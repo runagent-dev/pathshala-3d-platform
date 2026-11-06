@@ -27,11 +27,10 @@ the quiet "আবার দেখো" button plays the step just finished again 
    mirror shows is marked on the road (translucent amber, dashed outline; the rule names it), the word row chooses which;
 7. the student drags the bus (or the arrow keys) with everything live, and the test is offered in one quiet line.
 
-The bus shows that it can be moved whenever it is in view: a white disc with a thin dark ring and arrows along the road on
-the verge beside it, a dashed track for its range (nose 12.5–20 m along the east road; the wide framing follows its tail, so
+The bus shows that it can be moved whenever it is in view: the kit's `createDragHandle` on the verge beside it, a dashed track
+for its range (nose 12.5–20 m along the east road; the wide framing follows its tail, so
 it stays whole), the word "টেনে সরাও" and a gentle pulse until the first drag, then smaller and calm. Hidden in the close-ups
-and the test. The disc is an element, so its pulse costs no 3D frames; written in the figure until the kit's
-`createDragHandle` arrives. The test tab stays usable (the kit's shell), but is quiet until the offer appears.
+and the test. The test tab stays usable (the kit's shell), but is quiet until the offer appears.
 
 ## The exactness (for the reviewer)
 - **The plan is built so that 45° is exact, not nearly.** The road is rounded (radius 10 m), so the two drivers' straight-
@@ -60,11 +59,12 @@ and the test. The disc is an element, so its pulse costs no 3D frames; written i
 - Numbers at the default place: the mirror shows about 3 m of width at the bus when plane, about 10 m when convex.
 
 ## The whole way round
-The camera turns all the way round (polar 5°–88°, zoom limited to 10–170 m), damped; a tap is not a turn (8 px). It can never go
+The camera turns all the way round (polar 5°–88°, zoom 0.6–1.8 × the distance when the student took over), damped; a tap is not a turn (8 px). It can never go
 under the ground or into the hill: `keepAboveGround` holds it 2.5 m above the terrain under it. Every side of each object is
 modelled, so nothing is open from behind, and the terrain runs on all sides to the far ridges. A step's guided framing comes
-back with the next step, or with the quiet "সামনে" button. A white pill with a turning ring says "ঘুরিয়ে দেখো" until the first
-turn, then only the ring stays: it does not look like the bus's round handle, which moves a part, not the view. The rays are
+back with the next step, or with the quiet "সামনে" button. The kit's rotate cue, a dark pill, says "⟲ ৩৬০° ঘুরিয়ে দেখো" until the first
+turn, then ⟲ ৩৬০° stays: it does not look like the bus's round handle, which moves a part, not the view. A resize never takes a turned
+view away (the kit reports its lower resolution as a resize, and a browser test holds this); an unturned view fits again. The rays are
 drawn over the scene, so from behind the hill they show through it: they are a drawing, and that keeps the path readable.
 
 ## Scale and honesty

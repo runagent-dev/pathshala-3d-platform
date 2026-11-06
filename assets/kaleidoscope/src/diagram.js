@@ -60,7 +60,7 @@ export function createDiagram({ stage, host, tube, font }) {
   const NO_DASH = [];
   const DASH_R = [9, 6];
   const DASH_N = [7, 5];
-  const DASH_T = [5, 6];
+  const DASH_T = [7, 6];
   const gripBoxes = [];
 
   function stroke(x0, y0, x1, y1, color, width, halo, haloWidth, dash = NO_DASH, alpha = 1) {
@@ -322,92 +322,32 @@ export function createDiagram({ stage, host, tube, font }) {
     ctx.fill();
     ctx.restore();
   }
+  /** The radius of the ring the tube is turned along, px. */
+  const eyeRing = () => Math.min(w, h) * EYE_RING + 4 * unit;
   /**
-   * What the student can drag: a faint dashed track of everything within reach, and on it a white disc with a thin dark ring and
-   * arrows along the way it moves (a round arrow for turning). Its boxes go to the labels' avoid list. q: { turn, angle } for a
-   * ring round the middle of the view, or { path, at, prev, next } of world points; `small` once it has been used.
+   * The range of the kit's turning handle: a whole circle round the middle of the view, the dashes of the kit's tracks (the kit's
+   * track is an open curve). Its boxes go to the labels' avoid list.
    */
-  function grip(q) {
-    gripBoxes.length = 0;
-    let x = 0;
-    let y = 0;
-    let along = 0;
+  function turnTrack() {
+    const R = eyeRing();
     ctx.setLineDash(DASH_T);
     ctx.lineCap = 'butt';
     ctx.beginPath();
-    if (q.turn) {
-      const R = Math.min(w, h) * EYE_RING + 4 * unit;
-      ctx.arc(w / 2, h / 2, R, 0, Math.PI * 2);
-      x = w / 2 + R * Math.sin(q.angle);
-      y = h / 2 - R * Math.cos(q.angle);
-      along = q.angle;
-      for (let i = 0; i < 24; i++) {
-        const a = (i * Math.PI) / 12;
-        trackBox(w / 2 + R * Math.sin(a), h / 2 - R * Math.cos(a));
-      }
-    } else {
-      q.path.forEach((p, i) => {
-        at(p);
-        if (i) ctx.lineTo(sx, sy);
-        else ctx.moveTo(sx, sy);
-        trackBox(sx, sy);
-      });
-      at(q.prev);
-      const x0 = sx;
-      const y0 = sy;
-      at(q.next);
-      along = Math.atan2(sy - y0, sx - x0);
-      at(q.at);
-      x = sx;
-      y = sy;
+    ctx.arc(w / 2, h / 2, R, 0, Math.PI * 2);
+    for (let i = 0; i < 24; i++) {
+      const a = (i * Math.PI) / 12;
+      const x = w / 2 + R * Math.sin(a);
+      const y = h / 2 - R * Math.cos(a);
+      gripBoxes.push({ left: x - 5, top: y - 5, right: x + 5, bottom: y + 5 });
     }
-    ctx.strokeStyle = 'rgba(15,20,28,0.55)';
-    ctx.lineWidth = 3.4 * unit;
+    ctx.strokeStyle = 'rgba(20,30,45,0.6)';
+    ctx.lineWidth = 3.6;
     ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-    ctx.lineWidth = 1.7 * unit;
+    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+    ctx.lineWidth = 1.8;
     ctx.stroke();
     ctx.setLineDash(NO_DASH);
-    const r = (q.small ? 12.5 : 15.5) * unit;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.strokeStyle = C.ink;
-    ctx.lineWidth = 1.5 * unit;
-    ctx.stroke();
-    const a = r * 0.6;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(along);
-    ctx.strokeStyle = C.ink;
-    ctx.lineWidth = 1.9 * unit;
     ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    if (q.turn) {
-      // a round arrow: most of a circle, one head
-      ctx.arc(0, 0, a, -2.3, 1.5);
-      const hx = a * Math.cos(1.5);
-      const hy = a * Math.sin(1.5);
-      ctx.moveTo(hx + a * 0.55, hy - a * 0.02);
-      ctx.lineTo(hx, hy);
-      ctx.lineTo(hx + a * 0.2, hy - a * 0.62);
-    } else {
-      ctx.moveTo(-a, 0);
-      ctx.lineTo(a, 0);
-      for (const k of [-1, 1]) {
-        ctx.moveTo(k * a * 0.5, -a * 0.46);
-        ctx.lineTo(k * a, 0);
-        ctx.lineTo(k * a * 0.5, a * 0.46);
-      }
-    }
-    ctx.stroke();
-    ctx.restore();
-    return { x, y };
-  }
-  function trackBox(x, y) {
-    gripBoxes.push({ left: x - 5, top: y - 5, right: x + 5, bottom: y + 5 });
   }
 
   // ── what is shown: a plain description the figure fills in ──────────────────────────────────────────────────
@@ -423,17 +363,16 @@ export function createDiagram({ stage, host, tube, font }) {
     eyes: [],
     squares: [], // right angles: { at, a, b, r }
     mask: 0, // how far the eyepiece has closed round the view
-    grip: null, // what can be dragged now
+    turnTrack: false, // the ring along which the tube can be turned now
     hide: false, // while the camera flies
   };
-  const handles = { knob: null, track: gripBoxes };
+  const handles = { track: gripBoxes };
 
   function paint() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    handles.knob = null;
     gripBoxes.length = 0;
     if (v.hide) {
       if (v.mask > 0) eyepiece(v.mask);
@@ -457,7 +396,7 @@ export function createDiagram({ stage, host, tube, font }) {
     for (const q of v.rings) ring(q);
     for (const q of v.chips) chip(q);
     for (const q of v.eyes) eye(q);
-    if (v.grip) handles.knob = grip(v.grip);
+    if (v.turnTrack) turnTrack();
   }
   stage.onResize(size);
   stage.onAfterRender(paint);
@@ -466,9 +405,10 @@ export function createDiagram({ stage, host, tube, font }) {
     canvas,
     view: v,
     handles,
+    eyeRing,
     clear() {
       for (const k of ['cells', 'rings', 'normals', 'backs', 'arcs', 'squares', 'rays', 'dots', 'chips', 'eyes']) v[k].length = 0;
-      v.grip = null;
+      v.turnTrack = false;
     },
     paint,
   };

@@ -234,8 +234,8 @@ test(`${ID}: the bulb is dragged along the rail, and a tap on it is the action`,
 
 test(`${ID}: the rotate cue stays, and a tap is not a turn`, async ({ page }) => {
   const { fig, log } = await open(page, { params: { coach: '1' } });
-  const cue = fig.frame.locator('.lab-orbit');
-  await expect(fig.frame.locator('.lab-dh')).toBeHidden(); // no handle where nothing can be dragged
+  const cue = fig.frame.locator('.pvc-rc');
+  await expect(fig.frame.locator('.pvc-dh')).toBeHidden(); // no handle where nothing can be dragged
   await expect(cue).toContainText('৩৬০°');
   await expect(cue).toContainText('ঘুরিয়ে দেখো');
   const free = await fig.frame.locator('.pvc-canvas').boundingBox();
@@ -261,7 +261,7 @@ test(`${ID}: the rotate cue stays, and a tap is not a turn`, async ({ page }) =>
   st = await fig.call('get');
   expect(st).toMatchObject({ view: '3d', orbited: true });
   expect(Math.abs(st.az - az0)).toBeGreaterThan(20);
-  await expect(fig.frame.locator('.lab-orbit-word')).toBeHidden();
+  await expect(fig.frame.locator('.pvc-rc-word')).toBeHidden();
   await expect(cue).toBeVisible(); // the pill stays
   await expect(cue).toContainText('৩৬০°');
   expect(log.errors).toEqual([]);
@@ -301,7 +301,7 @@ test(`${ID}: the view goes all the way round, and comes back`, async ({ page }) 
 
 test(`${ID}: the handle shows that the bulb moves`, async ({ page }) => {
   const { fig, log } = await open(page, { params: { stage: 'torch', coach: '1' } });
-  const handle = fig.frame.locator('.lab-dh');
+  const handle = fig.frame.locator('.pvc-dh');
   await fig.advance(600);
   // the word until the first drag, then it stays, smaller; dragged, the bulb goes
   await expect(handle).toBeVisible();
@@ -324,7 +324,7 @@ test(`${ID}: the handle shows that the bulb moves`, async ({ page }) => {
   expect(st.beam).toBe('closing');
   await expect(handle).toHaveClass(/used/);
   await expect(handle).not.toHaveClass(/pulse/);
-  await expect(fig.frame.locator('.lab-dh-word')).toBeHidden();
+  await expect(fig.frame.locator('.pvc-dh-word')).toBeHidden();
   await expect(handle).toBeVisible();
   // it hides during the test
   await fig.call('practice');

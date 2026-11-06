@@ -9,9 +9,11 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
+import { createDragHandle } from '@shared/student/draghandle.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
@@ -120,6 +122,7 @@ export function createApp(root, options = {}) {
         { act: 'replay', label: 'act_replay', icon: ICONS.play },
         { act: 'home', label: 'act_home', icon: ICONS.reset },
       ],
+      tight: true,
       lines: { action: 2, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
@@ -130,31 +133,17 @@ export function createApp(root, options = {}) {
   note.className = 'kld-note';
   note.hidden = true;
   ui.stage.appendChild(note);
-  // the view can be turned all the way round: a dark pill in a corner, nothing like the white discs of what can be dragged
-  const orbitEl = document.createElement('div');
-  orbitEl.className = 'kld-orbit';
-  orbitEl.hidden = true;
-  orbitEl.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4 3.5v4.6h4.6"/></svg><b>${t.num(360)}°</b><span>${t('view_rotate')}</span>`;
-  ui.stage.appendChild(orbitEl);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const FOV = 22;
   const stage = createStage(ui.canvasHost, { fov: FOV, near: 0.4, far: 1600, environment: 'studio-light', environmentIntensity: 0.35 });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = true;
-  // all the way round; never under the table. A flight and the eye's own view go beyond these
-  controls.minAzimuthAngle = Number.NEGATIVE_INFINITY;
-  controls.maxAzimuthAngle = Number.POSITIVE_INFINITY;
+  // the rotate cue below opens the orbit all the way round, never under the table. A flight and the eye's own view go beyond that
   function freeTurn(free) {
     controls.minPolarAngle = free ? 0 : THREE.MathUtils.degToRad(5);
     controls.maxPolarAngle = free ? Math.PI : THREE.MathUtils.degToRad(88);
-    if (free) {
-      controls.minDistance = 0;
-      controls.maxDistance = Number.POSITIVE_INFINITY;
-    }
   }
-  freeTurn(false);
   const tube = createTube({ shadow: Boolean(o.shadow) });
   const setting = createSetting({ stage, shadow: Boolean(o.shadow), tube });
   const font = "'Noto Sans Bengali', sans-serif";
@@ -193,8 +182,7 @@ export function createApp(root, options = {}) {
     userMovedCamera: false,
     quiz: null,
     drag: null,
-    dragged: { turn: false, eye: false, lamp: false }, // a handle calms down once it has been used
-    orbited: false, // the rotate cue calms down once the student has turned the view
+    orbited: false, // the student has turned the view
   };
   s.stage = clamp(Math.round(Number(o.stage) || 0), 0, TOP[s.step]);
   s.zoom = s.step === 'why' && s.stage >= 1;
@@ -332,7 +320,6 @@ export function createApp(root, options = {}) {
     v.backs.push([hit, toW(q.image), 1]);
     v.dots.push([...hit, 2.8, C.ray]);
     v.eyes.push({ at: eye, look: hit });
-    if (!s.quiz && canEye()) v.grip = lineGrip(gripOnStrip, s.theta, STRIP.min, STRIP.max, s.dragged.eye);
   }
   /**
    * The ray between the mirrors. `lit`: how far the ray to B has come, 0 … 1. `angles`: its angles are drawn (they come after
@@ -388,7 +375,7 @@ export function createApp(root, options = {}) {
     if (s.quiz) return applyQuiz(s.quiz);
     if (s.step === 'pattern' && s.stage >= 1) {
       v.cells.push(realCell);
-      if (canTurn()) v.grip = { turn: true, angle: TURN_START + s.phi, small: s.dragged.turn };
+      v.turnTrack = canTurn();
     }
     if (s.step === 'why') {
       if (s.stage <= 3) drawPaths();
@@ -411,7 +398,6 @@ export function createApp(root, options = {}) {
     if (s.step === 'graze') drawGraze();
     if (s.step === 'two') {
       drawWedge(s.angle, wedgeNow());
-      if (canLamp()) v.grip = lineGrip(gripOnWedge, s.angle, WEDGE.min, WEDGE.max, s.dragged.lamp);
     }
   }
   // what the student drags, at each whole degree it can reach (made once)
@@ -420,17 +406,6 @@ export function createApp(root, options = {}) {
     return stripWorld(q.eye[0] + 1.9 * Math.sin(rad(th)), q.eye[1] + 1.9 * Math.cos(rad(th)));
   };
   const gripOnWedge = (th) => wedgeWorld(...sourceHandle(th));
-  const tracks = new Map();
-  /** A handle moving along a path of world points: the dashed track of its whole range, and where it is. */
-  function lineGrip(fn, value, min, max, used) {
-    if (!tracks.has(fn)) {
-      const path = [];
-      for (let a = min; a <= max; a += 4) path.push(fn(a));
-      path.push(fn(max));
-      tracks.set(fn, path);
-    }
-    return { path: tracks.get(fn), at: fn(value), prev: fn(Math.max(min, value - 2)), next: fn(Math.min(max, value + 2)), small: used };
-  }
   /** The handle on the ray box, a little behind it. */
   function sourceHandle(theta) {
     const a = rad(theta);
@@ -548,18 +523,13 @@ export function createApp(root, options = {}) {
       controls.target.copy(pz.target);
       setFov(pz.fov);
       tube.setPeek(eyeNow);
-      // a sensible zoom round the guided view
-      if (!eyeNow) {
-        const d = pz.position.distanceTo(pz.target);
-        controls.minDistance = d * 0.45;
-        controls.maxDistance = d * 2.2;
-      }
     }
     controls.update();
   }
   function flyCamera(duration = FLY) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
+      rotate.home();
       s.view = 'front';
       syncUI();
     }
@@ -607,6 +577,7 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
+    rotate.home();
     syncUI();
     if (animate) flyCamera(FLY);
     else camK = 1;
@@ -614,7 +585,7 @@ export function createApp(root, options = {}) {
   }
   /** The student has taken the view: from here on the guided framing waits, until the next step or the "সামনে" button. */
   function beginOrbit() {
-    if (s.userMovedCamera || s.drag || !controls.enabled) return;
+    if (s.userMovedCamera) return;
     s.userMovedCamera = true;
     s.orbited = true;
     tweener.cancel('camera');
@@ -625,15 +596,20 @@ export function createApp(root, options = {}) {
       syncUI();
       emit('view', { view: s.view });
     }
-    syncCue();
     draw();
   }
+  const rotate = createRotateCue(stage, {
+    layer: ui.stage,
+    short: `${t.num(360)}°`,
+    label: t('view_rotate'),
+    pulse: Boolean(o.coach),
+    zoom: [0.45, 2.2],
+    when: () => !inEye() && !s.quiz, // the eye's view is fixed
+    onTurn: beginOrbit,
+  });
+  // the stage also calls this when it lowers its resolution mid-turn: a view the student has turned stays theirs, and an
+  // unturned one is fitted again on the next frame
   stage.onResize(() => {
-    s.userMovedCamera = false;
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
-    }
     draw();
   });
   stage.onBeforeRender(() => {
@@ -919,57 +895,53 @@ export function createApp(root, options = {}) {
   // ── labels on the picture: pinned to what they name ────────────────────────────────────────────────────
   let action = null;
   const panelTab = ui.$('.pvc-panel-toggle');
-  // the part of the handle that moves by itself: a gentle ring and the first-time word, in the page, so that a figure at rest
-  // draws nothing (the disc itself is on the drawing, so that it is in every picture)
-  const gripEl = document.createElement('div');
-  gripEl.className = 'kld-grip';
-  gripEl.hidden = true;
-  gripEl.innerHTML = '<i class="kld-grip-pulse"></i><span class="kld-grip-tag"></span>';
-  ui.stage.appendChild(gripEl);
-  const gripTag = gripEl.querySelector('.kld-grip-tag');
-  const gripWas = { x: 0, y: 0, on: false, word: '', low: false };
-  const gripWord = () => {
-    if (s.step === 'pattern' && !s.dragged.turn) return t('l_turn');
-    if (s.step === 'graze' && !s.dragged.eye) return t('l_drag');
-    if (s.step === 'two' && !s.dragged.lamp) return t('l_drag');
-    return '';
-  };
-  function syncGrip() {
-    const p = dia.handles.knob;
-    const on = Boolean(p) && camK >= 1;
-    if (on !== gripWas.on) {
-      gripWas.on = on;
-      gripEl.hidden = !on;
-      stage.invalidate(); // the labels were placed before the handle was known: once more, keeping off it
-    }
-    if (!on) return;
-    const x = Math.round(p.x);
-    const y = Math.round(p.y);
-    if (x !== gripWas.x || y !== gripWas.y) {
-      gripWas.x = x;
-      gripWas.y = y;
-      gripEl.style.transform = `translate(${x}px, ${y}px)`;
-    }
-    const low = y < stage.height - 56; // the word goes under the disc, clear of what it moves, unless the view ends there
-    const word = s.drag ? '' : gripWord();
-    if (word !== gripWas.word || low !== gripWas.low) {
-      gripWas.word = word;
-      gripWas.low = low;
-      gripTag.textContent = word;
-      gripEl.classList.toggle('fresh', Boolean(word) && Boolean(o.coach));
-      gripEl.classList.toggle('low', low);
-      gripTag.hidden = !word;
-    }
+  // what can be dragged: one handle for each. The tube is turned from a point on the ring round the eye's view, drawn in the
+  // screen's plane (a whole circle, so the dashed ring itself stays on the drawing); the other two ride their arcs
+  const toV3 = (q) => new THREE.Vector3(q[0], q[1], q[2]);
+  /** A point on that ring, `angle` clockwise from the top. */
+  function onRing(out, angle) {
+    const r = dia.eyeRing();
+    return out.set((2 * r * Math.sin(angle)) / stage.width, (2 * r * Math.cos(angle)) / stage.height, 0.5).unproject(camera);
   }
-  stage.onAfterRender(syncGrip);
-  const knobBox = () => {
-    const p = dia.handles.knob;
-    if (!p) return [];
-    const out = [{ left: p.x - 22, top: p.y - 22, right: p.x + 22, bottom: p.y + 22 }];
-    if (gripWas.word)
-      out.push({ left: p.x - 42, top: gripWas.low ? p.y + 18 : p.y - 46, right: p.x + 42, bottom: gripWas.low ? p.y + 46 : p.y - 18 });
-    return out;
-  };
+  const ringAt = new THREE.Vector3();
+  const ringWay = new THREE.Vector3();
+  const ringFrom = new THREE.Vector3();
+  const turnHandle = createDragHandle(stage, {
+    point: () => onRing(ringAt, TURN_START + s.phi),
+    axis: 'turn',
+    direction: () => onRing(ringWay, TURN_START + s.phi + 0.1).sub(onRing(ringFrom, TURN_START + s.phi)),
+    label: t('l_turn'),
+    aria: t('aria_turn'),
+    pulse: Boolean(o.coach),
+    when: canTurn,
+  });
+  /** A handle that rides a curve of world points: `of` says where it stands at a value, `via` a value half way along. */
+  function curveHandle(of, value, min, max, via, aria, when) {
+    const here = new THREE.Vector3();
+    const way = new THREE.Vector3();
+    const back = new THREE.Vector3();
+    return createDragHandle(stage, {
+      point: () => here.fromArray(of(value())),
+      axis: 'x',
+      direction: () => way.fromArray(of(Math.min(max, value() + 2))).sub(back.fromArray(of(Math.max(min, value() - 2)))),
+      track: { from: toV3(of(min)), to: toV3(of(max)), via: toV3(of(via)) },
+      label: t('l_drag'),
+      aria,
+      pulse: Boolean(o.coach),
+      when,
+    });
+  }
+  const eyeHandle = curveHandle(
+    gripOnStrip,
+    () => s.theta,
+    STRIP.min,
+    STRIP.max,
+    54,
+    t('aria_eye'),
+    () => canEye() && !s.quiz,
+  );
+  const lampHandle = curveHandle(gripOnWedge, () => s.angle, WEDGE.min, WEDGE.max, 45, t('aria_lamp'), canLamp);
+  const handleOf = { turn: turnHandle, eye: eyeHandle, lamp: lampHandle };
   const trackBoxes = () => dia.handles.track;
   const onScreen = new THREE.Vector3();
   /** Small boxes along the rays drawn now, in canvas pixels: labels keep off them. */
@@ -994,7 +966,18 @@ export function createApp(root, options = {}) {
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, orbitEl, panelTab, knobBox, trackBoxes, rayBoxes, () => action?.ringBox()],
+    avoid: [
+      ui.corner,
+      note,
+      rotate.el,
+      panelTab,
+      () => turnHandle.box(),
+      () => eyeHandle.box(),
+      () => lampHandle.box(),
+      trackBoxes,
+      rayBoxes,
+      () => action?.ringBox(),
+    ],
   });
   const shown = new Map();
   const used = new Map();
@@ -1171,14 +1154,7 @@ export function createApp(root, options = {}) {
     note.hidden = !(slow || rays) || Boolean(s.quiz);
     note.textContent = rays ? t('note_rays') : t('note_slow');
   }
-  function syncCue() {
-    const on = !inEye() && !s.quiz;
-    if (orbitEl.hidden === on) orbitEl.hidden = !on;
-    orbitEl.classList.toggle('used', s.orbited);
-    orbitEl.classList.toggle('fresh', !s.orbited && Boolean(o.coach));
-  }
   function panel() {
-    syncCue();
     if (s.quiz) return;
     const ph = phase();
     sheet.outcome(outcome());
@@ -1225,7 +1201,7 @@ export function createApp(root, options = {}) {
     label: 'act_look',
     target: actionSpot,
     radius: 22,
-    avoid: [ui.corner, ui.hint, note, orbitEl, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, note, rotate.el, () => anno.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -1267,25 +1243,18 @@ export function createApp(root, options = {}) {
     (e) => {
       const p = hostXY(e);
       tap = { x: p.x, y: p.y, id: e.pointerId, at: performance.now() };
-      const k = dia.handles.knob;
-      const reach = e.pointerType === 'touch' ? 36 : 26;
-      if (canEye() && k && Math.hypot(k.x - p.x, k.y - p.y) <= reach) return startDrag('eye', e, p);
-      if (canLamp() && k && Math.hypot(k.x - p.x, k.y - p.y) <= reach) return startDrag('lamp', e, p);
+      if (eyeHandle.hit(p.x, p.y)) return startDrag('eye', e, p);
+      if (lampHandle.hit(p.x, p.y)) return startDrag('lamp', e, p);
       if (canTurn()) startDrag('turn', e, p);
     },
     { capture: true },
   );
-  ui.canvasHost.addEventListener('wheel', beginOrbit, { passive: true });
   ui.canvasHost.addEventListener('pointermove', (e) => {
     const g = s.drag;
-    if (!g && tap?.id === e.pointerId) {
-      // a tap is not an orbit: the view is the student's only after a real move
-      const o = hostXY(e);
-      if (Math.hypot(o.x - tap.x, o.y - tap.y) >= 8) beginOrbit();
-    }
     if (!g || e.pointerId !== g.id) return;
     const p = hostXY(e);
     g.moved = Math.max(g.moved, Math.hypot(p.x - g.x, p.y - g.y));
+    if (g.moved >= 8) handleOf[g.kind].markUsed();
     if (g.kind === 'turn') {
       const a = screenAngle(p);
       let d = a - g.a;
@@ -1335,7 +1304,6 @@ export function createApp(root, options = {}) {
     s.drag = null;
     action.show('drag');
     emit('dragend', { part: g.kind });
-    if (g.moved >= 8) s.dragged[g.kind] = true;
     if (g.kind === 'turn' && Math.abs(s.turned) >= 20) s.stage = 2;
     draw();
     emitChange();
@@ -1410,7 +1378,6 @@ export function createApp(root, options = {}) {
     clearLabels();
     applyWorld();
     syncNote();
-    syncCue();
     shownFrame = frameKey();
     toSite(false);
     stage.invalidate();
@@ -1655,13 +1622,6 @@ export function createApp(root, options = {}) {
     syncUI();
     emitChange();
   }
-  // "সামনে", in words: the icon alone would read as starting again
-  {
-    const front = ui.$('[data-view="front"]');
-    front.textContent = t('view_front_short');
-    front.classList.remove('icon-only');
-    front.classList.add('kld-front');
-  }
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
   let lastTap = { what: '', at: 0 };
@@ -1712,18 +1672,18 @@ export function createApp(root, options = {}) {
         });
         s.turned += walk * 20;
         s.stage = 2;
-        s.dragged.turn = true;
+        turnHandle.markUsed();
         draw();
         emitChange();
       } else if (canEye()) {
         s.theta = clamp(s.theta + walk * 2, STRIP.min, STRIP.max);
-        s.dragged.eye = true;
+        eyeHandle.markUsed();
         if (s.theta >= 70) s.stage = 1;
         draw();
         emitChange();
       } else if (canLamp()) {
         s.angle = snapWedge(s.angle + walk);
-        s.dragged.lamp = true;
+        lampHandle.markUsed();
         draw();
         emitChange();
       }
@@ -1823,6 +1783,7 @@ export function createApp(root, options = {}) {
         controls.update();
         s.userMovedCamera = true;
         s.orbited = true;
+        rotate.markUsed();
         s.view = '3d';
         syncUI();
       }
@@ -1861,6 +1822,7 @@ export function createApp(root, options = {}) {
       s.step = 'pattern';
       s.open = false;
       s.orbited = false;
+      rotate.rearm();
       squareUp(false);
       restartStep();
       tube.beads.restart();

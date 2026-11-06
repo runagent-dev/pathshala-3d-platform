@@ -63,35 +63,6 @@ body.bg-transparent { background: transparent; }
   .lab .pvc-anno { font-size: 12.5px; }
 }
 
-/* the glass's drag handle: a white disc with a thin dark ring and arrows up and down; it stays, smaller and calm, after the first drag */
-.lab-handle[hidden] { display: none; }
-.lab-handle { position: absolute; left: 0; top: 0; z-index: 3; width: 0; height: 0; pointer-events: none; }
-.lab-hd { position: absolute; left: -16px; top: -16px; display: grid; place-items: center; box-sizing: border-box; width: 32px; height: 32px; border: 1.5px solid #1f2933; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(10, 16, 24, 0.5); animation: lab-pulse 1.5s ease-in-out infinite; }
-.pvc .lab-hd svg { width: 22px; height: 22px; stroke: #1f2933; stroke-width: 2.2; fill: none; }
-.lab-hl { position: absolute; left: 0; top: 22px; transform: translateX(-50%); padding: 1px 7px; border-radius: 4px; background: #1864ab; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
-.lab-handle.up .lab-hl { top: -44px; }
-.lab-handle.used .lab-hl { display: none; }
-.lab-handle.used .lab-hd { left: -13px; top: -13px; width: 26px; height: 26px; animation: none; }
-.pvc .lab-handle.used .lab-hd svg { width: 18px; height: 18px; }
-@keyframes lab-pulse {
-  50% { transform: scale(1.14); box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.35), 0 1px 4px rgba(10, 16, 24, 0.5); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lab-hd { animation: none; }
-}
-.pvc[data-mode='quiz'] .lab-handle { display: none; }
-
-/* the sign that the view turns all the way round: a dark tab in a corner; after the first turn only its icon stays */
-.lab-turn { position: absolute; left: 8px; top: 8px; z-index: 2; display: flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; border-radius: 6px; background: rgba(24, 32, 44, 0.74); color: #fff; font-size: 12.5px; font-weight: 600; line-height: 1; white-space: nowrap; pointer-events: none; }
-.lab-turn svg { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.lab-turn b { font-weight: 600; font-size: 12.5px; }
-.lab-turn.used { height: 24px; padding: 0 7px; opacity: 0.8; }
-.lab-turn.used span { display: none; }
-
-/* back to the guided view: a target and its word */
-.pvc .pvc-corner .lab-front { width: auto; padding: 0 9px; gap: 4px; font-size: 13.5px; font-weight: 600; }
-.pvc .pvc-corner .lab-front svg { width: 17px; height: 17px; }
-
 /* the step's replay keeps its word where the row has room; the longer "start again" stays an icon */
 @container pvc-panel (min-width: 350px) {
   .lab .pvc-act-row .pvc-quiet.lab-worded > span { display: inline; font-size: 13.5px; }

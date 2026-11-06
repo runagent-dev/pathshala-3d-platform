@@ -33,11 +33,9 @@ three images only that one is not swapped.
   opening 2 s, the ray 1 s a stretch (`RAY_PLAY`). The action waits ("দেখো…") through every move and flight and about 1 s more
   (`hold`), and taps meanwhile are ignored, not queued. The quiet ▶ "আবার দেখো" plays the last move again, the step's earlier moves staying;
   the word or ↺ restarts the step. The test is offered at the end: "বুঝেছ? তাহলে পরীক্ষা দাও". The পরীক্ষা tab is open from the start: that is the kit's.
-- **What can be moved shows itself** (the owner, 2026-11-06). One part moves, the mirror, so it carries the handle: a white disc with a thin
-  dark ring and arrows along its way on the screen, a 44 px hit area (68 px by touch), a faint dashed arc for its range with a dot at each
-  end, "টেনে সরাও" until the mirrors are folded by hand, and a gentle pulse until the first drag; then it stays, smaller. It is drawn in
-  `diagram.js` (the pulse is CSS, so it asks the 3D view for no frames, and it stays off with `coach=0`) and will move to the kit's
-  `createDragHandle`. It hides in the zoom on the corner image, where it is out of the frame, and in the test.
+- **What can be moved shows itself** (the owner, 2026-11-06). One part moves, the mirror, so it carries the kit's `createDragHandle`: its
+  range is a curved track along the arc, "টেনে সরাও" stays until the mirrors are folded by hand, and the pulse stays off with `coach=0`. It
+  hides in the zoom on the corner image, where it is out of the frame, and in the test.
 - **Images are exact, with no render to texture.** A plane mirror shows the world reflected in its plane, so each image is the same
   geometry under the mirror's own transform (a matrix of determinant −1), drawn only through the mirror's frame: four clipping
   planes from the camera through the frame's edges, set every frame. An image of an image goes under two transforms, cut by the first
@@ -51,7 +49,8 @@ three images only that one is not swapped.
   image the camera's own picture in the first mirror must stand in front of the second. From behind a mirror there is its back: painted
   glass and three steel braces, one mesh, drawn only from that side (from the front the view goes through). In a view the student has
   turned, the images' labels go, since their points may lie outside the glass: "সামনে" brings them back. Each step's guided camera still flies to its frame, and "সামনে" brings it back. The dark pill in a corner (⟲ ৩৬০° ঘুরিয়ে দেখো,
-  then a small icon) is the rotate cue, nothing like the white handle on the mirror. A tap is not a turn: it takes 8 px.
+  then ⟲ ৩৬০°) is the kit's rotate cue, nothing like the white handle on the mirror. A tap is not a turn: it takes 8 px. A resize never takes a
+  turned view away (the kit reports its lower resolution as a resize, and a browser test holds this); an unturned view fits again.
 - **Rays are traced** (`reading.js`): aimed by unfolding, then r = d − 2(d·n)n at each mirror; θi = θr, the miss at the eye and the miss at the
   image are read back from the vectors, in the unit tests and in `get`.
 - **The test** (numbers only: the kit's quiz compares numbers; a browser test answers all five right and checks ৫ টির মধ্যে ৫ টি): the

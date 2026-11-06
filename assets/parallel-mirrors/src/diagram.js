@@ -47,7 +47,6 @@ export function createDiagram({ stage, host }) {
   const NO_DASH = [];
   const DASH_R = [9, 6];
   const DOTS = [1.6, 4.4];
-  const TRACK_DASH = [7, 6];
   function line(ax, ay, bx, by, color, width, halo, haloWidth, dash = NO_DASH, alpha = 1) {
     P(ax, ay);
     const x0 = sx;
@@ -188,39 +187,6 @@ export function createDiagram({ stage, host }) {
     ctx.fill();
     ctx.globalAlpha = 1;
   }
-  /** Where the candle can go: a faint dashed line on the table, with its two ends marked. */
-  function track(q) {
-    P(q.x0, 0.05, q.z);
-    const x0 = sx;
-    const y0 = sy + q.dy;
-    P(q.x1, 0.05, q.z);
-    const x1 = sx;
-    const y1 = sy + q.dy;
-    const l = Math.hypot(x1 - x0, y1 - y0) || 1;
-    const nx = (-(y1 - y0) / l) * 6;
-    const ny = ((x1 - x0) / l) * 6;
-    ctx.lineCap = 'butt';
-    for (const [colour, width, dash] of [
-      ['rgba(16, 24, 32, 0.55)', 3.6, TRACK_DASH],
-      ['rgba(255, 255, 255, 0.9)', 1.7, TRACK_DASH],
-    ]) {
-      ctx.setLineDash(dash);
-      ctx.strokeStyle = colour;
-      ctx.lineWidth = width * unit;
-      ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x1, y1);
-      ctx.stroke();
-      ctx.setLineDash(NO_DASH);
-      ctx.beginPath();
-      ctx.moveTo(x0 - nx, y0 - ny);
-      ctx.lineTo(x0 + nx, y0 + ny);
-      ctx.moveTo(x1 - nx, y1 - ny);
-      ctx.lineTo(x1 + nx, y1 + ny);
-      ctx.stroke();
-    }
-    ctx.lineCap = 'round';
-  }
   /** A small eye, looking along (dx, dy) on the screen: an almond with an iris, drawn in vector. */
   function eye(q) {
     P(q.x, q.y);
@@ -270,7 +236,6 @@ export function createDiagram({ stage, host }) {
     dims: [], // { x0, x1, y, k, lit, drop0, drop1 }
     ray: null, // { points, k, lit, a }: k counts the straight stretches drawn so far
     halo: null, // { x, y, r, k }
-    track: null, // { x0, x1, z, dy }: dy in pixels, down the screen
     backs: [], // dashed: { x0, y0, x1, y1, k, lit }
     eye: null, // { x, y, tx, ty }
     aim: null, // the image a ray is traced to: { x, y }
@@ -284,7 +249,6 @@ export function createDiagram({ stage, host }) {
     ctx.clearRect(0, 0, w, h);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    if (v.track) track(v.track);
     if (v.halo) halo(v.halo);
     for (const q of v.dims) dimension(q);
     for (const q of v.spots) spot(q[0], q[1]);

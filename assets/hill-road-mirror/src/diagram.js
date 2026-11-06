@@ -177,7 +177,6 @@ export function createDiagram({ stage, host }) {
     eye: null, // the point of the eye that is looking
     rays: [], // the test's candidates: { from, to }
     lines: [], // plain lines: { from, to, color, width, dash, alpha }
-    track: null, // the faint range of what can be dragged: { from, to }
     halo: null, // a ring round the mirror in the wide view: { p, r }
     leaders: [], // { from, to, color }
   };
@@ -239,14 +238,6 @@ export function createDiagram({ stage, host }) {
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2.2 * unit;
       ctx.stroke();
-    }
-    if (v.track) {
-      count = 0;
-      add(v.track.from);
-      add(v.track.to);
-      stroke(C.ink, 1.7, 'rgba(255,255,255,0.75)', 3.4, DASH_D, 0.85);
-      dot(v.track.from, 2.4, C.ink, '#ffffff');
-      dot(v.track.to, 2.4, C.ink, '#ffffff');
     }
     if (v.normal > 0) {
       count = 0;
@@ -327,7 +318,6 @@ export function createDiagram({ stage, host }) {
       v.arcs.length = 0;
       v.rays.length = 0;
       v.lines.length = 0;
-      v.track = null;
       v.halo = null;
       v.leaders.length = 0;
     },

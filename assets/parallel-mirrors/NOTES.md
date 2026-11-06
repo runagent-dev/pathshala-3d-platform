@@ -41,17 +41,16 @@ angle, a camera per step with smooth zooms, one element at a time, labels never 
 - **The frame** takes in an image's whole range up to step 3, so the view stands still while the candle is dragged. From step 4 on it takes in
   where the images stand now, because they need every pixel of a phone, and the view follows the drag a little. Step 3 stands at −12°, so
   that the right x′ stands clear of M₁ and the candle even at x = 7.
-- **The candle's handle** is the chapter's visible handle: a white disc with a thin dark ring and ↔ arrows, a faint dashed track
-  with its ends marked, "টেনে সরাও" and a gentle pulse until the first drag, a smaller disc after that, hidden in the test. On a wide
-  view the table is thin on the screen, so handle and track step down until they clear the candle's foot. Its arrows follow the row
-  on the screen, so from behind or from the side the drag still follows the finger. It dims while a step plays, and does not vanish.
+- **The candle's handle** is the kit's `createDragHandle`, with "টেনে সরাও" until the first drag, hidden in the test. On a wide view the
+  table is thin on the screen, so handle and track step down until they clear the candle's foot: the figure gives the kit points moved
+  down the screen by that much. Its arrows follow the row on the screen, so from behind or from the side the drag still follows the
+  finger. It dims while a step plays, and does not vanish (`.pm2-wait` on the canvas host, the only thing this figure adds to it).
 - **The view turns all the way round** (no azimuth limit, polar 5°–88°, zoom 0.45–1.6 of the guided distance, damping on). OrbitControls
-  starts on the finger going down, so only 8 px of movement counts as taking the view: a tap leaves it alone. A dark pill in the corner
-  (⟲ ৩৬০° ঘুরিয়ে দেখো) keeps its words until the first turn, then stays as ⟲ ৩৬০°; it looks nothing like the white disc on the candle.
-  The next step, or the "সামনে" button (a target and the word: the kit's is a circular arrow, so the figure replaces its inside, until
-  the kit changes), flies back round the scene, not through it. The one exception is the view into M₁: the camera stands between the
+  starts on the finger going down, so only 8 px of movement counts as taking the view: a tap leaves it alone. The kit's rotate cue, a dark pill in the corner
+  (⟲ ৩৬০° ঘুরিয়ে দেখো), keeps its words until the first turn, then stays as ⟲ ৩৬০°; it looks nothing like the white disc on the candle.
+  The next step, or the kit's "সামনে" button (a target and the word), flies back round the scene, not through it. The one exception is the view into M₁: the camera stands between the
   mirrors and looks through M₁, and beyond that glass this view has nothing to show, so there it keeps to M₂'s side (azimuth −115° to
-  −58°, every frame has images) and does not zoom, and the pill says ⟲ একটু ঘুরিয়ে দেখো instead of ৩৬০°.
+  −58°, every frame has images) and does not zoom, and the pill does not show: it would promise a ৩৬০° that this view does not have.
 - **A resize frames the view again only if the stage's CSS size changed.** The kit lowers its pixel ratio while frames come slowly and reports
   that as a resize; taken at face value it threw the student's turn away, on the slow phones that need it most. A browser test holds this.
 - **Icons do not look alike:** ⟲ with ৩৬০° turns the view, the target with সামনে goes back to the front, ▶ replays a step. The figure has no plain ↺.

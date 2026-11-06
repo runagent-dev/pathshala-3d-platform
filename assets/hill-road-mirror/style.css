@@ -35,19 +35,6 @@ body.bg-transparent { background: transparent; }
 .hrm-offer:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .hrm[data-offer='0'] [role='tab'][data-mode='quiz']:not(.on) { color: var(--ink-3); font-weight: 500; }
 
-/* the handle of what can be dragged: a white disc with a thin dark ring, arrows along the way it goes, a gentle pulse until
-   the first drag, then smaller and calm. Touches go through it to the view, where the grab has a 44 px circle at least */
-.hrm-handle { position: absolute; left: 0; top: 0; width: 0; height: 0; visibility: hidden; pointer-events: none; }
-.hrm-handle.in { visibility: visible; }
-.hrm-handle svg { position: absolute; left: -15px; top: -15px; width: 30px; height: 30px; box-sizing: border-box; border: 1.5px solid #212529; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); }
-.hrm-handle path { fill: none; stroke: #212529; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.hrm-handle::before { content: ''; position: absolute; left: -15px; top: -15px; width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9); animation: hrm-pulse 1.8s ease-out infinite; }
-.hrm-handle.calm::before, .hrm-handle.still::before { display: none; }
-.hrm-handle.calm svg { left: -12px; top: -12px; width: 24px; height: 24px; }
-@keyframes hrm-pulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(1.75); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .hrm-handle::before { animation: none; opacity: 0; } }
-.pvc[data-mode='quiz'] .hrm-handle { display: none; }
-
 /* labels on the picture: a plain white tab, a thin line, no dot */
 .hrm .pvc-anno { transition: none; font-size: 13px; font-weight: 600; color: var(--c); border: 0; border-radius: 4px; background: #fff; padding: 1px 6px; box-shadow: none; white-space: nowrap; }
 .hrm .pvc-anno:has(sub) { padding: 2px 8px; font-size: 16px; line-height: 1.3; }
@@ -64,14 +51,9 @@ body.bg-transparent { background: transparent; }
   .hrm-pip span, .hrm-pip em { font-size: 15px; }
 }
 
-/* the corner: the cue that the view turns, a white pill with a turning ring (never a disc, the mark of a part that moves), then
-   only its icon once the student has turned it; beside it the note of what is drawn, not seen */
+/* the corner: the kit's cue that the view turns, and beside it the note of what is drawn, not seen */
 .hrm-corner { position: absolute; left: 8px; top: 8px; right: 60px; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; pointer-events: none; }
-.hrm-orbit { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 9px 0 6px; border-radius: 6px; background: #fff; color: var(--accent); font-size: 13px; font-weight: 600; line-height: 1; white-space: nowrap; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
-.hrm-orbit svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.hrm-orbit.small { padding: 0 4px; opacity: 0.85; }
-.hrm-orbit.small span { display: none; }
-.hrm-orbit[hidden], .pvc[data-mode='quiz'] .hrm-orbit { display: none; }
+.hrm-corner .pvc-rc { position: static; }
 .hrm-note { padding: 1px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.86); color: var(--ink-2); font-size: 11.5px; line-height: 1.4; white-space: nowrap; }
 .hrm-note[hidden] { display: none; }
 .pvc[data-mode='quiz'] .hrm-note { display: none; }

@@ -19,11 +19,6 @@ export function createDiagram({ stage, host }) {
   canvas.className = 'ra-draw';
   host.appendChild(canvas);
   const ctx = canvas.getContext('2d');
-  // the handle's gentle pulse is CSS, so that it never asks the 3D view for a frame
-  const pulse = document.createElement('div');
-  pulse.className = 'ra-pulse';
-  pulse.hidden = true;
-  host.appendChild(pulse);
   let dpr = 1;
   let w = 1;
   let h = 1;
@@ -50,7 +45,6 @@ export function createDiagram({ stage, host }) {
   const NO_DASH = [];
   const DASH_R = [9, 6];
   const DASH_L = [7, 6];
-  const DASH_T = [5, 6];
   function stroke(ax, ay, bx, by, color, width, halo, haloWidth, dash, alpha = 1) {
     ctx.globalAlpha = alpha;
     ctx.setLineDash(dash);
@@ -209,73 +203,6 @@ export function createDiagram({ stage, host }) {
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
     ctx.fill();
   }
-  /** The handle's range: a faint dashed arc at its own height, a small dot at each end. */
-  function track(q) {
-    const n = 24;
-    ctx.beginPath();
-    for (let i = 0; i <= n; i++) {
-      const p = q.at(q.from + ((q.to - q.from) * i) / n);
-      P(p.x, p.y, p.z);
-      if (i) ctx.lineTo(sx, sy);
-      else ctx.moveTo(sx, sy);
-    }
-    ctx.lineCap = 'butt';
-    ctx.setLineDash(DASH_T);
-    ctx.globalAlpha = 0.75;
-    ctx.strokeStyle = C.lineDark;
-    ctx.lineWidth = 3.4 * unit;
-    ctx.stroke();
-    ctx.strokeStyle = C.line;
-    ctx.lineWidth = 1.8 * unit;
-    ctx.stroke();
-    ctx.setLineDash(NO_DASH);
-    ctx.globalAlpha = 1;
-    for (const a of [q.from, q.to]) dot(q.at(a), 2.6, C.line, C.lineDark);
-  }
-  /** The handle: a white disc, a thin dark ring, and arrows along the way it goes on the screen. */
-  function handle(q) {
-    const before = q.at(q.alpha + (q.alpha < 170 ? 6 : -6));
-    P(before.x, before.y, before.z);
-    const bx = sx;
-    const by = sy;
-    const here = q.at(q.alpha);
-    P(here.x, here.y, here.z);
-    const cx = sx;
-    const cy = sy;
-    const r = (q.calm ? 13.5 : 15.5) * unit;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.strokeStyle = C.ink;
-    ctx.lineWidth = 1.5 * unit;
-    ctx.stroke();
-    ctx.save();
-    ctx.translate(cx, cy);
-    let a = Math.atan2(by - cy, bx - cx);
-    if (Math.cos(a) < 0) a += Math.PI;
-    ctx.rotate(a);
-    const w = r * 0.66;
-    const h = r * 0.34;
-    ctx.strokeStyle = C.ink;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = 2.1 * unit;
-    ctx.beginPath();
-    ctx.moveTo(-w, 0);
-    ctx.lineTo(w, 0);
-    for (const s of [-1, 1]) {
-      ctx.moveTo(s * (w - h), -h);
-      ctx.lineTo(s * w, 0);
-      ctx.lineTo(s * (w - h), h);
-    }
-    ctx.stroke();
-    ctx.restore();
-    pulse.hidden = !q.pulse;
-    if (q.pulse) pulse.style.transform = `translate(${cx}px, ${cy}px)`;
-    return { x: cx, y: cy };
-  }
-
   // ── what is shown: a plain description the figure fills in ──────────────────────────────────────────────────
   const v = {
     axes: [], // the mirrors' lines carried on past O, dashed: { a, b, k }
@@ -285,10 +212,8 @@ export function createDiagram({ stage, host }) {
     corner: null, // { a, b, r, right }
     points: [], // [{ x, y, z }, radius, colour]
     spots: [], // the test's places on the floor
-    fold: null, // the handle and its range: { at(α), from, to, alpha, calm, pulse }
     flash: 0,
   };
-  const handles = { fold: null };
 
   function paint() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -308,13 +233,6 @@ export function createDiagram({ stage, host }) {
     if (v.ray) ray(v.ray.points, v.ray.ks);
     for (const p of v.points) dot(p[0], p[1], p[2]);
     if (v.eye) eye(v.eye);
-    if (v.fold) {
-      track(v.fold);
-      handles.fold = handle(v.fold);
-    } else {
-      handles.fold = null;
-      pulse.hidden = true;
-    }
   }
   stage.onResize(size);
   stage.onAfterRender(paint);
@@ -322,9 +240,8 @@ export function createDiagram({ stage, host }) {
   return {
     canvas,
     view: v,
-    handles,
     clear() {
-      Object.assign(v, { ray: null, eye: null, corner: null, fold: null, flash: 0 });
+      Object.assign(v, { ray: null, eye: null, corner: null, flash: 0 });
       v.axes.length = 0;
       v.backs.length = 0;
       v.points.length = 0;

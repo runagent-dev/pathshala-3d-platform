@@ -9,7 +9,7 @@ const FRAME_MS = 50;
 
 test('hill-road-mirror: the story, step by step, at its real pace', async ({ page }) => {
   test.setTimeout(240_000);
-  await page.setViewportSize({ width: 480, height: 300 });
+  await page.setViewportSize({ width: 600, height: 300 }); // narrower than 600 px the panel stacks and the 3D view has no height
   const log = await preparePage(page);
   const fig = await openFigure(page, 'hill-road-mirror');
   const act = () => fig.frame.locator('.pvc-act').first().click();
@@ -46,7 +46,7 @@ test('hill-road-mirror: the story, step by step, at its real pace', async ({ pag
 
 test('hill-road-mirror: the last step: both mirrors, the offer of the test, and seeing it again', async ({ page }) => {
   test.setTimeout(180_000);
-  await page.setViewportSize({ width: 480, height: 300 });
+  await page.setViewportSize({ width: 600, height: 300 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'hill-road-mirror');
   await fig.call('set', { part: 5, animate: false });
@@ -131,17 +131,18 @@ test('hill-road-mirror: the bus shows that it can be moved, and a finger on its 
   await page.setViewportSize({ width: 844, height: 390 });
   const log = await preparePage(page);
   const fig = await openFigure(page, 'hill-road-mirror');
-  const handle = fig.frame.locator('.hrm-handle');
+  const handle = fig.frame.locator('.pvc-dh');
   expect((await fig.call('get')).handle).toBe(false); // nothing to drag before the vehicles reach the bend
   await fig.call('set', { part: 3, animate: false });
   await fig.advance(400);
   expect(await fig.call('get')).toMatchObject({ handle: true, dragged: false });
-  await expect(handle).toHaveClass(/\bin\b/);
-  await expect(fig.frame.locator('.pvc-anno', { hasText: 'টেনে সরাও' })).toBeVisible();
+  await expect(handle).toBeVisible();
+  await expect(handle.locator('.pvc-dh-word')).toHaveText('টেনে সরাও');
 
   // a grab at the disc, along the road
   const stage = fig.frame.locator('.pvc-canvas').first();
-  const at = await handle.boundingBox();
+  const box = await handle.boundingBox();
+  const at = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   const send = async (type, x, y) => {
     await stage.dispatchEvent(type, { bubbles: true, pointerType: 'touch', isPrimary: true, pointerId: 7, clientX: x, clientY: y });
     await fig.advance(40);
@@ -155,8 +156,8 @@ test('hill-road-mirror: the bus shows that it can be moved, and a finger on its 
   expect(st.thetaR).toBeCloseTo(st.thetaI, 6);
   await fig.advance(300);
   // it stays, calmer, and the word has done its work
-  await expect(handle).toHaveClass(/calm/);
-  await expect(fig.frame.locator('.pvc-anno', { hasText: 'টেনে সরাও' })).toHaveCount(0);
+  await expect(handle).toHaveClass(/used/);
+  await expect(handle.locator('.pvc-dh-word')).toHaveCount(0);
 
   // the mirror's close-up and the test have no handle
   await fig.call('set', { part: 4, animate: false });
@@ -218,6 +219,34 @@ test('hill-road-mirror: a step cut short keeps its picture, and taps wait while 
   expect(log.errors).toEqual([]);
 });
 
+test('hill-road-mirror: a lower render resolution leaves the view where the student turned it', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const page = await browser.newPage({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 2 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'hill-road-mirror');
+  await fig.call('set', { part: 3, animate: false });
+  await fig.advance(400);
+  const canvas = fig.frame.locator('.pvc-canvas canvas').first();
+  const ratio = () => canvas.evaluate((c) => c.width / c.clientWidth);
+  expect(await ratio()).toBe(2);
+  const box = await canvas.boundingBox();
+  const x = box.x + 30;
+  const y = box.y + box.height - 30;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  // slow frames while the view turns: the stage lowers its resolution, and tells the figure through onResize
+  for (let i = 1; i <= 60 && (await ratio()) === 2; i++) {
+    await page.mouse.move(x + (i % 20) * 6, y);
+    await fig.advance(40, 40);
+  }
+  await page.mouse.up();
+  expect(await ratio()).toBeLessThan(2);
+  await fig.advance(600);
+  expect(await fig.call('get')).toMatchObject({ view: '3d', orbited: true });
+  expect(log.errors).toEqual([]);
+  await page.close();
+});
+
 test('hill-road-mirror: the whole way round, with the guided view a tap away', async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 844, height: 390 });
@@ -225,7 +254,7 @@ test('hill-road-mirror: the whole way round, with the guided view a tap away', a
   const fig = await openFigure(page, 'hill-road-mirror');
   await fig.call('set', { part: 3, animate: false });
   await fig.advance(400);
-  const cue = fig.frame.locator('.hrm-orbit');
+  const cue = fig.frame.locator('.pvc-rc');
   await expect(cue).toContainText('ঘুরিয়ে দেখো');
   const stage = fig.frame.locator('.pvc-canvas').first();
   const send = async (type, x, y) => {
@@ -254,10 +283,10 @@ test('hill-road-mirror: the whole way round, with the guided view a tap away', a
     expect(st.view).toBe('3d');
     expect((await fig.call('get')).aboveGround).toBeGreaterThan(1.5);
   }
-  // the words have gone, the small icon stays
-  await expect(cue).toHaveClass(/small/);
-  await expect(cue.locator('span')).toBeHidden();
-  await expect(cue).toBeVisible();
+  // the words have gone, the pill stays: never the arrow alone
+  await expect(cue).toHaveClass(/used/);
+  await expect(cue.locator('.pvc-rc-word')).toBeHidden();
+  await expect(cue.locator('.pvc-rc-deg')).toHaveText('৩৬০°');
 
   // the quiet button goes back to the guided framing
   const front = fig.frame.locator('[data-view="front"]');

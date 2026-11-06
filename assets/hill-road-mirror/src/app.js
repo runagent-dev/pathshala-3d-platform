@@ -11,9 +11,11 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
+import { createDragHandle } from '@shared/student/draghandle.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
@@ -102,20 +104,17 @@ export function createApp(root, options = {}) {
         { act: 'replay', label: 'act_replay', icon: ICONS.play },
         { act: 'home', label: 'act_home', icon: ICONS.reset },
       ],
+      tight: true,
       lines: { action: 1, outcome: 2, rule: 3 },
     }),
     learnAlign: 'start',
   });
   const sheet = bindCleanSheet(ui.learn);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
-  // the corner: the cue that the view turns (a pill, not a disc: the handle moves a part, this moves the camera), and the note
+  // the corner: the kit's cue that the view turns (it goes in here below, once there is a stage), and the note beside it
   const corner = document.createElement('div');
   corner.className = 'hrm-corner';
   ui.stage.appendChild(corner);
-  const orbit = document.createElement('div');
-  orbit.className = 'hrm-orbit';
-  orbit.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12.5" rx="9" ry="3.6"/><path d="M15.2 8.6l3.6-1 .6 3.6"/><path d="M12 3.4v3M12 18.6v2"/></svg><span>${t('orbit_cue')}</span>`;
-  corner.appendChild(orbit);
   const note = document.createElement('div');
   note.className = 'hrm-note';
   note.textContent = t('note_rays');
@@ -137,28 +136,11 @@ export function createApp(root, options = {}) {
   offer.textContent = t('offer_test');
   offer.hidden = true;
   ui.learn.appendChild(offer);
-  // the bus's handle, always on show when it can be dragged. It is an element, so its pulse needs no 3D frames; the touch
-  // goes through it to the view, where the grab is measured (a 44 px circle at least)
-  const handle = document.createElement('div');
-  handle.className = 'hrm-handle';
-  handle.setAttribute('aria-hidden', 'true');
-  handle.innerHTML = '<svg viewBox="-15 -15 30 30"><path d="M-3.5 0H3.5M-3.2 -3.6L-7.4 0L-3.2 3.6M3.2 -3.6L7.4 0L3.2 3.6"/></svg>';
-  handle.classList.toggle('still', !o.coach);
-  ui.annoLayer.appendChild(handle);
-  const handleArrows = handle.firstChild;
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 27, near: 1, far: 9000, environment: 'studio-light', environmentIntensity: 0.75 });
   const { camera, controls, scene } = stage;
   controls.enablePan = false;
-  // the whole way round, always above the ground (the hill is kept off by keepAboveGround)
-  controls.enableZoom = true;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(5);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(88);
-  controls.minAzimuthAngle = Number.NEGATIVE_INFINITY;
-  controls.maxAzimuthAngle = Number.POSITIVE_INFINITY;
-  controls.minDistance = 10;
-  controls.maxDistance = 170;
   const sun = new THREE.DirectionalLight('#fff1da', 2.2);
   sun.position.set(-0.62, 0.6, 0.3);
   scene.add(sun, new THREE.HemisphereLight('#cfe3f4', '#6d5a4a', 0.7));
@@ -262,7 +244,6 @@ export function createApp(root, options = {}) {
     dia.setNormal(NORMAL.x, NORMAL.z);
     if (q) return applyQuiz(q, E, H);
     const v = dia.view;
-    v.track = handleOn() ? TRACK : null;
     if (s.rise > 0 && poseKey() === 'wide') v.halo = HALO;
     const from = other;
     const to = eye;
@@ -384,6 +365,7 @@ export function createApp(root, options = {}) {
   function flyCamera(duration = FLY) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
+      rotate.home();
       s.view = 'front';
       syncUI();
     }
@@ -405,6 +387,7 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
+    rotate.home();
     syncUI();
     if (animate) flyCamera(FLY);
     else camK = 1;
@@ -416,16 +399,22 @@ export function createApp(root, options = {}) {
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
-    if (!s.orbited) {
-      s.orbited = true;
-      orbit.classList.add('small');
-    }
+    s.orbited = true;
+    rotate.markUsed();
     if (s.view !== '3d') {
       s.view = '3d';
       syncUI();
       emit('view', { view: s.view });
     }
   }
+  // the whole way round, always above the ground (the hill is kept off by keepAboveGround)
+  const rotate = createRotateCue(stage, {
+    layer: corner,
+    short: `${t.num(360)}°`,
+    label: t('orbit_cue'),
+    pulse: Boolean(o.coach),
+    onTurn: turnedByHand,
+  });
   /** Never inside the hill or under the ground. */
   const ABOVE = 2.5;
   function keepAboveGround() {
@@ -500,13 +489,10 @@ export function createApp(root, options = {}) {
     own.visible = was;
     setting.fieldOff(false);
   }
+  // the stage also calls this when it lowers its resolution mid-turn: a view the student has turned stays theirs, and an
+  // unturned one is fitted again on the next frame
   stage.onResize(() => {
     layoutPip();
-    s.userMovedCamera = false;
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
-    }
     draw();
   });
   const hideForMirror = [null];
@@ -522,7 +508,6 @@ export function createApp(root, options = {}) {
     setting.fieldOff(false);
     setting.setViewer(camera);
     mirror.show(s.kind);
-    placeHandle();
     labels();
   });
   stage.onAfterRender(drawPip);
@@ -710,44 +695,23 @@ export function createApp(root, options = {}) {
   }
 
   // ── the handle ─────────────────────────────────────────────────────────────────────────────────────────
-  const hp = { x: 0, y: 0, on: false };
-  function placeHandle() {
-    const on = handleOn() && camK >= 1;
-    if (on) {
-      const a = toScreen(handlePoint(tmp2));
-      hp.x = a.x;
-      hp.y = a.y;
-      const c = toScreen(tmp2.set(TRACK.from.x, 0.02, HANDLE.z));
-      const cx = c.x;
-      const cy = c.y;
-      const d = toScreen(tmp2.set(TRACK.to.x, 0.02, HANDLE.z));
-      handle.style.transform = `translate(${hp.x}px, ${hp.y}px)`;
-      handleArrows.style.transform = `rotate(${Math.atan2(d.y - cy, d.x - cx)}rad)`;
-    }
-    if (on !== hp.on) {
-      hp.on = on;
-      handle.classList.toggle('in', on);
-    }
-    handle.classList.toggle('calm', s.moved);
-  }
-  const HANDLE_BOX = 22; // half its box for the labels: the disc and a little air
-  const handleBox = () => (hp.on ? { left: hp.x - HANDLE_BOX, top: hp.y - HANDLE_BOX, right: hp.x + HANDLE_BOX, bottom: hp.y + HANDLE_BOX } : null);
-  function trackBoxes() {
-    if (!hp.on) return null;
-    const out = [];
-    for (let i = 0; i <= 12; i++) {
-      const q = toScreen(tmp2.set(TRACK.from.x + ((TRACK.to.x - TRACK.from.x) * i) / 12, 0.02, HANDLE.z));
-      out.push({ left: q.x - 6, top: q.y - 6, right: q.x + 6, bottom: q.y + 6 });
-    }
-    return out;
-  }
+  const busAt = new THREE.Vector3();
+  const busHandle = createDragHandle(stage, {
+    point: () => handlePoint(busAt),
+    axis: 'x',
+    track: { from: new THREE.Vector3().copy(TRACK.from), to: new THREE.Vector3().copy(TRACK.to) },
+    label: t('l_drag'),
+    aria: t('aria_bus'),
+    pulse: Boolean(o.coach),
+    when: () => handleOn() && camK >= 1,
+  });
 
   // ── labels on the picture ──────────────────────────────────────────────────────────────────────────────
   let action = null;
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, orbit, note, panes[0].el, panes[1].el, handleBox, trackBoxes, () => action?.ringBox()],
+    avoid: [ui.corner, rotate.el, note, panes[0].el, panes[1].el, () => busHandle.box(), () => action?.ringBox()],
   });
   const shown = new Map();
   const pts = new Map();
@@ -800,14 +764,6 @@ export function createApp(root, options = {}) {
   }
   const tmp2 = new THREE.Vector3();
   const lineAvoid = [lineBoxes];
-  const SEE_HANDLE = [
-    { dx: 0, dy: 40 },
-    { dx: -46, dy: 34 },
-    { dx: 46, dy: 34 },
-    { dx: -64, dy: 8 },
-    { dx: -64, dy: 30 },
-    { dx: 0, dy: -44 },
-  ];
   const UP = [
     { dx: 0, dy: -34 },
     { dx: 30, dy: -28 },
@@ -925,8 +881,6 @@ export function createApp(root, options = {}) {
     label('busdrv', free && p === PART.BOTH && whole, t('l_bus_driver'), tmp.copy(busEye(s.busX)), '#1864ab', UP, true, lineAvoid);
     label('car2', free && p === PART.BOTH && whole, t('l_car'), carTop(), C.ink, UP.concat(LEFT), true, lineAvoid);
     label('cng', free && p === PART.COMPARE, t('l_cng'), tmp.set(CNG.x - 1.2, 1.9, CNG.z), C.ink, UP, true, lineAvoid);
-
-    label('drag', hp.on && !s.moved, t('l_drag'), handlePoint(tmp), C.ink, SEE_HANDLE, true, lineAvoid);
 
     // the angles, close up
     const angles = free && p === PART.ANGLES && whole;
@@ -1126,11 +1080,11 @@ export function createApp(root, options = {}) {
       const ph = phase();
       if (ph === 'p0') return ringPoint.set(-LANE, 0.8, s.carZ + 2);
       if (ph === 'p1') return ringPoint.set(MIRROR.x, 0.6, MIRROR.z);
-      if (ph === 'p6') return hp.on ? handlePoint(ringPoint) : null;
+      if (ph === 'p6') return busHandle.visible ? handlePoint(ringPoint) : null;
       return null;
     },
     radius: 22,
-    avoid: [ui.corner, ui.hint, orbit, note, panes[0].el, panes[1].el, handleBox, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, rotate.el, note, panes[0].el, panes[1].el, () => busHandle.box(), () => anno.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -1152,7 +1106,7 @@ export function createApp(root, options = {}) {
     return true;
   }
   function overBus(x, y, touch) {
-    if (hp.on && Math.hypot(x - hp.x, y - hp.y) <= (touch ? 30 : 24)) return true;
+    if (busHandle.hit(x, y)) return true;
     const a = { ...toScreen(tmp2.set(s.busX, 1.5, LANE)) };
     const b = { ...toScreen(tmp2.set(s.busX + BUS.length, 1.5, LANE)) };
     const dx = b.x - a.x;
@@ -1167,8 +1121,7 @@ export function createApp(root, options = {}) {
       const p = hostXY(e);
       down = { x: p.x, y: p.y, at: performance.now() };
       if (!grabbable() || !overBus(p.x, p.y, e.pointerType === 'touch')) return;
-      const onHandle = hp.on && Math.hypot(p.x - hp.x, p.y - hp.y) <= 30;
-      const level = onHandle ? 0 : 1.5;
+      const level = busHandle.hit(p.x, p.y) ? 0 : 1.5;
       if (!onLevel(p.x, p.y, level)) return;
       controls.enabled = false;
       capturePointer(ui.canvasHost, e.pointerId);
@@ -1184,11 +1137,6 @@ export function createApp(root, options = {}) {
   );
   ui.canvasHost.addEventListener('pointermove', (e) => {
     const g = s.drag;
-    if (!g && down && e.buttons) {
-      // a tap is not a turn: only a real move of the finger hands the camera over
-      const m = hostXY(e);
-      if (Math.hypot(m.x - down.x, m.y - down.y) >= 8) turnedByHand();
-    }
     if (!g || e.pointerId !== g.id) return;
     const p = hostXY(e);
     g.moved = Math.max(g.moved, Math.hypot(p.x - g.px, p.y - g.py));
@@ -1197,6 +1145,7 @@ export function createApp(root, options = {}) {
     if (next !== s.busX) {
       s.busX = next;
       s.moved = true;
+      busHandle.markUsed();
       draw();
       emitChange();
     }
@@ -1226,7 +1175,6 @@ export function createApp(root, options = {}) {
     if (Math.hypot(a.x - p.x, a.y - p.y) < 44) act();
   });
   ui.canvasHost.addEventListener('pointercancel', endDrag);
-  ui.canvasHost.addEventListener('wheel', turnedByHand, { passive: true });
 
   // ── the test ────────────────────────────────────────────────────────────────────────────────────────────
   const LETTERS = t('letters').split(',');
@@ -1443,9 +1391,9 @@ export function createApp(root, options = {}) {
   function syncUI() {
     const front = ui.$('[data-view="front"]');
     if (front) front.hidden = s.view !== '3d';
+    controls.enabled = !s.locked && !s.drag;
     controls.enableRotate = !s.locked;
     controls.enableZoom = !s.locked;
-    orbit.hidden = s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
       const on = b.dataset.mode === root.dataset.mode;
@@ -1514,6 +1462,7 @@ export function createApp(root, options = {}) {
       tweener.cancel('glide');
       s.busX = clamp(s.busX + d, ...BUS_RANGE);
       s.moved = true;
+      busHandle.markUsed();
       draw();
       emitChange();
       return;

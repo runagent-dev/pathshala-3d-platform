@@ -87,23 +87,6 @@ body.bg-transparent { background: transparent; }
   .kld .pvc-rule { font-size: 16.5px; line-height: 1.65; }
 }
 
-/* what can be dragged: the disc and its track are on the drawing; here, the first-time word and a gentle ring until the first drag */
-.kld-grip { position: absolute; left: 0; top: 0; width: 1px; height: 1px; z-index: 3; pointer-events: none; }
-.kld-grip[hidden] { display: none; }
-.pvc[data-mode='quiz'] .kld-grip { display: none; }
-.kld-grip-pulse { display: none; position: absolute; left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; box-sizing: border-box; box-shadow: 0 0 0 1px rgba(15, 20, 28, 0.45); }
-.kld-grip.fresh .kld-grip-pulse { display: block; animation: kld-grip-pulse 1.8s ease-out infinite; }
-@keyframes kld-grip-pulse {
-  from { transform: scale(1); opacity: 0.9; }
-  to { transform: scale(1.9); opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .kld-grip.fresh .kld-grip-pulse { animation: none; opacity: 0; }
-}
-.kld-grip-tag { position: absolute; left: 0; bottom: 21px; transform: translateX(-50%); padding: 1px 7px; border-radius: 4px; background: #fff; color: #212529; font-size: 13px; font-weight: 600; line-height: 1.45; white-space: nowrap; }
-.kld-grip-tag[hidden] { display: none; }
-.kld-grip.low .kld-grip-tag { bottom: auto; top: 21px; }
-
 /* the test comes after the last step: until then its tab is there, and quiet */
 .kld .pvc-tabs button.kld-later { color: var(--ink-3); opacity: 0.6; }
 
@@ -113,24 +96,6 @@ body.bg-transparent { background: transparent; }
 .kld .pvc-act-row [data-act='replay'] + [data-act='home'] { margin-left: 0; }
 .kld .pvc-act-row [data-act='replay'][hidden] { display: none; }
 
-/* the view can be turned round: a dark pill in a corner, unlike the white discs of what can be dragged */
-.kld-orbit { position: absolute; left: 8px; top: 8px; z-index: 2; display: flex; align-items: center; gap: 4px; padding: 3px 9px 3px 6px; border-radius: 999px; background: rgba(18, 26, 36, 0.74); color: #fff; font-size: 12.5px; line-height: 1.3; font-weight: 500; pointer-events: none; white-space: nowrap; }
-.kld-orbit[hidden] { display: none; }
-.pvc[data-mode='quiz'] .kld-orbit { display: none; }
-.kld-orbit svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
-.kld-orbit b { font-weight: 600; font-size: 11.5px; }
-.kld-orbit.used { padding: 2px 6px 2px 4px; opacity: 0.66; }
-.kld-orbit.used span { display: none; }
-.kld-orbit.fresh svg { animation: kld-orbit-nudge 2.6s ease-in-out infinite; }
-@keyframes kld-orbit-nudge {
-  0%, 60%, 100% { transform: rotate(0deg); }
-  30% { transform: rotate(-40deg); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .kld-orbit.fresh svg { animation: none; }
-}
-
 @container pvc-panel (max-width: 340px) {
   .kld .pvc-act-row [data-act='replay'].kld-tight > span { display: none; }
 }
-.kld .pvc-tool.kld-front { width: auto; min-width: 44px; padding: 0 10px; font-size: 13.5px; font-weight: 600; }

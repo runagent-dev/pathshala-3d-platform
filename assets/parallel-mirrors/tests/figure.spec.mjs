@@ -173,14 +173,14 @@ test('parallel-mirrors: the candle’s handle shows what can be moved, from any 
   const f = fig.frame;
   await fig.advance(400);
   // nothing to move yet
-  await expect(f.locator('.pm2-hd')).toBeHidden();
+  await expect(f.locator('.pvc-dh')).toBeHidden();
   await fig.call('set', { stage: 1, animate: false });
   await fig.advance(400);
   let st = await fig.call('get');
   expect(st.handle).toEqual({ shown: true, used: false });
-  await expect(f.locator('.pm2-hl')).toBeVisible();
+  await expect(f.locator('.pvc-dh-word')).toBeVisible();
   const drag = async (dx) => {
-    const b = await f.locator('.pm2-hd').boundingBox();
+    const b = await f.locator('.pvc-dh').boundingBox();
     const [x, y] = [b.x + b.width / 2, b.y + b.height / 2];
     await page.mouse.move(x, y);
     await page.mouse.down();
@@ -195,16 +195,16 @@ test('parallel-mirrors: the candle’s handle shows what can be moved, from any 
   expect(st.view).toBe('front'); // moving the candle is not turning the view
   expect(st.images[0].x - 15).toBe(st.d1);
   expect(st.handle).toEqual({ shown: true, used: true });
-  await expect(f.locator('.pm2-hl')).toBeHidden();
-  await expect(f.locator('.pm2-hd')).toBeVisible();
+  await expect(f.locator('.pvc-dh-word')).toBeHidden();
+  await expect(f.locator('.pvc-dh')).toBeVisible();
   // from behind the same drag on the screen moves the candle the other way along the row
   const before = (await fig.call('set', { x: 0, azimuth: 180, polar: 75, animate: false })).x;
   await fig.advance(400);
   expect((await drag(-40)).x).toBeGreaterThan(before);
   await fig.call('practice');
   await fig.advance(900);
-  await expect(f.locator('.pm2-hd')).toBeHidden();
-  await expect(f.locator('.pm2-turn')).toBeHidden();
+  await expect(f.locator('.pvc-dh')).toBeHidden();
+  await expect(f.locator('.pvc-rc')).toBeHidden();
   expect(log.errors).toEqual([]);
 });
 
@@ -217,8 +217,8 @@ test('parallel-mirrors: a tap is not a turn; the view goes all the way round and
   await fig.advance(400);
   const c = await f.locator('.pvc-canvas').boundingBox();
   const [x, y] = [c.x + 60, c.y + 70];
-  await expect(f.locator('.pm2-tw')).toBeVisible();
-  await expect(f.locator('.pm2-turn b')).toContainText('৩৬০°');
+  await expect(f.locator('.pvc-rc-word')).toBeVisible();
+  await expect(f.locator('.pvc-rc-deg')).toContainText('৩৬০°');
   // a plain tap, with a finger's small slip
   await page.mouse.move(x, y);
   await page.mouse.down();
@@ -237,9 +237,9 @@ test('parallel-mirrors: a tap is not a turn; the view goes all the way round and
   st = await fig.call('get');
   expect(st).toMatchObject({ view: '3d', turned: true });
   // the pill keeps ⟲ ৩৬০°, never the icon alone
-  await expect(f.locator('.pm2-tw')).toBeHidden();
-  await expect(f.locator('.pm2-turn svg')).toBeVisible();
-  await expect(f.locator('.pm2-turn b')).toBeVisible();
+  await expect(f.locator('.pvc-rc-word')).toBeHidden();
+  await expect(f.locator('.pvc-rc svg')).toBeVisible();
+  await expect(f.locator('.pvc-rc-deg')).toBeVisible();
   // all the way round, and the সামনে button brings the guided view back
   for (const azimuth of [90, 180, -90]) expect((await fig.call('set', { azimuth, animate: false })).view).toBe('3d');
   await expect(f.locator('[data-view="front"]')).toContainText('সামনে');
@@ -251,8 +251,7 @@ test('parallel-mirrors: a tap is not a turn; the view goes all the way round and
   // looking into M₁ the camera stands between the mirrors: the pill does not promise 360°
   await fig.call('set', { step: 'many', stage: 2, animate: false });
   await fig.advance(300);
-  await expect(f.locator('.pm2-tn')).toBeVisible();
-  await expect(f.locator('.pm2-turn b')).toBeHidden();
+  await expect(f.locator('.pvc-rc')).toBeHidden();
   expect(log.errors).toEqual([]);
 });
 

@@ -49,8 +49,9 @@ test('kaleidoscope: a drag turns it, by touch of the view', async ({ page }) => 
   const fig = await openFigure(page, 'kaleidoscope', { params: { step: 'pattern', stage: '1' } });
   await fig.advance(600);
   // what can be moved shows: a handle with its word, until the first drag
-  await expect(fig.frame.locator('.kld-grip')).toBeVisible();
-  await expect(fig.frame.locator('.kld-grip-tag')).toHaveText('ঘোরাও');
+  const handle = fig.frame.locator('.pvc-dh:not([hidden])');
+  await expect(handle).toHaveCount(1);
+  await expect(handle.locator('.pvc-dh-word')).toHaveText('ঘোরাও');
   const box = await fig.frame.locator('.pvc-canvas').boundingBox();
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
@@ -67,11 +68,11 @@ test('kaleidoscope: a drag turns it, by touch of the view', async ({ page }) => 
   expect(st.stage).toBe(2);
   expect(st.phi).toBeCloseTo(1.2, 1); // clockwise on the screen is positive
   expect(st.turned).toBeGreaterThan(60);
-  await expect(fig.frame.locator('.kld-grip')).toBeVisible();
-  await expect(fig.frame.locator('.kld-grip-tag')).toBeHidden();
+  await expect(handle).toHaveCount(1);
+  await expect(handle.locator('.pvc-dh-word')).toHaveCount(0);
   await fig.call('practice');
   await fig.advance(1700);
-  await expect(fig.frame.locator('.kld-grip')).toBeHidden();
+  await expect(handle).toHaveCount(0);
   expect(log.errors).toEqual([]);
 });
 
@@ -236,8 +237,8 @@ test('kaleidoscope: the view turns all the way round; a tap is not an orbit', as
   const fig = await openFigure(page, 'kaleidoscope', { params: { step: 'graze' } });
   const f = fig.frame;
   await fig.advance(600);
-  await expect(f.locator('.kld-orbit')).toBeVisible();
-  await expect(f.locator('.kld-orbit span')).toBeVisible();
+  await expect(f.locator('.pvc-rc')).toBeVisible();
+  await expect(f.locator('.pvc-rc-word')).toBeVisible();
   const box = await f.locator('.pvc-canvas').boundingBox();
   const x = box.x + box.width * 0.75;
   const y = box.y + box.height * 0.25;
@@ -264,8 +265,9 @@ test('kaleidoscope: the view turns all the way round; a tap is not an orbit', as
   let st = await fig.call('get');
   expect(st).toMatchObject({ view: '3d', orbited: true });
   expect(st.azimuth).not.toBe(az0);
-  await expect(f.locator('.kld-orbit span')).toBeHidden();
-  await expect(f.locator('.kld-orbit')).toBeVisible();
+  await expect(f.locator('.pvc-rc-word')).toBeHidden();
+  await expect(f.locator('.pvc-rc')).toBeVisible();
+  await expect(f.locator('.pvc-rc-deg')).toHaveText('৩৬০°');
   await expect(f.locator('[data-view="front"]')).toBeVisible();
   // the view from behind works, and never goes under the table
   st = await fig.call('set', { azimuth: 170, animate: false });
@@ -286,8 +288,40 @@ test('kaleidoscope: the view turns all the way round; a tap is not an orbit', as
   // the eye's view is fixed: no cue, and a drag turns the tube
   await fig.call('set', { step: 'pattern', stage: 1, animate: false });
   await fig.advance(400);
-  await expect(f.locator('.kld-orbit')).toBeHidden();
+  await expect(f.locator('.pvc-rc')).toBeHidden();
   expect(log.errors).toEqual([]);
+});
+
+test('kaleidoscope: a lower render resolution leaves the view where the student turned it', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const page = await browser.newPage({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 2 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'kaleidoscope', { params: { step: 'graze' } });
+  await fig.advance(600);
+  const az0 = (await fig.call('get')).azimuth;
+  const canvas = fig.frame.locator('.pvc-canvas canvas').first();
+  const ratio = () => canvas.evaluate((c) => c.width / c.clientWidth);
+  expect(await ratio()).toBe(2);
+  const box = await canvas.boundingBox();
+  const x = box.x + 30;
+  const y = box.y + 30;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  // slow frames while the view turns: the stage lowers its resolution, and tells the figure through onResize
+  for (let i = 1; i <= 60 && (await ratio()) === 2; i++) {
+    await page.mouse.move(x + (i % 20) * 6, y);
+    await fig.advance(40, 40);
+  }
+  await page.mouse.move(x + 150, y);
+  await fig.advance(40, 40);
+  await page.mouse.up();
+  expect(await ratio()).toBeLessThan(2);
+  await fig.advance(1500);
+  const st = await fig.call('get');
+  expect(st.view).toBe('3d');
+  expect(st.azimuth).not.toBe(az0);
+  expect(log.errors).toEqual([]);
+  await page.close();
 });
 
 test('kaleidoscope: nothing is drawn while it rests', async ({ page }) => {

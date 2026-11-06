@@ -9,9 +9,11 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
+import { createDragHandle } from '@shared/student/draghandle.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
@@ -104,12 +106,6 @@ export function createApp(root, options = {}) {
   note.textContent = t('note_ray');
   note.hidden = true;
   ui.stage.appendChild(note);
-  // the view can be turned all the way round: a dark pill in a corner, nothing like the white handle on the mirror
-  const turnCue = document.createElement('div');
-  turnCue.className = 'ra-turn';
-  turnCue.setAttribute('aria-hidden', 'true');
-  turnCue.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20.5 3.2v4h-4"/></svg><b>${t('deg360', { a: 360 })}</b><span>${t('turn_hint')}</span>`;
-  ui.stage.appendChild(turnCue);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const FOV = 24;
@@ -234,9 +230,6 @@ export function createApp(root, options = {}) {
     if (s.quiz) return applyQuiz(s.quiz);
     if (s.step === 'two') {
       if (s.alpha < ANGLE.flat - 0.5 || s.drag) v.corner = { a: m.a.dir, b: m.b.dir, r: 0.36, right: s.alpha === ANGLE.right };
-      if (canFold()) {
-        v.fold = { at: handleAt, from: ANGLE.flat, to: ANGLE.right, alpha: s.alpha, calm: s.dragged, pulse: Boolean(o.coach) && !s.dragged };
-      }
     }
   }
 
@@ -453,6 +446,7 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
+    rotate.home();
     syncUI();
     if (animate) flyCamera(1.2);
     else camK = 1;
@@ -463,25 +457,26 @@ export function createApp(root, options = {}) {
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
-    const d = camera.position.distanceTo(controls.target);
-    controls.minDistance = d * 0.45;
-    controls.maxDistance = d * 1.7;
-    if (!s.orbited) {
-      s.orbited = true;
-      turnCue.classList.add('used');
-    }
+    s.orbited = true;
+    rotate.markUsed();
     if (s.view !== '3d') {
       s.view = '3d';
       syncUI();
       emit('view', { view: s.view });
     }
   }
+  const rotate = createRotateCue(stage, {
+    layer: ui.stage,
+    short: `${t.num(360)}°`,
+    label: t('turn_hint'),
+    pulse: Boolean(o.coach),
+    at: 'bottom-right',
+    zoom: [0.45, 1.7],
+    onTurn: turnedByHand,
+  });
+  // the stage also calls this when it lowers its resolution mid-turn: a view the student has turned stays theirs, and an
+  // unturned one is fitted again on the next frame
   stage.onResize(() => {
-    s.userMovedCamera = false;
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
-    }
     draw();
   });
   stage.onBeforeRender(() => {
@@ -692,10 +687,27 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture: pinned to what they name ────────────────────────────────────────────────────
   let action = null;
-  const handleBoxes = () => {
-    const p = dia.handles.fold;
-    return p ? [{ left: p.x - 22, top: p.y - 22, right: p.x + 22, bottom: p.y + 22 }] : [];
+  // the fold: a handle on the far mirror, riding its arc
+  const foldVec = (alpha) => {
+    const h = handleAt(alpha);
+    return new THREE.Vector3(h.x, h.y, h.z);
   };
+  const foldAt = new THREE.Vector3();
+  const foldWay = new THREE.Vector3();
+  const foldHandle = createDragHandle(stage, {
+    point: () => foldAt.copy(handleAt(s.alpha)),
+    axis: 'x',
+    direction: () => {
+      const a = handleAt(Math.min(ANGLE.flat, s.alpha + 6));
+      const b = handleAt(Math.max(ANGLE.right, s.alpha - 6));
+      return foldWay.set(a.x - b.x, a.y - b.y, a.z - b.z);
+    },
+    track: { from: foldVec(ANGLE.flat), to: foldVec(ANGLE.right), via: foldVec((ANGLE.flat + ANGLE.right) / 2) },
+    label: t('l_drag'),
+    aria: t('aria_fold'),
+    pulse: Boolean(o.coach),
+    when: canFold,
+  });
   /** The real card on the screen, before his hand goes up: the action's badge keeps off it. */
   function cardBox() {
     if (s.step !== 'one' || s.stage !== 0) return null;
@@ -708,23 +720,11 @@ export function createApp(root, options = {}) {
     const h = Math.abs(e.y - y) + 4;
     return { left: x - w, top: y - h, right: x + w, bottom: y + h };
   }
-  /** Small boxes along the handle's range, in canvas pixels: labels keep off it. */
-  function trackBoxes() {
-    const out = [];
-    const f = dia.view.fold;
-    if (!f) return out;
-    for (let i = 0; i <= 10; i++) {
-      const p = f.at(mix(f.from, f.to, i / 10));
-      const a = toScreen(p.x, p.y, p.z);
-      out.push({ left: a.x - 5, top: a.y - 5, right: a.x + 5, bottom: a.y + 5 });
-    }
-    return out;
-  }
   const panelTab = ui.$('.pvc-panel-toggle');
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, turnCue, panelTab, handleBoxes, trackBoxes, () => action?.ringBox()],
+    avoid: [ui.corner, note, rotate.el, panelTab, () => foldHandle.box(), () => action?.ringBox()],
   });
   const shown = new Map();
   const used = new Map();
@@ -815,12 +815,6 @@ export function createApp(root, options = {}) {
     { dx: 0, dy: 124 },
     { dx: 0, dy: 50 },
   ];
-  const DRAG_SPOTS = [
-    { dx: 0, dy: 40 },
-    { dx: -44, dy: 34 },
-    { dx: 44, dy: 34 },
-    { dx: 0, dy: -44 },
-  ];
   const ON_SPOT = [{ dx: 0, dy: 0 }];
   const O_SPOT = [{ dx: 18, dy: -14 }];
   const TAB_L = [{ dx: -24, dy: 0 }];
@@ -862,11 +856,6 @@ export function createApp(root, options = {}) {
   const shows = (key) => !s.userMovedCamera && setting.seen(key);
   function boyLabels() {
     const hand = setting.cardTop;
-    // the first time, the handle says what it is for
-    if (dia.view.fold && !s.dragged && s.stage === 0) {
-      const h = handleAt(s.alpha);
-      label('drag', t('l_drag'), at(h.x, h.y, h.z), INK, DRAG_SPOTS);
-    }
     if (s.step === 'one') {
       if (s.stage === 0) {
         label('mirror', t('l_mirror'), at(0.62, 0.42, 0), INK, ON_SPOT);
@@ -1044,7 +1033,7 @@ export function createApp(root, options = {}) {
     label: 'act_raise',
     target: actionSpot,
     radius: 22,
-    avoid: [ui.corner, ui.hint, note, turnCue, handleBoxes, cardBox, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, note, rotate.el, () => foldHandle.box(), cardBox, () => anno.boxes()],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -1072,8 +1061,9 @@ export function createApp(root, options = {}) {
     (e) => {
       const p = hostXY(e);
       tap = { x: p.x, y: p.y, id: e.pointerId, at: performance.now() };
-      const h = dia.handles.fold;
-      if (!canFold() || !h || Math.hypot(h.x - p.x, h.y - p.y) > (e.pointerType === 'touch' ? 34 : 24)) return;
+      if (!foldHandle.hit(p.x, p.y)) return;
+      const f = handleAt(s.alpha);
+      const h = toScreen(f.x, f.y, f.z);
       controls.enabled = false;
       capturePointer(ui.canvasHost, e.pointerId);
       s.drag = { id: e.pointerId, from: s.alpha, moved: 0, dx: h.x - p.x, dy: h.y - p.y, x0: p.x, y0: p.y };
@@ -1086,13 +1076,13 @@ export function createApp(root, options = {}) {
   );
   ui.canvasHost.addEventListener('pointermove', (e) => {
     const g = s.drag;
-    if (!g && tap && e.pointerId === tap.id && !s.userMovedCamera && !s.locked) {
-      const p = hostXY(e);
-      if (Math.hypot(p.x - tap.x, p.y - tap.y) > 8) turnedByHand();
-    }
     if (!g || e.pointerId !== g.id) return;
     const p = hostXY(e);
     g.moved = Math.max(g.moved, Math.hypot(p.x - g.x0, p.y - g.y0));
+    if (g.moved >= 6) {
+      s.dragged = true;
+      foldHandle.markUsed();
+    }
     // the handle follows the finger along its arc: the angle whose handle stands nearest the finger
     const fx = p.x + g.dx;
     const fy = p.y + g.dy;
@@ -1117,7 +1107,6 @@ export function createApp(root, options = {}) {
     if (!g || e.pointerId !== g.id) return;
     releasePointer(ui.canvasHost, e.pointerId);
     s.drag = null;
-    if (g.moved >= 6) s.dragged = true;
     controls.enabled = !s.locked;
     action.show('drag');
     emit('dragend', { part: 'mirror' });
@@ -1141,13 +1130,6 @@ export function createApp(root, options = {}) {
     }
   });
   ui.canvasHost.addEventListener('pointercancel', endDrag);
-  ui.canvasHost.addEventListener(
-    'wheel',
-    () => {
-      if (!s.locked && !s.userMovedCamera) turnedByHand();
-    },
-    { capture: true, passive: true },
-  );
 
   // ── the test ────────────────────────────────────────────────────────────────────────────────────────────
   function applyQuiz(q) {
@@ -1325,6 +1307,7 @@ export function createApp(root, options = {}) {
   function syncUI() {
     const front = ui.$('[data-view="front"]');
     if (front) front.hidden = s.view !== '3d';
+    controls.enabled = !s.locked && !s.drag;
     controls.enableRotate = !s.locked;
     controls.enableZoom = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
@@ -1356,7 +1339,6 @@ export function createApp(root, options = {}) {
     draw();
     emitChange();
   }
-  ui.$('[data-view="front"]')?.insertAdjacentHTML('beforeend', `<span>${t('view_front_short')}</span>`);
   const fullscreenBtn = ui.$('[data-act="fullscreen"]');
   if (fullscreenBtn && !document.fullscreenEnabled) fullscreenBtn.hidden = true;
   let lastTap = { what: '', at: 0 };
@@ -1392,6 +1374,7 @@ export function createApp(root, options = {}) {
       if (!canFold()) return;
       if (setAlpha(s.alpha + walk)) {
         s.dragged = true;
+        foldHandle.markUsed();
         draw({ instant: true });
         emitChange();
       }
@@ -1441,7 +1424,7 @@ export function createApp(root, options = {}) {
       arm: +s.arm.toFixed(3),
       world: inFist() ? 'fist' : 'boy',
       images: imagesNow(),
-      handle: { shown: canFold(), used: s.dragged },
+      handle: { shown: foldHandle.visible, used: s.dragged },
       orbited: s.orbited,
       ray: rayNow(),
       frame: shownFrame,
@@ -1522,7 +1505,8 @@ export function createApp(root, options = {}) {
       buildTo('one', 0);
       s.dragged = false;
       s.orbited = false;
-      turnCue.classList.remove('used');
+      foldHandle.rearm();
+      rotate.rearm();
       clearLabels();
       setView('front', { animate: false });
       camK = 1;

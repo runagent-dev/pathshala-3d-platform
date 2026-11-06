@@ -10,9 +10,11 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
+import { createDragHandle } from '@shared/student/draghandle.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
@@ -79,7 +81,6 @@ const RAY_AT = { 4: 'l2' };
 const REVEALS = { 1: 'r1', 2: 'l1', 3: 'l2', 5: 'r2', 6: 'r3' };
 const FAINT_LABELS_UNTIL = 5; // from this beat on an older pair of distances keeps its line, not its name: a phone has no room
 const EDGE_ON = 26; // px: looking along the row, a distance shorter than its own name goes without the name
-const TURN_CLICK = 8; // px: a finger that moves less has tapped, it has not turned the view
 // where a distance's name sits: over its arrow, or, where two arrows meet at a mirror, a little to the outside of each
 const ON_DIM = [
   { dx: 0, dy: -13 },
@@ -125,6 +126,7 @@ export function createApp(root, options = {}) {
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: STEPS.map((id) => ({ id, label: `ex_${id}` })) },
       quiet: [{ act: 'home', label: 'act_home', icon: ICONS.play }],
+      tight: true,
       lines: { action: 1, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
@@ -138,32 +140,10 @@ export function createApp(root, options = {}) {
   ui.stage.appendChild(note);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
-  const turnCue = document.createElement('div');
-  turnCue.className = 'pm2-turn';
-  turnCue.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4 3.5v4.6h4.6"/></svg><b>${t('turn_360')}</b><span class="pm2-tw">${t('view_rotate')}</span><span class="pm2-tn">${t('turn_near')}</span>`;
-  ui.stage.appendChild(turnCue);
-  // the candle's handle: always there while it can be moved. A finger on it is found by distance; the element lets every touch through
-  const handle = document.createElement('div');
-  handle.className = 'pm2-handle';
-  handle.hidden = true;
-  handle.innerHTML = `<i class="pm2-hd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M3 12l5-5M3 12l5 5M21 12l-5-5M21 12l-5 5"/></svg></i><span class="pm2-hl">${t('l_drag')}</span>`;
-  ui.stage.appendChild(handle);
-
-  // the kit's button is a circular arrow, like the rotate cue: this one says what it does, with a target and the word
-  const front = ui.$('[data-view="front"]');
-  if (front) {
-    front.classList.remove('icon-only');
-    front.classList.add('pm2-front');
-    front.innerHTML = `${ICONS.target}<span>${t('view_front_short')}</span>`;
-  }
-
   const FOV = 20;
   const stage = createStage(ui.canvasHost, { fov: FOV, near: 2, far: 6000, environment: 'studio-light', environmentIntensity: 0.3 });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = true;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(5);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(88); // the camera stays above the table
   /**
    * All the way round. The one exception is the view into M₁: the camera stands between the mirrors and looks through M₁, so
    * there it stays on M₂'s side; beyond that glass this view has nothing to show.
@@ -174,12 +154,6 @@ export function createApp(root, options = {}) {
     controls.enableZoom = !intoMirror;
   }
   turnLimits(false);
-  /** The guided camera goes wherever a step needs; the limits on a student's zoom are set when the student takes over. */
-  function zoomLimits(free) {
-    const d = camera.position.distanceTo(controls.target);
-    controls.minDistance = free ? d * 0.45 : 0;
-    controls.maxDistance = free ? d * 1.6 : Number.POSITIVE_INFINITY;
-  }
   const setting = createSetting({ stage, shadow: Boolean(o.shadow) });
   const dia = createDiagram({ stage, host: ui.canvasHost });
 
@@ -492,7 +466,7 @@ export function createApp(root, options = {}) {
     if (arc) {
       s.userMovedCamera = false;
       s.view = 'front';
-      zoomLimits(false);
+      rotate.home();
       syncUI();
     }
     camFrom = { position: camera.position.clone(), target: controls.target.clone(), fov: camera.fov, arc };
@@ -524,7 +498,7 @@ export function createApp(root, options = {}) {
       flight = null;
       camK = 1;
       s.userMovedCamera = false;
-      zoomLimits(false);
+      rotate.home();
       if (s.view === '3d' && !first) s.view = 'front';
     } else flyCamera(duration);
   }
@@ -534,7 +508,7 @@ export function createApp(root, options = {}) {
     if (animate) flyCamera();
     else {
       s.userMovedCamera = false;
-      zoomLimits(false);
+      rotate.home();
       camK = 1;
     }
     stage.invalidate();
@@ -546,32 +520,24 @@ export function createApp(root, options = {}) {
     tweener.cancel('camera');
     flight = null;
     camK = 1;
-    zoomLimits(true);
-    if (!s.turned) {
-      s.turned = true;
-      turnCue.classList.add('used');
-    }
+    s.turned = true;
+    rotate.markUsed();
     if (s.view !== '3d') {
       s.view = '3d';
       syncUI();
       emit('view', { view: s.view });
     }
   }
-  // a plain tap is not a turn: OrbitControls starts on the finger going down, so only movement past a few pixels takes the view
-  let orbiting = false;
-  controls.addEventListener('start', () => {
-    orbiting = !s.drag;
+  const rotate = createRotateCue(stage, {
+    layer: ui.stage,
+    short: `${t.num(360)}°`,
+    label: t('view_rotate'),
+    pulse: Boolean(o.coach),
+    at: 'bottom-right',
+    zoom: [0.45, 1.6],
+    when: () => s.inside < 1 || Boolean(s.quiz), // looking into M₁ the camera keeps to M₂'s side: no promise of 360°
+    onTurn: takeView,
   });
-  controls.addEventListener('end', () => {
-    orbiting = false;
-  });
-  ui.canvasHost.addEventListener(
-    'wheel',
-    () => {
-      if (!s.locked && s.inside === 0) takeView();
-    },
-    { capture: true, passive: true },
-  );
   // the stage also says "resize" when it only lowers its pixel ratio, in the middle of a student's turn: that changes nothing here
   let viewW = stage.width;
   let viewH = stage.height;
@@ -580,7 +546,7 @@ export function createApp(root, options = {}) {
     viewW = w;
     viewH = h;
     s.userMovedCamera = false;
-    zoomLimits(false);
+    rotate.home();
     if (s.view === '3d') {
       s.view = 'front';
       syncUI();
@@ -767,36 +733,44 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture: pinned to what they name ────────────────────────────────────────────────────
   let action = null;
-  const grip = { on: false, free: null, x: 0, y: 0, ux: 1, uy: 0, used: null, up: null, angle: 1e9 };
+  const grip = { drop: 0, free: null, ux: 1, uy: 0, perCm: 1 };
   const gripPoint = new THREE.Vector3();
-  const trackView = { x0: CANDLE.min, x1: CANDLE.max, z: FLOOR_Z, dy: 0 };
-  const gripIcon = handle.querySelector('svg');
-  /** On the table in front of the candle, or at the edge of the view when the student has turned that out of it. */
+  /** On the table in front of the candle at x, stepped down the screen with the handle. */
+  function onTrack(out, x) {
+    out.set(x, 0.05, FLOOR_Z).project(camera);
+    out.y -= (2 * grip.drop) / stage.height;
+    return out.unproject(camera);
+  }
+  const gripAt = new THREE.Vector3();
+  const trackMin = new THREE.Vector3();
+  const trackMax = new THREE.Vector3();
+  const candleHandle = createDragHandle(stage, {
+    point: () => onTrack(gripAt, s.x),
+    axis: 'x',
+    direction: new THREE.Vector3(1, 0, 0),
+    track: { from: () => onTrack(trackMin, CANDLE.min), to: () => onTrack(trackMax, CANDLE.max) },
+    label: o.coach ? t('l_drag') : '',
+    labelAt: 'left', // clear of the names on the table and of the corner's cue, whichever way the view has been turned
+    aria: t('aria_candle'),
+    pulse: Boolean(o.coach),
+    when: () => s.beat >= 1 && !inRow() && s.inside === 0 && !s.quiz,
+  });
   function placeHandle() {
     // it stays through a step, dimmed, so that it does not come and go: it can be used again when the step has played
-    const on = s.beat >= 1 && !inRow() && s.inside === 0 && !s.quiz;
-    const free = on && canDrag() && camK >= 1;
-    if (on !== grip.on) {
-      grip.on = on;
-      handle.hidden = !on;
-    }
+    const free = canDrag() && camK >= 1;
     if (free !== grip.free) {
       grip.free = free;
-      handle.classList.toggle('wait', !free);
+      ui.canvasHost.classList.toggle('pm2-wait', !free);
     }
-    dia.view.track = free ? trackView : null;
-    if (!on) return;
+    if (s.beat < 1 || inRow() || s.inside !== 0 || s.quiz) return;
     // in a wide view the table is thin on the screen: the handle and its track step down, clear of the candle's foot
     gripPoint.set(s.x, 0, 0).project(camera);
     const foot = ((1 - gripPoint.y) / 2) * stage.height;
     gripPoint.set(s.x, 0.05, FLOOR_Z).project(camera);
     const px = ((gripPoint.x + 1) / 2) * stage.width;
     const py = ((1 - gripPoint.y) / 2) * stage.height;
-    trackView.dy = Math.max(0, foot + GRIP_CLEAR - py);
-    grip.x = Math.min(stage.width - 26, Math.max(26, px));
-    grip.y = Math.min(stage.height - 26, Math.max(26, py + trackView.dy));
-    handle.style.transform = `translate(${grip.x}px, ${grip.y}px)`;
-    // its arrows lie along the candle's way on the screen, from any side
+    grip.drop = Math.max(0, foot + GRIP_CLEAR - py);
+    // the candle's way on the screen, from any side: the drag goes along it
     gripPoint.set(s.x + 1, 0.05, FLOOR_Z).project(camera);
     const dx = ((gripPoint.x + 1) / 2) * stage.width - px;
     const dy = ((1 - gripPoint.y) / 2) * stage.height - py;
@@ -804,40 +778,13 @@ export function createApp(root, options = {}) {
     grip.ux = dx / l;
     grip.uy = dy / l;
     grip.perCm = l;
-    const angle = Math.round((Math.atan2(dy, dx) * 180) / Math.PI / 5) * 5;
-    if (angle !== grip.angle) {
-      grip.angle = angle;
-      gripIcon.style.transform = `rotate(${angle}deg)`;
-    }
-    const up = grip.y > stage.height - 60;
-    if (up !== grip.up) {
-      grip.up = up;
-      handle.classList.toggle('up', up);
-    }
-    const end = grip.x > stage.width - 130; // its word then stands on the side with room
-    if (end !== grip.end) {
-      grip.end = end;
-      handle.classList.toggle('end', end);
-    }
-    if (s.dragged !== grip.used) {
-      grip.used = s.dragged;
-      handle.classList.toggle('used', s.dragged);
-      handle.classList.toggle('calm', !o.coach);
-    }
   }
-  const handleBoxes = () => {
-    if (!grip.on) return [];
-    const r = grip.used ? 16 : 22;
-    const box = { left: grip.x - r, right: grip.x + r, top: grip.y - r, bottom: grip.y + r };
-    if (grip.used || !o.coach || !grip.free) return [box];
-    if (grip.up) {
-      const left = grip.end ? grip.x - 104 : grip.x + 18;
-      return [box, { left, right: left + 86, top: grip.y - 12, bottom: grip.y + 12 }];
-    }
-    return [box, { left: grip.x - 44, right: grip.x + 44, top: grip.y + 22, bottom: grip.y + 44 }];
-  };
   const panelTab = ui.$('.pvc-panel-toggle');
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, turnCue, panelTab, handleBoxes, () => action?.ringBox()] });
+  const anno = createAnnotations({
+    stage,
+    layer: ui.annoLayer,
+    avoid: [ui.corner, note, rotate.el, panelTab, () => candleHandle.box(), () => action?.ringBox()],
+  });
   const shown = new Map();
   const used = new Map();
   const pts = new Map();
@@ -1070,7 +1017,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
-  const steady = { act: '', open: 0, near: false };
+  const steady = { act: '', open: 0 };
   function outcome() {
     const d = distances(s.x);
     const a = N(num(d.d1));
@@ -1134,11 +1081,6 @@ export function createApp(root, options = {}) {
         b.setAttribute('aria-disabled', String(i >= open));
       });
     }
-    const near = s.inside >= 1 && !s.quiz;
-    if (near !== steady.near) {
-      steady.near = near;
-      turnCue.classList.toggle('near', near);
-    }
     sheet.next(ph === 'busy' || s.beat >= LAST_BEAT ? null : stepOfBeat(s.beat + 1) === s.step ? null : stepOfBeat(s.beat + 1));
     const [word, step, icon] = ACTIONS[ph];
     const enabled = ph !== 'busy';
@@ -1179,7 +1121,7 @@ export function createApp(root, options = {}) {
     label: 'act_b0',
     target: actionSpot,
     radius: 20,
-    avoid: [ui.corner, ui.hint, note, turnCue, () => anno.boxes(), aimBoxes, lineBoxes],
+    avoid: [ui.corner, ui.hint, note, rotate.el, () => anno.boxes(), aimBoxes, lineBoxes],
     pulse: Boolean(o.coach),
     onAct: () => act(),
   });
@@ -1187,7 +1129,7 @@ export function createApp(root, options = {}) {
   // ── dragging the candle, and tapping an image ──────────────────────────────────────────────────────────
   function onCandle(x, y, touch) {
     if (!canDrag()) return false;
-    if (grip.on && Math.hypot(grip.x - x, grip.y - y) <= (touch ? 34 : 26)) return true; // a target of at least 44 px
+    if (candleHandle.hit(x, y)) return true;
     const a = { ...toScreen(s.x, 0) };
     const b = toScreen(s.x, CANDLE.tip);
     return Math.abs(x - a.x) < (touch ? 30 : 22) && y > b.y - 6 && y < a.y + 10;
@@ -1218,7 +1160,6 @@ export function createApp(root, options = {}) {
     'pointerdown',
     (e) => {
       const p = hostXY(e);
-      if (tap && tap.id !== e.pointerId && orbiting) takeView(); // a second finger: a pinch is no tap
       tap = { x: p.x, y: p.y, id: e.pointerId, at: performance.now() };
       if (!onCandle(p.x, p.y, e.pointerType === 'touch')) return;
       controls.enabled = false;
@@ -1234,9 +1175,7 @@ export function createApp(root, options = {}) {
   );
   ui.canvasHost.addEventListener('pointermove', (e) => {
     const p = hostXY(e);
-    if (orbiting && tap?.id === e.pointerId && Math.hypot(p.x - tap.x, p.y - tap.y) >= TURN_CLICK) takeView();
     const g = s.drag;
-    if (e.pointerType === 'mouse' && !g) ui.canvasHost.style.cursor = grip.free && Math.hypot(p.x - grip.x, p.y - grip.y) <= 26 ? 'grab' : '';
     if (!g || e.pointerId !== g.id) return;
     const along = (p.x - g.x) * g.ux + (p.y - g.y) * g.uy;
     g.moved = Math.max(g.moved, Math.abs(along));
@@ -1244,6 +1183,7 @@ export function createApp(root, options = {}) {
     if (next !== s.x) {
       s.x = next;
       s.dragged = true;
+      candleHandle.markUsed();
       if (pickedTrace) {
         pickedTrace = false;
         s.trace = RAY_AT[s.beat] ?? '';
@@ -1257,7 +1197,7 @@ export function createApp(root, options = {}) {
     if (!g || e.pointerId !== g.id) return;
     releasePointer(ui.canvasHost, e.pointerId);
     s.drag = null;
-    controls.enabled = true;
+    controls.enabled = !s.locked;
     action.show('drag');
     emit('dragend', { part: 'candle' });
     draw();
@@ -1533,6 +1473,7 @@ export function createApp(root, options = {}) {
   function syncUI() {
     const front = ui.$('[data-view="front"]');
     if (front) front.hidden = s.view !== '3d';
+    controls.enabled = !s.locked && !s.drag;
     controls.enableRotate = !s.locked;
     root.dataset.mode = s.mode === 'quiz' ? 'quiz' : 'explore';
     for (const b of ui.$$('[data-mode]')) {
@@ -1597,6 +1538,7 @@ export function createApp(root, options = {}) {
       s.x = snapCandle(s.x + walk * CANDLE.step);
       if (s.x !== from) {
         s.dragged = true;
+        candleHandle.markUsed();
         if (pickedTrace) {
           pickedTrace = false;
           s.trace = RAY_AT[s.beat] ?? '';
@@ -1645,7 +1587,7 @@ export function createApp(root, options = {}) {
       images: builtIds().map((id) => ({ id, x: +imageAt(s.x, id[0], Number(id[1])).toFixed(4) })),
       trace: s.trace ? traced(s.trace) : null,
       frame: shownFrame,
-      handle: { shown: grip.on, used: s.dragged },
+      handle: { shown: candleHandle.visible, used: s.dragged },
       turned: s.turned,
       azimuth: +THREE.MathUtils.radToDeg(controls.getAzimuthalAngle()).toFixed(1),
       pixelRatio: stage.pixelRatio,
