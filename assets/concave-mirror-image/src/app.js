@@ -9,9 +9,11 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
+import { createDragHandle } from '@shared/student/draghandle.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { createSetting, FRAMES, RAIL, SEE_BEHIND, SEE_V, TRACKS } from './bench.js';
@@ -166,6 +168,7 @@ export function createApp(root, options = {}) {
         { act: 'replay', label: 'act_replay', icon: ICONS.play },
         { act: 'home', label: 'act_home', icon: ICONS.reset },
       ],
+      tight: true,
       lines: { action: 1, outcome: 2, rule: 4 },
     }),
     learnAlign: 'start',
@@ -184,28 +187,11 @@ export function createApp(root, options = {}) {
   note.className = 'lab-note';
   note.textContent = t('note_rays');
   ui.stage.appendChild(note);
-  // the drag handles: always there while the part can be moved, so that nobody has to guess (the owner's rule). A finger on one is
-  // found by distance in the pointerdown below; the element itself lets every touch through
-  const ARROWS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M3 12l5-5M3 12l5 5M21 12l-5-5M21 12l-5 5"/></svg>';
-  function makeGrip(words) {
-    const el = document.createElement('div');
-    el.className = 'lab-handle';
-    el.hidden = true;
-    el.innerHTML = `<i class="lab-hd">${ARROWS}</i><span class="lab-hl">${t(words)}</span>`;
-    ui.stage.appendChild(el);
-    return { el, on: false, x: 0, y: 0, used: null, up: null, wordsWide: words === 'coach_drag' ? 62 : 54 };
-  }
-  const grips = { pencil: makeGrip('coach_drag'), screen: makeGrip('coach_screen') };
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 22, near: 10, far: 1600, environmentIntensity: 0.8 });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = false;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(30);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(91);
-  controls.minAzimuthAngle = THREE.MathUtils.degToRad(6); // the silver faces the pencil: never from behind the mirror
-  controls.maxAzimuthAngle = THREE.MathUtils.degToRad(91);
   const setting = createSetting({ stage, shadow: Boolean(o.shadow), t });
   const rays = createRays({ stage, host: ui.canvasHost });
 
@@ -491,30 +477,37 @@ export function createApp(root, options = {}) {
   function leaveTurnedView() {
     if (!s.userMovedCamera) return;
     s.userMovedCamera = false;
+    rotate.home();
     s.view = 'front';
     syncUI();
   }
   function setView(view) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
+    rotate.home();
     syncUI();
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
+  /** The student has really turned the view. */
+  function turnedByHand() {
     s.userMovedCamera = true;
     if (s.view !== '3d') {
       s.view = '3d';
       syncUI();
       emit('view', { view: s.view });
     }
+  }
+  const rotate = createRotateCue(stage, {
+    layer: ui.stage,
+    short: `${t.num(360)}°`,
+    label: t('rotate_me'),
+    pulse: Boolean(o.coach),
+    at: 'bottom-right',
+    onTurn: turnedByHand,
   });
+  // the stage also calls this when it lowers its resolution mid-turn: a view the student has turned stays theirs
   stage.onResize(() => {
-    s.userMovedCamera = false;
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
-    }
-    camSnap();
+    if (!s.userMovedCamera) camSnap();
     draw();
   });
   stage.onBeforeRender(() => {
@@ -525,11 +518,42 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture: few and short, each pinned to what it names ───────────────────────────────────
   let action = null;
-  const gripBoxesLater = () => gripBoxes();
+  // the drag handles: always there while the part can be moved, each with its range
+  const penAt = new THREE.Vector3();
+  const paperAt = new THREE.Vector3();
+  const penRail = (x) => new THREE.Vector3(x, TRACKS.pencil.y, TRACKS.pencil.z);
+  const paperRail = (x) => new THREE.Vector3(x, TRACKS.screen.y, TRACKS.screen.z);
+  const pencilHandle = createDragHandle(stage, {
+    point: () => penAt.set(V.u, TRACKS.pencil.y, TRACKS.pencil.z),
+    axis: 'x',
+    track: { from: penRail(U.min), to: penRail(U.max) },
+    label: o.coach ? t('coach_drag') : '',
+    aria: t('coach_drag'),
+    pulse: Boolean(o.coach),
+    when: () => !s.busy && !s.quiz && movable(),
+  });
+  const screenHandle = createDragHandle(stage, {
+    point: () => paperAt.set(V.s, TRACKS.screen.y, TRACKS.screen.z),
+    axis: 'x',
+    track: { from: paperRail(SCREEN.min), to: paperRail(SCREEN.max) },
+    label: o.coach ? t('coach_screen') : '',
+    aria: t('coach_screen'),
+    pulse: Boolean(o.coach),
+    when: () => !s.busy && !s.quiz && screenMovable(),
+  });
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, ui.$('.pvc-panel-toggle'), gripBoxesLater, () => rays.boxes(), () => action?.ringBox()],
+    avoid: [
+      ui.corner,
+      rotate.el,
+      note,
+      ui.$('.pvc-panel-toggle'),
+      () => pencilHandle.box(),
+      () => screenHandle.box(),
+      () => rays.boxes(),
+      () => action?.ringBox(),
+    ],
   });
   const shown = new Map();
   const pts = new Map();
@@ -683,60 +707,17 @@ export function createApp(root, options = {}) {
     ],
   };
   const big = (letter) => `<span class="lab-letter">${letter}</span>`;
-  const gripPoint = new THREE.Vector3();
-  /** A handle at the world point (x, y, z), while it can be used: inside the view, with its track behind it. */
-  function placeGrip(g, on, x, y, z, used) {
-    let shown = on;
-    if (on) {
-      gripPoint.set(x, y, z).project(camera);
-      g.x = ((gripPoint.x + 1) / 2) * stage.width;
-      g.y = ((1 - gripPoint.y) / 2) * stage.height;
-      // a part out of the view has no handle: the toggle at the edge stays clear too
-      shown = g.x > 20 && g.x < stage.width - 40 && g.y > 20 && g.y < stage.height - 16;
-    }
-    if (shown !== g.on) {
-      g.on = shown;
-      g.el.hidden = !shown;
-    }
-    if (!shown) return false;
-    g.el.style.transform = `translate(${g.x}px, ${g.y}px)`;
-    const up = g.y > stage.height - 60;
-    if (up !== g.up) {
-      g.up = up;
-      g.el.classList.toggle('up', up);
-    }
-    const calm = used || !o.coach;
-    if (calm !== g.used) {
-      g.used = calm;
-      g.el.classList.toggle('used', calm);
-    }
-    return true;
+  /** Each handle calms down once its part has been moved by hand. */
+  const calmed = { pencil: false, screen: false };
+  function calm(k, handle, used) {
+    if (used === calmed[k]) return;
+    calmed[k] = used;
+    if (used) handle.markUsed();
+    else handle.rearm();
   }
-  const penTrack = { from: U.min, to: U.max, ...TRACKS.pencil };
-  const paperTrack = { from: SCREEN.min, to: SCREEN.max, ...TRACKS.screen };
-  const trackList = [];
   function placeGrips() {
-    const open = !s.busy && !s.quiz && !s.dragging;
-    const seesPen = placeGrip(grips.pencil, open && movable(), V.u, TRACKS.pencil.y, TRACKS.pencil.z, s.movedPencil);
-    const paperFree = open && screenMovable();
-    const seesPaper = placeGrip(grips.screen, paperFree, V.s, TRACKS.screen.y, TRACKS.screen.z, s.movedScreen || (s.found && s.stage !== 'screen'));
-    trackList.length = 0;
-    if (seesPen) trackList.push(penTrack);
-    if (seesPaper) trackList.push(paperTrack);
-    rays.view.tracks = trackList;
-  }
-  function gripBoxes() {
-    const out = [];
-    for (const g of [grips.pencil, grips.screen]) {
-      if (!g.on) continue;
-      const r = g.used ? 16 : 22;
-      out.push({ left: g.x - r, right: g.x + r, top: g.y - r, bottom: g.y + r });
-      if (!g.used) {
-        const y = g.up ? g.y - 44 : g.y + 22;
-        out.push({ left: g.x - g.wordsWide, right: g.x + g.wordsWide, top: y, bottom: y + 22 });
-      }
-    }
-    return out;
+    calm('pencil', pencilHandle, s.movedPencil);
+    calm('screen', screenHandle, s.movedScreen || (s.found && s.stage !== 'screen'));
   }
   function labels() {
     placeGrips();
@@ -1152,10 +1133,8 @@ export function createApp(root, options = {}) {
     const box = ui.canvasHost.getBoundingClientRect();
     const x = e.clientX - box.left;
     const y = e.clientY - box.top;
-    const near = (g) => (g.on ? Math.hypot(x - g.x, y - g.y) : Infinity);
-    const a = near(grips.pencil);
-    const b = near(grips.screen);
-    if (Math.min(a, b) <= 26) return b < a ? 'screen' : 'pencil';
+    if (pencilHandle.hit(x, y)) return 'pencil';
+    if (screenHandle.hit(x, y)) return 'screen';
     if (screenMovable() && ray.intersectObject(setting.screenHit, false).length) return 'screen';
     if (movable() && ray.intersectObject(setting.hit, false).length) return 'pencil';
     return null;
@@ -1180,11 +1159,6 @@ export function createApp(root, options = {}) {
     { capture: true },
   );
   ui.canvasHost.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'mouse' && !drag) {
-      const box = ui.canvasHost.getBoundingClientRect();
-      const over = [grips.pencil, grips.screen].some((g) => g.on && Math.hypot(e.clientX - box.left - g.x, e.clientY - box.top - g.y) <= 26);
-      ui.canvasHost.style.cursor = over ? 'grab' : '';
-    }
     if (!drag || e.pointerId !== drag.id) return;
     const x = railX(e);
     if (x == null) return;
@@ -1527,7 +1501,7 @@ export function createApp(root, options = {}) {
       rays: rays.view.keys.filter((k) => k.in >= 1).length,
       image: V.image >= 1,
       screen: V.screen >= 1 && V.paper >= 1 ? { x: round(tracks() ? screenGoal() : V.s, 2), sharp: on.sharp } : null,
-      grips: { pencil: grips.pencil.on, screen: grips.screen.on },
+      grips: { pencil: pencilHandle.visible, screen: screenHandle.visible },
       found: s.found,
       busy: s.busy || s.hold,
       frame: s.frame,

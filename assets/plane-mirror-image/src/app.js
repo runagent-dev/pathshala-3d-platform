@@ -8,10 +8,12 @@ import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
+import { createDragHandle } from '@shared/student/draghandle.js';
 import { createAudio } from '@shared/student/audio.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
@@ -36,8 +38,9 @@ import {
   snapDistance,
   snapEdge,
 } from './reading.js';
-import { createSetting, VIEW } from './setting.js';
+import { createSetting, MIRROR, VIEW } from './setting.js';
 
+const RESULT_HOLD = 1000; // ms a finished step's result stays up: a tap on the action before that is ignored
 export const DEFAULTS = {
   step: 'distance', // 'distance' | 'rays' | 'length'
   d: DIST.start, // XP, m
@@ -60,6 +63,8 @@ const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 const f2 = (x) => x.toFixed(2);
 const short = (x) => String(round(x)); // numbers in sentences have no trailing zeros
 const IMAGE_COLOUR = '#7a5a4a';
+const FLOOR_Z = 0.2; // m: the boy's handle, on the floor in front of his feet
+const SIDE_Z = MIRROR.halfW + 0.1; // m: the mirror's handles, just past its side
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -77,7 +82,11 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: STEPS.map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [
+        { act: 'replay', label: 'act_replay', icon: ICONS.play },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
+      tight: true,
       lines: { action: 1, outcome: 1, rule: 3 },
     }),
     learnAlign: 'start',
@@ -109,15 +118,11 @@ export function createApp(root, options = {}) {
   const stage = createStage(ui.canvasHost, { fov: 20, near: 0.5, far: 400, environment: 'studio-light', environmentIntensity: 0.32 });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = false;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(55);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(88);
-  controls.minAzimuthAngle = THREE.MathUtils.degToRad(-55);
-  controls.maxAzimuthAngle = THREE.MathUtils.degToRad(25);
   const setting = createSetting({ stage, shadow: Boolean(o.shadow) });
   const dia = createDiagram({ stage, host: ui.canvasHost });
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
+  let restUntil = 0; // no action before this (performance.now): the last step's result is being looked at
   const s = {
     step: STEPS.includes(o.step) ? o.step : 'distance',
     d: snapDistance(Number(o.d) || DIST.start),
@@ -173,6 +178,8 @@ export function createApp(root, options = {}) {
     return see.head && see.feet;
   };
 
+  let again = null; // what the last step did, to do it once more
+  let farSeen = false; // the far check is done: the last step is over
   /** What the panel's action does now. */
   function phase() {
     if (s.busy || s.grow < 1) return 'busy';
@@ -180,7 +187,7 @@ export function createApp(root, options = {}) {
     if (s.step === 'rays') return `r${s.ray}`;
     if (s.far) return 'l4';
     const see = sees(s.d, s.top, s.bottom);
-    if (see.head && see.feet) return 'l3';
+    if (see.head && see.feet) return farSeen ? 'test' : 'l3';
     return see.feet ? 'l2' : 'l1';
   }
 
@@ -359,9 +366,10 @@ export function createApp(root, options = {}) {
     }
     controls.update();
   }
-  function flyCamera(duration = 0.9) {
+  function flyCamera(duration = 1.5) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
+      rotate.home();
       s.view = 'front';
       syncUI();
     }
@@ -389,18 +397,19 @@ export function createApp(root, options = {}) {
     if (first || instant) {
       tweener.cancel('camera');
       camK = 1;
-    } else flyCamera(0.9);
+    } else flyCamera(1.5);
   }
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
+    rotate.home();
     syncUI();
-    if (animate) flyCamera(0.7);
+    if (animate) flyCamera(1.5);
     else camK = 1;
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
-    if (s.drag) return;
+  /** The student has really turned the view (the cue tells a turn from a bare tap). */
+  function turnedByHand() {
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
@@ -409,13 +418,17 @@ export function createApp(root, options = {}) {
       syncUI();
       emit('view', { view: s.view });
     }
+  }
+  const rotate = createRotateCue(stage, {
+    layer: ui.stage,
+    short: `${t.num(360)}°`,
+    label: t('rotate_me'),
+    pulse: Boolean(o.coach),
+    at: stage.width < stage.height ? 'bottom-right' : 'top-left', // upright, the small picture of what he sees is at the top left
+    onTurn: turnedByHand,
   });
+  // the stage also calls this when it lowers its resolution mid-turn: a view the student has turned stays theirs
   stage.onResize(() => {
-    s.userMovedCamera = false;
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
-    }
     placeCard();
     draw();
   });
@@ -431,7 +444,7 @@ export function createApp(root, options = {}) {
 
   // ── moving on ─────────────────────────────────────────────────────────────────────────────────────────
   /** Eases the distance and the mirror's edges to new values. */
-  function moveTo({ d = s.d, top = s.top, bottom = s.bottom }, duration = 0.9) {
+  function moveTo({ d = s.d, top = s.top, bottom = s.bottom }, duration = 1.6) {
     const a = { d: s.d, top: s.top, bottom: s.bottom };
     return tweener.animate({
       key: 'pose',
@@ -467,6 +480,8 @@ export function createApp(root, options = {}) {
     if (!STEPS.includes(step)) return;
     const was = s.step;
     stopMotion();
+    again = null;
+    farSeen = false;
     s.step = step;
     s.far = false;
     clearLabels();
@@ -479,7 +494,7 @@ export function createApp(root, options = {}) {
       const my = ++token;
       s.busy = true;
       landing = () => Object.assign(s, { d, top: edges.top, bottom: edges.bottom });
-      moveTo({ d, top: edges.top, bottom: edges.bottom }, 0.8).then((ok) => {
+      moveTo({ d, top: edges.top, bottom: edges.bottom }, 1.5).then((ok) => {
         if (my !== token) return;
         s.busy = false;
         landing = null;
@@ -493,6 +508,11 @@ export function createApp(root, options = {}) {
   }
   /** Runs an eased move as the action's demonstration, then what follows it. */
   function demo(target, duration, then) {
+    const from = { d: s.d, top: s.top, bottom: s.bottom };
+    again = () => {
+      Object.assign(s, from);
+      demo(target, duration, then);
+    };
     const my = ++token;
     s.busy = true;
     landing = () => {
@@ -503,6 +523,7 @@ export function createApp(root, options = {}) {
     moveTo(target, duration).then((ok) => {
       if (my !== token) return;
       s.busy = false;
+      restUntil = performance.now() + RESULT_HOLD;
       landing = null;
       if (ok) {
         then?.();
@@ -530,6 +551,7 @@ export function createApp(root, options = {}) {
   }
   /** The next thing grows in, highlighted; `set` is told how far. */
   function reveal(lit, set = () => {}) {
+    again = () => reveal(lit, set);
     const my = ++token;
     tweener.cancel('flash');
     s.lit = lit;
@@ -556,6 +578,7 @@ export function createApp(root, options = {}) {
         s.grow = 1;
         landing = null;
         set(1);
+        restUntil = performance.now() + RESULT_HOLD;
         audio.success();
         draw();
         emitChange();
@@ -566,7 +589,7 @@ export function createApp(root, options = {}) {
   function act() {
     if (s.locked) return lockedNudge();
     const now = performance.now();
-    if (now - lastAct < 400) return;
+    if (now - lastAct < 400 || now < restUntil) return;
     lastAct = now;
     audio.unlock();
     const ph = phase();
@@ -600,9 +623,9 @@ export function createApp(root, options = {}) {
     const n = neededCm(s.d);
     if (ph === 'l1') {
       s.edge = 'top';
-      return demo({ bottom: n.bottom }, 1);
+      return demo({ bottom: n.bottom }, 1.6);
     }
-    if (ph === 'l2') return demo({ top: n.top }, 1);
+    if (ph === 'l2') return demo({ top: n.top }, 1.6);
     if (ph === 'l3') {
       return demo({ d: DIST.far, top: n.top, bottom: n.bottom }, 2, () => {
         s.far = true;
@@ -610,23 +633,71 @@ export function createApp(root, options = {}) {
     }
     if (ph === 'l4') {
       s.far = false;
-      return demo({ d: DIST.start }, 1.6);
+      return demo({ d: DIST.start }, 1.6, () => {
+        farSeen = true;
+      });
     }
+    if (ph === 'test') return quiz.start();
+  }
+  /** The step that has just ended, once more. */
+  function replay() {
+    if (s.locked) return lockedNudge();
+    if (phase() === 'busy' || !again) return;
+    audio.unlock();
+    return again();
   }
 
   // ── labels on the picture: pinned to what they name, each with a thin line ─────────────────────────────
   let action = null;
+  const held = { boy: new THREE.Vector3(), top: new THREE.Vector3(), bottom: new THREE.Vector3() };
+  const canMove = (k) => !s.locked && !s.busy && s.grow >= 1 && Boolean(dia.view.drag[k]);
+  const boyHandle = createDragHandle(stage, {
+    point: () => held.boy.set(dia.view.drag.boy?.x ?? 0, 0, FLOOR_Z),
+    axis: 'x',
+    direction: new THREE.Vector3(1, 0, 0),
+    track: { from: new THREE.Vector3(-DIST.max, 0, FLOOR_Z), to: new THREE.Vector3(-DIST.min, 0, FLOOR_Z) },
+    label: t('drag_me'),
+    aria: t('aria_drag_boy'),
+    pulse: Boolean(o.coach),
+    when: () => canMove('boy'),
+  });
+  // the two edges share one strip beside the mirror, so that the points where the rays land stay in view
+  const topHandle = createDragHandle(stage, {
+    point: () => held.top.set(0, s.top, SIDE_Z),
+    axis: 'y',
+    direction: new THREE.Vector3(0, 1, 0),
+    track: { from: new THREE.Vector3(0, EDGE.low, SIDE_Z), to: new THREE.Vector3(0, EDGE.high, SIDE_Z) },
+    label: t('drag_me'),
+    labelAt: 'above',
+    aria: t('aria_drag_top'),
+    pulse: Boolean(o.coach),
+    when: () => canMove('top'),
+  });
+  const bottomHandle = createDragHandle(stage, {
+    point: () => held.bottom.set(0, s.bottom, SIDE_Z),
+    axis: 'y',
+    direction: new THREE.Vector3(0, 1, 0),
+    aria: t('aria_drag_bottom'),
+    pulse: Boolean(o.coach),
+    when: () => canMove('bottom'),
+  });
   const cardBox = () => (showsCard() ? { left: card.x - 8, top: card.y - 26, right: card.x + card.w + 8, bottom: card.y + card.h + 8 } : null);
-  const handleBoxes = () => {
-    const out = [];
-    for (const k of ['boy', 'top', 'bottom']) {
-      const p = dia.spot[k];
-      if (p) out.push({ left: p.x - 18, top: p.y - 18, right: p.x + 18, bottom: p.y + 18 });
-    }
-    return out;
-  };
   const panelTab = ui.$('.pvc-panel-toggle');
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, panelTab, cardBox, handleBoxes, () => action?.ringBox()] });
+  const anno = createAnnotations({
+    stage,
+    layer: ui.annoLayer,
+    avoid: [
+      ui.corner,
+      rotate.el,
+      note,
+      panelTab,
+      cardBox,
+      () => boyHandle.box(),
+      () => topHandle.box(),
+      () => bottomHandle.box(),
+      () => action?.ringBox(),
+    ],
+  });
   const shown = new Map();
   const used = new Map();
   const pts = new Map();
@@ -1064,12 +1135,18 @@ export function createApp(root, options = {}) {
     l2: ['act_top', 2, ICONS.drag],
     l3: ['act_far', 3, ICONS.hand],
     l4: ['act_near', '', ICONS.hand],
+    test: ['act_test', '', ICONS.hand],
   };
   function found() {
     return { a: s.stage >= 3, b: s.step === 'length' || (s.step === 'rays' && s.ray >= 4), c: s.stage >= 4, d: s.stage >= 4 };
   }
+  const replayBtn = ui.$('[data-act="replay"]');
+  const homeBtn = ui.$('[data-act="home"]'); // it gives way to the test's offer, which needs the room
   function panel() {
     if (s.quiz) return;
+    replayBtn.hidden = !again;
+    replayBtn.disabled = s.busy;
+    homeBtn.hidden = phase() === 'test';
     const ph = phase();
     sheet.outcome(outcome());
     sheet.rule(rule(ph));
@@ -1102,15 +1179,6 @@ export function createApp(root, options = {}) {
 
   // ── the action, and what it points at ──────────────────────────────────────────────────────────────────
   const ringPoint = new THREE.Vector3();
-  /** The world point under a handle on the screen. */
-  function onHandle(spot, y) {
-    ringPoint.set(0, y, 0.25).project(camera);
-    if (spot) {
-      ringPoint.x = (spot.x / stage.width) * 2 - 1;
-      ringPoint.y = 1 - (spot.y / stage.height) * 2;
-    }
-    return ringPoint.unproject(camera);
-  }
   action = createAction({
     stage,
     layer: ui.coachLayer,
@@ -1128,8 +1196,8 @@ export function createApp(root, options = {}) {
       if (ph === 'r0') return ringPoint.set(trace.x.x, trace.x.y, 0);
       if (ph === 'r1') return ringPoint.set(trace.y.x, 0.06, 0);
       if (ph === 'r2' || ph === 'r3') return ringPoint.set(0, trace.feet.m, 0);
-      if (ph === 'l1') return onHandle(dia.spot.bottom, s.bottom);
-      if (ph === 'l2') return onHandle(dia.spot.top, s.top);
+      if (ph === 'l1') return ringPoint.set(0, s.bottom, SIDE_Z);
+      if (ph === 'l2') return ringPoint.set(0, s.top, SIDE_Z);
       return null;
     },
     radius: 24,
@@ -1141,12 +1209,15 @@ export function createApp(root, options = {}) {
   // ── dragging the boy and the mirror's edges ────────────────────────────────────────────────────────────
   function grabAt(x, y, touch) {
     if (s.locked || s.busy || s.grow < 1) return null;
-    const reach = touch ? 34 : 24;
-    const near = (p) => p && Math.hypot(p.x - x, p.y - y) <= reach;
-    // on a short mirror the two are close: the nearer one
-    const away = (p) => (p ? Math.hypot(p.x - x, p.y - y) : Number.POSITIVE_INFINITY);
-    if (near(dia.spot.top) || near(dia.spot.bottom)) return away(dia.spot.top) <= away(dia.spot.bottom) ? 'top' : 'bottom';
-    if (near(dia.spot.boy)) return 'boy';
+    if (topHandle.hit(x, y) || bottomHandle.hit(x, y)) {
+      // on a short mirror the two are close: the nearer one
+      const away = (h) => {
+        const p = toScreen(0, h, SIDE_Z);
+        return Math.hypot(p.x - x, p.y - y);
+      };
+      return away(s.top) <= away(s.bottom) ? 'top' : 'bottom';
+    }
+    if (boyHandle.hit(x, y)) return 'boy';
     if (dia.view.drag.boy) {
       // on his body
       const a = { ...toScreen(trace.x.x, 0) };
@@ -1169,6 +1240,7 @@ export function createApp(root, options = {}) {
       capturePointer(ui.canvasHost, e.pointerId);
       tweener.cancel('pose');
       s.drag = { what, id: e.pointerId, x: p.x, y: p.y, d: s.d, top: s.top, bottom: s.bottom, moved: 0 };
+      (what === 'boy' ? boyHandle : what === 'top' ? topHandle : bottomHandle).markUsed();
       action.hide('drag');
       audio.unlock();
       emit('dragstart', { part: what });
@@ -1464,6 +1536,8 @@ export function createApp(root, options = {}) {
   function home() {
     if (s.locked) return lockedNudge();
     stopMotion();
+    again = null;
+    farSeen = false;
     s.d = DIST.start;
     s.far = false;
     if (s.step === 'distance') {
@@ -1500,6 +1574,7 @@ export function createApp(root, options = {}) {
     if (a === 'q-next') quiz.next();
     if (a === 'q-again') quiz.start();
     if (a === 'home') home();
+    if (a === 'replay') replay();
     if (a === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});
@@ -1514,6 +1589,7 @@ export function createApp(root, options = {}) {
       if (s.locked) return lockedNudge();
       if (s.busy || s.grow < 1) return;
       if (walk && dia.view.drag.boy) {
+        boyHandle.markUsed();
         s.d = snapDistance(s.d - walk * DIST.step);
         if (s.step === 'distance' && s.stage === 2 && Math.abs(s.d - DIST.start) >= 0.2) s.stage = 3;
       }
@@ -1521,6 +1597,7 @@ export function createApp(root, options = {}) {
         const see = sees(s.d, s.top, s.bottom);
         if (see.feet && !see.head) s.edge = 'top';
         if (see.head && !see.feet) s.edge = 'bottom';
+        (s.edge === 'top' ? topHandle : bottomHandle).markUsed();
         if (s.edge === 'top') s.top = snapEdge('top', s.top + lift * EDGE.step, s.bottom, s.d);
         else s.bottom = snapEdge('bottom', s.bottom + lift * EDGE.step, s.top, s.d);
       }

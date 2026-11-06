@@ -10,10 +10,12 @@ import { createArrow } from '@shared/arrow.js';
 import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
+import { createDragHandle } from '@shared/student/draghandle.js';
 import { createAudio } from '@shared/student/audio.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
@@ -50,9 +52,9 @@ const MARGINS = { top: 34, bottom: 10, side: 10 };
 const CHIP_W = 96; // an angle's label on the view, px
 const CHIP_H = 92; // and how high it sits, in the scene's units: well above O
 const FLY_IN = 1.5; // seconds, from the lake to O
-const FLY = 0.9; // seconds, from one close framing to the next
-const GROW = 0.8; // seconds a new part takes to arrive
-const GLOW_TIME = 0.75; // seconds it then shines before the button comes back
+const FLY = 1.5; // seconds, from one close framing to the next
+const GROW = 1.2; // seconds a new part takes to arrive
+const GLOW_TIME = 1; // seconds it then shines before the button comes back: the hold on the result
 const INK = C.ink;
 const RING_SMALL = 40; // the circle on the water before the plane opens it
 const RING_FAR = 860; // how near the camera is before the circle on the water starts to show
@@ -81,7 +83,11 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: STEPS.map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [
+        { act: 'replay', label: 'act_replay', icon: ICONS.play },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
+      tight: true,
       lines: { action: 1, outcome: 1, rule: 3 },
     }),
     learnAlign: 'start',
@@ -97,11 +103,6 @@ export function createApp(root, options = {}) {
   const stage = createStage(ui.canvasHost, { fov: 27, near: 10, far: 14000, environment: false });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = false;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(40);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(86);
-  controls.minAzimuthAngle = THREE.MathUtils.degToRad(-50);
-  controls.maxAzimuthAngle = THREE.MathUtils.degToRad(80);
   const lake = createLake({ stage });
   const dia = createDiagram({
     scene: stage.scene,
@@ -149,10 +150,13 @@ export function createApp(root, options = {}) {
     for (const fn of listeners.get(type) || []) fn(payload);
   }
 
+  let again = null; // what the last step did, to do it once more
+  let calmed = false; // the waves have come and gone: the last step is over
   /** What the panel's action does now. */
   function phase() {
     if (s.step === 'laws') return s.busy || s.reveal < 1 ? 'busy' : `l${s.law}`;
-    return s.wavesOn ? 's1' : 's0';
+    if (s.wavesOn) return 's1';
+    return calmed ? 'test' : 's0';
   }
   /** X and the handle can be moved once the whole picture is built. */
   const grabbable = () => s.step === 'laws' && s.law >= LAW.ANGLES && !s.busy;
@@ -240,9 +244,10 @@ export function createApp(root, options = {}) {
     }
     controls.update();
   }
-  function flyCamera(duration = 0.8) {
+  function flyCamera(duration = 1.5) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
+      rotate.home();
       s.view = 'front';
       syncUI();
     }
@@ -264,13 +269,14 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
+    rotate.home();
     syncUI();
-    if (animate) flyCamera(0.8);
+    if (animate) flyCamera(FLY);
     else camK = 1;
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
-    if (s.drag) return;
+  /** The student has really turned the view (the cue tells a turn from a bare tap). */
+  function turnedByHand() {
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
@@ -279,13 +285,16 @@ export function createApp(root, options = {}) {
       syncUI();
       emit('view', { view: s.view });
     }
+  }
+  const rotate = createRotateCue(stage, {
+    layer: ui.stage,
+    short: `${t.num(360)}°`,
+    label: t('rotate_me'),
+    pulse: Boolean(o.coach),
+    onTurn: turnedByHand,
   });
+  // the stage also calls this when it lowers its resolution mid-turn: a view the student has turned stays theirs
   stage.onResize(() => {
-    s.userMovedCamera = false;
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
-    }
     draw();
   });
   stage.onBeforeRender(() => {
@@ -320,7 +329,7 @@ export function createApp(root, options = {}) {
   root.addEventListener('keydown', wake, { capture: true });
 
   // ── moving on through the book ─────────────────────────────────────────────────────────────────────────
-  function poseTween(theta, phi, duration = 0.7) {
+  function poseTween(theta, phi, duration = 1.5) {
     const t0 = s.theta;
     const p0 = s.phi;
     return tweener.animate({
@@ -349,6 +358,8 @@ export function createApp(root, options = {}) {
     settle();
     s.step = step;
     s.wavesOn = false;
+    again = null;
+    calmed = false;
     if (animate) {
       clearLabels();
       poseTween(step === 'surface' ? 50 : s.theta, step === 'surface' ? 0 : s.phi);
@@ -367,6 +378,7 @@ export function createApp(root, options = {}) {
   async function buildLaw(next) {
     const my = ++token;
     const from = poseKey();
+    again = () => buildLaw(next);
     s.law = next;
     s.reveal = 0;
     s.busy = true;
@@ -416,22 +428,39 @@ export function createApp(root, options = {}) {
     if (/^l[0-5]$/.test(ph)) return buildLaw(s.law + 1);
     // a tap on a drag's button shows the move, and the student can go on by hand
     if (ph === 'l6') {
-      const my = ++token;
-      return poseTween(s.theta, s.phi < -14 ? 12 : -46, 1.5).then((ok) => {
-        if (ok && my === token) passLaw(LAW.SWUNG);
-      });
+      return moveDemo(s.theta, s.phi < -14 ? 12 : -46, LAW.SWUNG);
     }
     if (ph === 'l7') {
-      const my = ++token;
-      return poseTween(s.theta > 42 ? 30 : 62, s.phi, 1.3).then((ok) => {
-        if (ok && my === token) passLaw(LAW.BOTH);
-      });
+      return moveDemo(s.theta > 42 ? 30 : 62, s.phi, LAW.BOTH);
     }
     if (ph === 'l8') return go('surface');
     if (ph === 's0' || ph === 's1') return setWaves(!s.wavesOn);
+    if (ph === 'test') return quiz.start();
+  }
+  /** The move a drag's button shows; it can be seen again from where it began. */
+  function moveDemo(theta, phi, law) {
+    const from = { theta: s.theta, phi: s.phi };
+    const my = ++token;
+    again = () => {
+      Object.assign(s, from);
+      draw();
+      return moveDemo(theta, phi, law);
+    };
+    return poseTween(theta, phi, 1.8).then((ok) => {
+      if (ok && my === token) passLaw(law);
+    });
+  }
+  /** The step that has just ended, once more. */
+  function replay() {
+    if (s.locked) return lockedNudge();
+    if (s.busy || !again) return;
+    audio.unlock();
+    return again();
   }
   function setWaves(on) {
     s.wavesOn = on;
+    calmed = !on;
+    again = () => setWaves(true);
     s.idle = 0;
     audio.tick();
     draw();
@@ -447,7 +476,39 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture: few, each with a thin line to what it names ─────────────────────────────────
   let action = null;
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, () => action?.ringBox()] });
+  // the plane's handle turns on the ring on the water, which is its track; X moves on an arc in the plane
+  const swingWay = new THREE.Vector3();
+  const swingHandle = createDragHandle(stage, {
+    point: dia.pS,
+    axis: 'turn',
+    direction: () => swingWay.set(-dia.pS.z, 0, dia.pS.x),
+    label: t('drag_turn'),
+    aria: t('aria_drag_swing'),
+    pulse: Boolean(o.coach),
+    when: () => !s.locked && grabbable(),
+  });
+  const onArc = new THREE.Vector3();
+  const arcAt = (theta) => {
+    const l = toLight(theta, s.phi);
+    return onArc.set(l.x, l.y, l.z).multiplyScalar(L);
+  };
+  const xWay = new THREE.Vector3();
+  const xHandle = createDragHandle(stage, {
+    point: dia.pX,
+    axis: 'x',
+    direction: () => xWay.copy(arcAt(s.theta + 1)).sub(arcAt(s.theta)),
+    track: { from: () => arcAt(THETA[0]), via: () => arcAt((THETA[0] + THETA[1]) / 2), to: () => arcAt(THETA[1]) },
+    label: t('drag_me'),
+    labelAt: 'left',
+    aria: t('aria_drag_x'),
+    pulse: Boolean(o.coach),
+    when: () => !s.locked && grabbable(),
+  });
+  const anno = createAnnotations({
+    stage,
+    layer: ui.annoLayer,
+    avoid: [ui.corner, rotate.el, note, () => action?.ringBox(), () => swingHandle.box(), () => xHandle.box()],
+  });
   const shown = new Map();
   const pts = new Map();
   function label(id, on, text, point, color, spots, optional = false, avoid = []) {
@@ -697,9 +758,15 @@ export function createApp(root, options = {}) {
     l8: ['act_next', '', ICONS.chevR],
     s0: ['act_waves', 1, ICONS.hand],
     s1: ['act_calm', '', ICONS.hand],
+    test: ['act_test', '', ICONS.hand],
   };
+  const replayBtn = ui.$('[data-act="replay"]');
+  const homeBtn = ui.$('[data-act="home"]'); // it gives way to the test's offer, which needs the room
   function panel() {
     if (s.quiz) return;
+    replayBtn.hidden = !again;
+    replayBtn.disabled = s.busy;
+    homeBtn.hidden = phase() === 'test';
     sheet.outcome(outcome());
     sheet.rule(rule());
     sheet.choose(s.step);
@@ -753,8 +820,8 @@ export function createApp(root, options = {}) {
       const a = toScreen(p);
       return Math.hypot(a.x - x, a.y - y) <= reach;
     };
-    if (near(dia.pS)) return 'phi';
-    if (near(dia.pX)) return 'theta';
+    if (swingHandle.hit(x, y) || near(dia.pS)) return 'phi';
+    if (xHandle.hit(x, y) || near(dia.pX)) return 'theta';
     return null;
   }
   let down = null;
@@ -774,6 +841,7 @@ export function createApp(root, options = {}) {
       ++token;
       tweener.cancel('pose');
       s.drag = { what, id: e.pointerId, x: p.x, y: p.y, theta: s.theta, phi: s.phi, moved: 0 };
+      (what === 'phi' ? swingHandle : xHandle).markUsed();
       action.hide('drag');
       audio.unlock();
       emit('dragstart', { part: what });
@@ -1100,6 +1168,8 @@ export function createApp(root, options = {}) {
     tweener.cancel('pose');
     if (s.step === 'laws') s.law = LAW.SETTING;
     s.wavesOn = false;
+    again = null;
+    calmed = false;
     s.theta = 50;
     s.phi = 0;
     clearLabels();
@@ -1128,6 +1198,7 @@ export function createApp(root, options = {}) {
     if (a === 'q-next') quiz.next();
     if (a === 'q-again') quiz.start();
     if (a === 'home') home();
+    if (a === 'replay') replay();
     if (a === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});

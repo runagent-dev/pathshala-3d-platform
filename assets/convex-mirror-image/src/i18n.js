@@ -3,6 +3,8 @@
 
 export const STRINGS = {
   bn: {
+    aria_drag_pencil: 'পেনসিল রেল বরাবর সরাও',
+    rotate_me: 'ঘুরিয়ে দেখো',
     panel_hide: 'লেখা লুকাও',
     panel_show: 'লেখা দেখাও',
     rotate_title: 'ফোনটি আড়াআড়ি ধরো',
@@ -11,7 +13,7 @@ export const STRINGS = {
     rotate_stay: 'এভাবেই দেখো',
     title: 'উত্তল আয়নায় প্রতিবিম্ব',
     view: 'দেখার ধরন',
-    view_front_short: 'শুরুর দৃশ্য',
+    view_front_short: 'সামনে',
     view_rotate: 'ঘুরিয়ে দেখো',
     fullscreen: 'পূর্ণ পর্দা',
     tab_learn: 'শেখো',
@@ -28,7 +30,7 @@ export const STRINGS = {
     act_par: 'সমান্তরাল রশ্মি আঁকো',
     act_ext: 'রশ্মিটি পেছনে বাড়াও',
     act_cen: 'কেন্দ্রমুখী রশ্মি আঁকো',
-    act_foc: 'ফোকাস অভিমুখী রশ্মি আঁকো',
+    act_foc: 'ফোকাসমুখী রশ্মি আঁকো',
     title_see: 'গোলীয় উত্তল আয়নায় প্রতিবিম্ব',
     title_r1: '(i) কেন্দ্রমুখী রশ্মি',
     title_r2: '(ii) প্রধান অক্ষের সমান্তরাল রশ্মি',
@@ -148,6 +150,8 @@ export const STRINGS = {
     a_rear: '<b>খুঁটি {x}:</b> সমতল আয়নায় {a}টি, উত্তল আয়নায় {b}টি। তাই রিয়ার ভিউ মিররে উত্তল আয়না থাকে।',
   },
   en: {
+    aria_drag_pencil: 'Move the pencil along the rail',
+    rotate_me: 'Turn it',
     panel_hide: 'Hide the text',
     panel_show: 'Show the text',
     rotate_title: 'Turn your phone sideways',
@@ -156,7 +160,7 @@ export const STRINGS = {
     rotate_stay: 'Stay like this',
     title: 'Image in a convex mirror',
     view: 'View',
-    view_front_short: 'Start view',
+    view_front_short: 'Front',
     view_rotate: 'Rotate',
     fullscreen: 'Full screen',
     tab_learn: 'Learn',

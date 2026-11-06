@@ -13,8 +13,8 @@ const settled = async (fig) => {
 };
 
 test(`${ID}: the whole story on one action`, async ({ page }) => {
-  test.setTimeout(420_000);
-  await page.setViewportSize({ width: 800, height: 500 });
+  test.setTimeout(280_000);
+  await page.setViewportSize({ width: 600, height: 300 }); // every step really plays: few pixels, so that CI stays inside its limit
   const log = await preparePage(page);
   const fig = await openFigure(page, ID);
   const act = async () => {
@@ -41,8 +41,25 @@ test(`${ID}: the whole story on one action`, async ({ page }) => {
   expect(st.screen).toMatchObject({ x: 24, sharp: true });
   await expect(fig.frame.locator('.pvc-outcome')).toContainText('স্পষ্ট');
 
+  expect(log.errors).toEqual([]);
+});
+
+test(`${ID}: the book's cases and the end of the story, on one action`, async ({ page }) => {
+  test.setTimeout(280_000);
+  await page.setViewportSize({ width: 600, height: 300 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, ID);
+  const act = async () => {
+    await fig.frame.locator('.pvc-act').first().click();
+    await settled(fig);
+    return fig.call('get');
+  };
+  await fig.call('set', { stage: 'screen', animate: false });
+  await fig.advance(600);
+  await act(); // the action finds the place
+
   // the book's cases, one tap each
-  st = await act();
+  let st = await act();
   expect(st).toMatchObject({ stage: 'cases', u: 30, v: 30, m: 1, zone: 'o' });
   await expect(fig.frame.locator('.pvc-anno', { hasText: 'বাস্তব · উল্টো · সমান' })).toHaveCount(1);
   st = await act();
@@ -116,7 +133,7 @@ test(`${ID}: the keys move the screen until it is sharp, and the pencil afterwar
 });
 
 test(`${ID}: a step that plays is not cut short, nothing is queued, and a finished step can be seen again`, async ({ page }) => {
-  test.setTimeout(300_000);
+  test.setTimeout(280_000);
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, ID, { params: { stage: 'ray1' } });
@@ -165,8 +182,8 @@ test(`${ID}: a step that plays is not cut short, nothing is queued, and a finish
 });
 
 test(`${ID}: the test, right and wrong, and what it leaves behind`, async ({ page }) => {
-  test.setTimeout(420_000);
-  await page.setViewportSize({ width: 800, height: 500 });
+  test.setTimeout(280_000);
+  await page.setViewportSize({ width: 640, height: 400 });
   const log = await preparePage(page);
   const fig = await openFigure(page, ID, { params: { stage: 'cases', u: '22.5' } });
   const answerAll = async (pick) => {
@@ -195,4 +212,50 @@ test(`${ID}: the test, right and wrong, and what it leaves behind`, async ({ pag
   const st = await fig.call('get');
   expect(st).toMatchObject({ stage: 'cases', u: 22.5, v: 45, mode: 'explore', locked: false, question: null });
   expect(log.errors).toEqual([]);
+});
+
+test('concave-mirror-image: a tap on the view is not a turn of it; a move of the finger is', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 844, height: 390 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'concave-mirror-image');
+  const box = await fig.frame.locator('.pvc-canvas').first().boundingBox();
+  const x = box.x + 40;
+  const y = box.y + 40;
+  await page.mouse.click(x, y);
+  await fig.advance(300);
+  expect((await fig.call('get')).view).toBe('front');
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 60, y, { steps: 4 });
+  await page.mouse.up();
+  await fig.advance(300);
+  expect((await fig.call('get')).view).toBe('3d');
+  expect(log.errors).toEqual([]);
+});
+
+test('concave-mirror-image: a lower render resolution leaves the view where the student turned it', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const page = await browser.newPage({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 2 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'concave-mirror-image');
+  const canvas = fig.frame.locator('.pvc-canvas canvas').first();
+  const ratio = () => canvas.evaluate((c) => c.width / c.clientWidth);
+  expect(await ratio()).toBe(2);
+  const box = await canvas.boundingBox();
+  const x = box.x + 30;
+  const y = box.y + 30;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  // slow frames while the view turns: the stage lowers its resolution, and tells the figure through onResize
+  for (let i = 1; i <= 60 && (await ratio()) === 2; i++) {
+    await page.mouse.move(x + (i % 20) * 4, y);
+    await fig.advance(40, 40);
+  }
+  await page.mouse.up();
+  expect(await ratio()).toBeLessThan(2);
+  await fig.advance(300);
+  expect((await fig.call('get')).view).toBe('3d');
+  expect(log.errors).toEqual([]);
+  await page.close();
 });

@@ -15,7 +15,8 @@ body.bg-transparent { background: transparent; }
 .pvc.lab .lab-graph { width: 100%; height: 118px; min-width: 0; max-height: none; stroke: none; touch-action: none; cursor: ew-resize; }
 .lab-graph .lab-curve { fill: none; stroke: #1f2933; stroke-width: 1.8; stroke-linejoin: round; }
 .lab-graph .lab-drop { stroke: #1f2933; stroke-width: 1; stroke-dasharray: 3 3; }
-.lab-graph .lab-now { fill: #fff; stroke: #1f2933; stroke-width: 2; }
+.lab-graph .lab-now circle { fill: #fff; stroke: #1f2933; stroke-width: 1.5; }
+.lab-graph .lab-now path { fill: none; stroke: #1f2933; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .lab-graph .lab-gy { font-weight: 600; fill: var(--ink); }
 .lab-graph .lab-band { stroke: none; }
 .lab-graph .lab-band.b0 { fill: #d7dde3; }

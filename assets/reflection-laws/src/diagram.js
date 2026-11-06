@@ -383,32 +383,6 @@ export function createDiagram({ scene, stage, host, words }) {
       }
       dot(0, 0, 0, 3.6 + 3.4 * (g + (1 - v.o)), C.ink, '#ffffff');
     }
-    if (v.swing) {
-      // the handle: at least 26 px, with a double arrow that says it turns
-      P(pS.x, pS.y, pS.z);
-      const x = sx;
-      const y = sy;
-      const r = 13 * unit;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fillStyle = C.sheet;
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2.4 * unit;
-      ctx.stroke();
-      const a = r * 0.58;
-      ctx.lineWidth = 2 * unit;
-      ctx.beginPath();
-      ctx.moveTo(x - a, y);
-      ctx.lineTo(x + a, y);
-      ctx.moveTo(x - a * 0.45, y - a * 0.5);
-      ctx.lineTo(x - a, y);
-      ctx.lineTo(x - a * 0.45, y + a * 0.5);
-      ctx.moveTo(x + a * 0.45, y - a * 0.5);
-      ctx.lineTo(x + a, y);
-      ctx.lineTo(x + a * 0.45, y + a * 0.5);
-      ctx.stroke();
-    }
     if (v.loupe) paintLoupe();
   }
   stage.onResize(size);

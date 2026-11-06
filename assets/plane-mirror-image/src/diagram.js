@@ -12,7 +12,6 @@ export const C = {
   ti: '#1971c2',
   tr: '#2b8a3e',
   ink: '#212529',
-  handle: '#33506b',
   card: '#fbf6f1',
   frame: '#5b3f2d',
   bar: '#245a8a',
@@ -240,46 +239,6 @@ export function createDiagram({ stage, host }) {
       stroke(C.bar, 2.4, '#ffffff', 4);
     }
   }
-  /** A handle at the side of a point on the screen, tied to it by a short line. */
-  function tab(px, py, dx, dy) {
-    ctx.beginPath();
-    ctx.moveTo(px, py);
-    ctx.lineTo(px + dx, py + dy);
-    ctx.strokeStyle = C.handle;
-    ctx.lineWidth = 2 * unit;
-    ctx.stroke();
-    return knob(px + dx, py + dy, true);
-  }
-  function handle(x, y, z, vertical) {
-    P(x, y, z);
-    return knob(sx, sy, vertical);
-  }
-  function knob(cx, cy, vertical) {
-    const r = 13 * unit;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = C.handle;
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2.4 * unit;
-    ctx.stroke();
-    const a = r * 0.58;
-    const ux = vertical ? 0 : 1;
-    const uy = vertical ? 1 : 0;
-    ctx.lineWidth = 2 * unit;
-    ctx.beginPath();
-    ctx.moveTo(cx - ux * a, cy - uy * a);
-    ctx.lineTo(cx + ux * a, cy + uy * a);
-    for (const s of [-1, 1]) {
-      const tx = cx + s * ux * a;
-      const ty = cy + s * uy * a;
-      ctx.moveTo(tx - s * ux * a * 0.55 - uy * a * 0.5, ty - s * uy * a * 0.55 - ux * a * 0.5);
-      ctx.lineTo(tx, ty);
-      ctx.lineTo(tx - s * ux * a * 0.55 + uy * a * 0.5, ty - s * uy * a * 0.55 + ux * a * 0.5);
-    }
-    ctx.stroke();
-    return { x: cx, y: cy };
-  }
   /** The card of the small picture round the mirror's hole: where there is no mirror, a dashed outline and the words. */
   function card(view) {
     const { rect, top, bottom, low, high, absent, from } = view;
@@ -356,7 +315,6 @@ export function createDiagram({ stage, host }) {
     card: null,
     normalLen: 0.6,
   };
-  const spot = { boy: null, top: null, bottom: null };
 
   function paint() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -400,19 +358,6 @@ export function createDiagram({ stage, host }) {
     if (v.card) card(v.card);
     for (const s of v.segs) segment(s[0], s[1], s[2], s[3], 0.5, true);
     for (const p of v.points) dot(p[0], p[1], p[2], p[3], '#ffffff');
-    spot.boy = v.drag.boy ? handle(v.drag.boy.x, 0, 0.2, false) : null;
-    if (v.drag.top) {
-      // beside the mirror's corners, so that the points where the rays land stay in view
-      P(0, v.drag.top.y, MIRROR.halfW);
-      const tx = sx;
-      const ty = sy;
-      P(0, v.drag.bottom.y, MIRROR.halfW);
-      const bx = sx;
-      const by = sy;
-      const inset = Math.min(9, (by - ty - 30 * unit) / 2);
-      spot.top = tab(tx, ty, 29 * unit, inset);
-      spot.bottom = tab(bx, by, 29 * unit, -inset);
-    } else spot.top = spot.bottom = null;
   }
   stage.onResize(size);
   stage.onAfterRender(paint);
@@ -420,7 +365,6 @@ export function createDiagram({ stage, host }) {
   return {
     canvas,
     view: v,
-    spot,
     clear() {
       Object.assign(v, { bars: null, rays: null, head: 0, feet: 0, ext: 0, normals: 0, card: null, flash: 0, lit: '' });
       v.marks.length = 0;

@@ -156,10 +156,10 @@ test(`${ID}: the drag handle shows what can be moved`, async ({ page }) => {
   const log = await preparePage(page);
   const fig = await openFigure(page, ID, { params: { coach: '1' } });
   await fig.advance(600);
-  const handle = fig.frame.locator('.lab-hd');
+  const handle = fig.frame.locator('.pvc-dh-disc');
   let st = await fig.call('get');
   expect(st.handle).toEqual({ shown: true, used: false });
-  await expect(fig.frame.locator('.lab-hl')).toBeVisible();
+  await expect(fig.frame.locator('.pvc-dh-word')).toBeVisible();
   // it can be taken with the mouse, and then stays, smaller, without its words
   const b = await handle.boundingBox();
   expect(b.width).toBeGreaterThanOrEqual(28);
@@ -171,10 +171,12 @@ test(`${ID}: the drag handle shows what can be moved`, async ({ page }) => {
   st = await fig.call('get');
   expect(st.u).not.toBe(10);
   expect(st.handle).toEqual({ shown: true, used: true });
-  await expect(fig.frame.locator('.lab-hl')).toBeHidden();
+  await expect(fig.frame.locator('.pvc-dh-word')).toBeHidden();
   await expect(handle).toBeVisible();
   // not in the rear-view stages, nor in the test
   await fig.call('set', { stage: 'eye', animate: false });
+  await fig.advance(300);
+  await expect(fig.frame.locator('.pvc-rc')).toBeHidden(); // the camera cannot turn in the eye's view
   await fig.advance(300);
   await expect(handle).toBeHidden();
   await fig.call('set', { stage: 'move', animate: false });
@@ -220,7 +222,7 @@ test(`${ID}: the bridge, the arrow keys, jumps cut short`, async ({ page }) => {
 });
 
 test(`${ID}: the test scores right answers and wrong ones, and leaves things as they were`, async ({ page }) => {
-  test.setTimeout(420_000);
+  test.setTimeout(280_000);
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, ID);
@@ -259,4 +261,50 @@ test(`${ID}: the test scores right answers and wrong ones, and leaves things as 
   const st = await fig.call('get');
   expect(st).toMatchObject({ mode: 'explore', locked: false, stage: 'ext', u: 22, rays: 1, question: null });
   expect(log.errors).toEqual([]);
+});
+
+test('convex-mirror-image: a tap on the view is not a turn of it; a move of the finger is', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 844, height: 390 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'convex-mirror-image');
+  const box = await fig.frame.locator('.pvc-canvas').first().boundingBox();
+  const x = box.x + 40;
+  const y = box.y + 40;
+  await page.mouse.click(x, y);
+  await fig.advance(300);
+  expect((await fig.call('get')).view).toBe('front');
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 60, y, { steps: 4 });
+  await page.mouse.up();
+  await fig.advance(300);
+  expect((await fig.call('get')).view).toBe('3d');
+  expect(log.errors).toEqual([]);
+});
+
+test('convex-mirror-image: a lower render resolution leaves the view where the student turned it', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const page = await browser.newPage({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 2 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'convex-mirror-image');
+  const canvas = fig.frame.locator('.pvc-canvas canvas').first();
+  const ratio = () => canvas.evaluate((c) => c.width / c.clientWidth);
+  expect(await ratio()).toBe(2);
+  const box = await canvas.boundingBox();
+  const x = box.x + 30;
+  const y = box.y + 30;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  // slow frames while the view turns: the stage lowers its resolution, and tells the figure through onResize
+  for (let i = 1; i <= 60 && (await ratio()) === 2; i++) {
+    await page.mouse.move(x + (i % 20) * 4, y);
+    await fig.advance(40, 40);
+  }
+  await page.mouse.up();
+  expect(await ratio()).toBeLessThan(2);
+  await fig.advance(300);
+  expect((await fig.call('get')).view).toBe('3d');
+  expect(log.errors).toEqual([]);
+  await page.close();
 });

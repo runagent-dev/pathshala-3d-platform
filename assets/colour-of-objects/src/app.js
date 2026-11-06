@@ -11,6 +11,7 @@ import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
@@ -20,6 +21,7 @@ import { absorbed, BANDS, LAMP, leaving, looks, reflected, shuffle, toEye } from
 import { createRose } from './rose.js';
 import { createSetting, FRAMES, LAYOUT } from './scene.js';
 
+const RESULT_HOLD = 1000; // ms a finished step's result stays up: a tap on the action before that is ignored
 export const DEFAULTS = {
   light: 'white', // 'white' | 'red' | 'green' | 'blue'
   rays: false, // the band and the arrows are drawn
@@ -63,7 +65,11 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: LEARN.map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [
+        { act: 'replay', label: 'act_replay', icon: ICONS.play },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
+      tight: true,
       lines: { action: 1, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
@@ -83,17 +89,13 @@ export function createApp(root, options = {}) {
   const stage = createStage(ui.canvasHost, { fov: 24, near: 4, far: 900, environment: false, toneMapping: THREE.NoToneMapping });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = false;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(56);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(100);
-  controls.minAzimuthAngle = THREE.MathUtils.degToRad(-24);
-  controls.maxAzimuthAngle = THREE.MathUtils.degToRad(46);
   const setting = createSetting({ stage, shadow: Boolean(o.shadow) });
   const rose = createRose({ layout: LAYOUT });
   stage.scene.add(rose.root);
   const rays = createRays({ stage, host: ui.canvasHost });
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
+  let restUntil = 0; // no action before this (performance.now): the last step's result is being looked at
   const start = ALL.includes(o.light) ? o.light : 'white';
   const s = {
     light: start,
@@ -207,7 +209,7 @@ export function createApp(root, options = {}) {
     const from = [...s.rgb];
     const changes = from.join() !== wantRgb.join();
     if (!quick && (changes || r0.grow < 1 || l0.grow < 1) && s.frame !== 'full') {
-      await fly('full', 0.8);
+      await fly('full', 1.5);
       if (!alive()) return false;
     }
     if (changes) {
@@ -218,7 +220,7 @@ export function createApp(root, options = {}) {
       const swap = f0 > 0 && f1 > 0; // one filter out, the next one in
       const a0 = [r0.absorb, l0.absorb];
       if (!swap && f1 > 0) s.gel = [...wantRgb];
-      await tween('light', 0.85, (x) => {
+      await tween('light', quick ? 0.85 : 1.5, (x) => {
         s.rgb = from.map((c, i) => c + (wantRgb[i] - c) * x);
         if (swap) {
           s.filter = x < 0.5 ? 1 - 2 * x : 2 * x - 1;
@@ -267,14 +269,14 @@ export function createApp(root, options = {}) {
       });
     };
     for (const name of order) {
-      const flying = fly(name, 0.95);
+      const flying = fly(name, 1.5);
       await Promise.all([come(name, 0.9), sink(name, 0.9)]);
       if (!alive()) return false;
       await flying;
       if (!alive()) return false;
       s.focus = name;
       draw();
-      await finish(name, 0.75);
+      await finish(name, 1);
       if (!alive()) return false;
       await hold(1.1);
       if (!alive()) return false;
@@ -283,7 +285,7 @@ export function createApp(root, options = {}) {
     }
     // whatever was not looked at closely finishes on the way back
     const rest = ['rose', 'leaf'].filter((n) => !order.includes(n));
-    const flying = quick && s.frame === 'both' ? null : fly('both', 1);
+    const flying = quick && s.frame === 'both' ? null : fly('both', 1.5);
     await Promise.all(rest.map((n) => sink(n, 0.5)));
     if (!alive()) return false;
     await Promise.all(
@@ -299,6 +301,7 @@ export function createApp(root, options = {}) {
     await flying;
     if (!alive()) return false;
     s.busy = false;
+    restUntil = performance.now() + RESULT_HOLD;
     s.seen.add(light);
     audio.success();
     draw();
@@ -330,9 +333,10 @@ export function createApp(root, options = {}) {
     controls.update();
   }
   /** The camera goes to a frame. Its promise settles when it arrives (or a finger takes over). */
-  function fly(frame, duration = 0.8) {
+  function fly(frame, duration = 1.5) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
+      rotate.home();
       s.view = 'front';
       syncUI();
     }
@@ -355,12 +359,14 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
+    rotate.home();
     syncUI();
-    if (animate) fly(s.frame, 0.8);
+    if (animate) fly(s.frame, 1.5);
     else camK = 1;
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
+  /** The student has really turned the view. */
+  function turnedByHand() {
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
@@ -369,13 +375,17 @@ export function createApp(root, options = {}) {
       syncUI();
       emit('view', { view: s.view });
     }
+  }
+  const rotate = createRotateCue(stage, {
+    layer: ui.stage,
+    short: `${t.num(360)}°`,
+    label: t('rotate_me'),
+    pulse: Boolean(o.coach),
+    at: 'bottom-right',
+    onTurn: turnedByHand,
   });
+  // the stage also calls this when it lowers its resolution mid-turn: a view the student has turned stays theirs
   stage.onResize(() => {
-    s.userMovedCamera = false;
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
-    }
     draw();
   });
   stage.onBeforeRender(() => {
@@ -385,7 +395,7 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture: few and short, each pinned to what it names ───────────────────────────────────
   let action = null;
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note] });
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, rotate.el, note] });
   const shown = new Map();
   const pts = new Map();
   /** A label at (dx, dy) px from a world point. The key labels are never dropped: they have no spots to run out of. */
@@ -484,22 +494,25 @@ export function createApp(root, options = {}) {
     if (!s.rays) return 'start';
     if (!s.seen.has('red')) return 'red';
     if (!s.seen.has('green')) return 'green';
-    return s.light === 'white' ? 'again' : 'white';
+    return s.light === 'white' ? 'test' : 'white';
   }
   let lastAct = -1e9;
   function act() {
     if (s.locked) return lockedNudge();
     const now = performance.now();
-    if (now - lastAct < 400) return;
+    if (now - lastAct < 400 || now < restUntil) return;
     lastAct = now;
     audio.unlock();
     const ph = phase();
     if (ph === 'busy') return;
     if (ph === 'start') return run(s.light);
-    if (ph === 'again') return replay();
+    if (ph === 'test') return quiz.start();
     return run(ph);
   }
+  /** The light of now, slowly, from the start. */
   function replay() {
+    if (s.locked) return lockedNudge();
+    if (s.busy) return;
     stopRun();
     settle(s.light, false);
     s.rays = false;
@@ -532,10 +545,15 @@ export function createApp(root, options = {}) {
     red: ['act_red', 2],
     green: ['act_green', 3],
     white: ['act_white', ''],
-    again: ['act_again', ''],
+    test: ['act_test', ''],
   };
+  const replayBtn = ui.$('[data-act="replay"]');
+  const homeBtn = ui.$('[data-act="home"]'); // it gives way to the test's offer, which needs the room
   function panel() {
     if (s.quiz) return;
+    replayBtn.hidden = !s.rays;
+    replayBtn.disabled = s.busy;
+    homeBtn.hidden = phase() === 'test';
     sheet.outcome(outcome());
     sheet.rule(rule());
     sheet.choose(s.light);
@@ -817,7 +835,7 @@ export function createApp(root, options = {}) {
     s.seen.clear();
     clearLabels();
     settle('white', false);
-    fly('full', 0.6);
+    fly('full', 1.5);
     draw();
     emitChange();
   }
@@ -841,6 +859,7 @@ export function createApp(root, options = {}) {
     if (a === 'q-next') quiz.next();
     if (a === 'q-again') quiz.start();
     if (a === 'home') home();
+    if (a === 'replay') replay();
     if (a === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});

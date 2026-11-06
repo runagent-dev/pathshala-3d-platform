@@ -72,7 +72,6 @@ export function createRays({ stage, host }) {
     kind: 'real',
     iv: 22.5,
     bars: 0, // u and v along the rail
-    tracks: [], // the ranges of the drag handles now shown
     screenAt: null, // the x of the paper: the light stops there
   };
 
@@ -299,36 +298,6 @@ export function createRays({ stage, host }) {
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
-  /** The dashed range of a drag handle, with a stop at each end. */
-  function track({ from, to, y, z }) {
-    Q(from, y, z);
-    const x0 = sx;
-    const y0 = sy;
-    Q(to, y, z);
-    const x1 = sx;
-    const y1 = sy;
-    const l = Math.hypot(x1 - x0, y1 - y0) || 1;
-    const nx = (-(y1 - y0) / l) * 6;
-    const ny = ((x1 - x0) / l) * 6;
-    ctx.lineCap = 'butt';
-    ctx.setLineDash([7, 6]);
-    for (const [c, wd] of [
-      ['rgba(12,16,22,0.4)', 3.4],
-      ['rgba(255,255,255,0.8)', 1.6],
-    ]) {
-      ctx.strokeStyle = c;
-      ctx.lineWidth = wd;
-      line(x0, y0, x1, y1);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-    ctx.lineWidth = 2;
-    line(x0 - nx, y0 - ny, x0 + nx, y0 + ny);
-    ctx.stroke();
-    line(x1 - nx, y1 - ny, x1 + nx, y1 + ny);
-    ctx.stroke();
-  }
 
   /** The end of a ray: at the paper, if it reaches it there. */
   function endOfRay(r) {
@@ -346,7 +315,6 @@ export function createRays({ stage, host }) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     if (v.axis > 0) axis(v.axis);
-    for (const k of v.tracks) track(k);
     if (v.bars > 0) {
       bar(0, v.u, RAIL.top + 1.5, '#1f2933', v.bars);
       if (Number.isFinite(v.iv)) bar(0, Math.max(X_BACK, Math.min(X_END, v.iv)), RAIL.top + 3, C.focus, v.bars);
@@ -400,9 +368,6 @@ export function createRays({ stage, host }) {
   function boxes() {
     out.length = 0;
     used = 0;
-    for (const k of v.tracks) {
-      along({ x: k.from, y: k.y - RAIL.axis }, { x: k.to, y: k.y - RAIL.axis });
-    }
     v.rays.forEach((r, i) => {
       const k = v.keys[i];
       if (!r) return;
