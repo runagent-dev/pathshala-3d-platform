@@ -10,6 +10,7 @@ import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createDragHandle } from '@shared/student/draghandle.js';
+import { createHowTo } from '@shared/student/howto.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
@@ -712,6 +713,18 @@ export function createApp(root, options = {}) {
     pulse: Boolean(o.coach),
     when: canFold,
   });
+  // how to use, in the panel: the rotate pill, the সামনে button and the fold's disc, drawn as on the view; the fold's item
+  // keeps its place unseen outside its step, so the panel does not jump
+  createHowTo(
+    ui,
+    t,
+    [
+      { kind: 'orbit', cue: rotate },
+      { kind: 'front' },
+      { kind: 'drag', axis: 'x', text: t('howto_fold'), handle: foldHandle, when: () => !s.locked && s.step === 'two' && s.stage !== 2 },
+    ],
+    { stage },
+  );
   /** The real card on the screen, before his hand goes up: the action's badge keeps off it. */
   function cardBox() {
     if (s.step !== 'one' || s.stage !== 0) return null;

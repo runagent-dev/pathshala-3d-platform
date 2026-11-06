@@ -58,6 +58,7 @@ three images only that one is not swapped.
   angle that keeps the writing in the corner (front) image; reflections read off a marked image; the marked image's hand and writing, the
   camera close on it; a mark on the floor for A′OB′ with the fist moved; which quarter a drawn ray seems to come from. `get` carries the current question's kind and right answer.
 - **The drawing** follows `reflection-laws`: a 2D canvas over the view, painted from exact 3D points through the camera.
+- **How to use** (v0.2.0, kit 1.8.0 `createHowTo`): under the action, the same ⟲ ৩৬০° pill and সামনে button as on the view, with a few words, and the fold's white disc ("টেনে আয়না ভাঁজ করো"), unseen but in place outside its step. Tapping an item points at its control on the view.
 
 ## Lightweight, on purpose
 - The boy is `plane-mirror-image`'s, about half its triangles, one mesh with colour and finish in the vertices, so he and each image
