@@ -110,6 +110,10 @@ export function createApp(root, options = {}) {
     learnAlign: 'start',
   });
   const sheet = bindCleanSheet(ui.learn);
+  // the line before the action: what the next tap will show (on the first screen, a few calm words that set the scene)
+  const lead = document.createElement('p');
+  lead.className = 'lab-lead';
+  ui.$('.pvc-act-row').before(lead);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   // the corner: the kit's cue that the view turns (it goes in here below, once there is a stage), and the note beside it
   const corner = document.createElement('div');
@@ -979,7 +983,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
-  const steady = { act: '' };
+  const steady = { act: '', lead: '' };
   const wide = (w) => N(w >= 10 ? Math.round(w) : Number(w.toFixed(1)));
   /** "About 6 times smaller": to the half at most, a number that can be read off, not a measurement. */
   const timesSmaller = (m) => Math.round(2 / m) / 2;
@@ -992,7 +996,7 @@ export function createApp(root, options = {}) {
   };
   function outcome() {
     const p = s.part;
-    if (p === PART.SCENE) return t('out_0');
+    if (p === PART.SCENE) return ''; // the first screen: only the calm words above the action
     if (p === PART.BLOCKED) return t('out_1');
     if (p === PART.MIRROR) return t('out_2', { a: RAY_ANGLE });
     if (p === PART.RAY) return t('out_3');
@@ -1006,6 +1010,7 @@ export function createApp(root, options = {}) {
   function rule() {
     const p = s.part;
     if (p === PART.COMPARE) return t(s.kind === 'convex' ? 'rule_convex' : 'rule_plane');
+    if (p === PART.SCENE) return ''; // the first screen: only the calm words above the action
     return t(`rule_${p}`, { a: RAY_ANGLE, r: 90 });
   }
   const ACTIONS = {
@@ -1051,6 +1056,19 @@ export function createApp(root, options = {}) {
     sheet.rule(rule());
     sheet.choose(word());
     const ph = phase();
+    // the line before the action: what the next tap will show; on the first screen, a few calm words that set the scene
+    const calm = s.part === PART.SCENE;
+    const leadHtml = calm
+      ? `<span class="lab-long">${t('intro')}</span><span class="lab-short">${t('intro_short')}</span>`
+      : ph === 'busy'
+        ? steady.lead
+        : t(`lead_${ph}`);
+    if (steady.lead !== leadHtml) {
+      steady.lead = leadHtml;
+      lead.innerHTML = leadHtml;
+      lead.classList.toggle('pvc-note', calm);
+      ui.learn.classList.toggle('lab-calm', calm);
+    }
     sheet.next(ph === 'p1' ? 'plane' : ph === 'p5' ? 'convex' : null);
     const [key, step, icon] = ACTIONS[ph];
     const enabled = ph !== 'busy';
