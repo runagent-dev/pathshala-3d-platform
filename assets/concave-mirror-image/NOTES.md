@@ -54,6 +54,7 @@ screen can catch: smaller beyond O, equal at O, bigger between O and F), at F th
 - The real image is a solid pencil hanging upside down, the virtual one a ghost at 55 %; both are drawn last, from a fresh depth, so that neither rail nor glass cuts them.
 - The opening stands at u = 40 cm (v = 24, m = 0.6, whole numbers), not the 45 first planned, so that the image is about 40 px on a phone held upright; there the frame gives up the far half of the mirror.
 - At F and inside it the frame comes close (`close`), at the same three-quarter angle as the rest; the wash of light fades as the pencil comes to F, so that nothing lies behind the pencil, and the picture keeps X, X′, one chip and F.
+- **How to use** (v0.2.0, kit 1.8.0 `createHowTo`): under the action, the same ⟲ ৩৬০° pill and সামনে button as on the view, with a few words, and the screen's and the pencil's white discs ("টেনে পর্দা সরাও", "টেনে পেনসিল সরাও"); each keeps its place unseen in the steps where its part does not move. Tapping an item points at its control on the view.
 
 ## Honest notes
 - Only two rays in one plane are drawn, out of countless.
