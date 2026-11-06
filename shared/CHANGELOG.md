@@ -5,6 +5,20 @@ student kit). Every zip records it in `PACKAGE.json` as `kit`. Bump it with each
 patch for fixes, minor for additions, major when a figure has to change to keep working. Run the visual comparison
 across all figures before merging a kit change (`npm run test:visual`).
 
+## 1.8.0
+
+`createHowTo(ui, t, items, options)` in `student/howto.js`, after the owner found that students cannot tell what the white
+disc on the 3D view means ("unless we also show in the white panel that it can be moved, for every type of icon, it will be
+very hard for the students to recognise"). A small row under the action row of the শেখো sheet: each control of the view
+with a miniature of the same icon (the drag handle's disc, the "⟲ ৩৬০°" pill, the সামনে button, a finger for a tap) and a
+few words. Tapping an item pulses its handle once (`handle.flash()`, new), rocks the pill (`cue.wiggle()`, new) or flashes
+the সামনে button. Items hidden for a step keep their place, so the panel does not jump; hidden in the test; words only for
+the drag item in the tightest frames.
+
+One source for each icon: `dragDisc(axis)` (draghandle.js), `rotateFace(short)` (rotatecue.js) and `frontFace(word)`
+(shell.js) build the markup for both the view and the panel. The markup they make is the same as before, so no figure
+changes without opting in.
+
 ## 1.7.0
 
 `createDragHandle(stage, options)` in `student/draghandle.js`, after the owner found nothing in a figure says a part can be

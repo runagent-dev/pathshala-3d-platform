@@ -136,6 +136,13 @@ export function bindCleanSheet(learn) {
 }
 
 /**
+ * The front-view button's face (cross hairs and the word): the one source for the button on the 3D view (layout 'side')
+ * and its miniature in the panel (createHowTo in ./howto.js).
+ * @param {string} word the figure's `view_front_short`
+ */
+export const frontFace = (word) => `${ICONS.front}<span>${word}</span>`;
+
+/**
  * The student view's frame. `learnAlign: 'start'` keeps the শেখো sheet's content together at the top; by default
  * ('spread') its first and last rows go to the top and bottom of the panel, which the পরীক্ষা sheet may make taller.
  * @param {HTMLElement} root
@@ -148,7 +155,7 @@ export function bindCleanSheet(learn) {
 export function buildStudentShell(root, t, { learn = '', learnAlign = 'spread', layout = 'stack' } = {}) {
   const side = layout === 'side';
   const viewButtons = side
-    ? `<button class="pvc-tool pvc-front" data-view="front" hidden title="${t('view_front_short')}" aria-label="${t('view_front_short')}">${ICONS.front}<span>${t('view_front_short')}</span></button>`
+    ? `<button class="pvc-tool pvc-front" data-view="front" hidden title="${t('view_front_short')}" aria-label="${t('view_front_short')}">${frontFace(t('view_front_short'))}</button>`
     : `<div class="pvc-seg" role="group" aria-label="${t('view')}">
           <button data-view="front">${t('view_front_short')}</button>
           <button data-view="3d">${t('view_rotate')}</button>

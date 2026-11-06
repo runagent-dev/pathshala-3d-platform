@@ -81,7 +81,7 @@ body.bg-transparent { background: transparent; }
 }
 @container pvc-panel (min-height: 1px) and (max-height: 420px) {
   .ph .pvc-rule { font-size: 13.5px; line-height: 1.45; }
-  .ph .pvc-learn { gap: 5px; }
+  .ph .pvc-learn { gap: 4px; }
 }
 /* a tall side panel (1280 × 800): larger, the book's size */
 @container pvc-panel (min-height: 620px) {
@@ -103,4 +103,8 @@ body.bg-transparent { background: transparent; }
 }
 @container pvc-panel (min-height: 460px) {
   .ph .ph-graph.on { max-height: none; }
+}
+/* a short side panel (a phone held sideways), with the how-to row (createHowTo) under the action */
+@container pvc-panel (min-height: 300px) and (max-height: 420px) {
+  .ph .ph-graph.on { max-height: 98px; }
 }

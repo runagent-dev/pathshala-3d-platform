@@ -27,6 +27,13 @@ import { ICONS } from './icons.js';
  *             at?: 'top-left' | 'bottom-right' }} Options
  */
 
+/**
+ * The pill's face (the arrow and the degrees): the one source for the badge on the 3D view and its miniature in the
+ * panel (createHowTo in ./howto.js).
+ * @param {string} short e.g. `${t.num(360)}°`
+ */
+export const rotateFace = (short) => `${ICONS.orbit}<b class="pvc-rc-deg">${short}</b>`;
+
 const TURN_PX = 8; // a press that moves less is a tap, not a turn of the view
 const RAD = Math.PI / 180;
 
@@ -60,10 +67,11 @@ export function createRotateCue(
   const host = canvas.parentElement;
   const el = document.createElement('div');
   el.className = `pvc-rc pvc-rc-${at}`;
-  el.innerHTML = `${ICONS.orbit}<b class="pvc-rc-deg"></b>${label ? '<span class="pvc-rc-word"></span>' : ''}`;
+  el.innerHTML = `${rotateFace('')}${label ? '<span class="pvc-rc-word"></span>' : ''}`;
   el.querySelector('.pvc-rc-deg').textContent = short;
   el.setAttribute('aria-hidden', 'true'); // the stage's own label says it; the badge only shows it
   el.classList.toggle('pulse', pulse);
+  el.addEventListener('animationend', () => el.classList.remove('wiggle'));
   const word = el.querySelector('.pvc-rc-word');
   if (word) word.textContent = label;
   (layer || host.parentElement).appendChild(el);
@@ -124,6 +132,13 @@ export function createRotateCue(
     },
     /** No words from now on. A turn does it. */
     markUsed,
+    /** One gentle rock of the arrow now (the panel's how-to row points the student at the badge). */
+    wiggle() {
+      if (el.hidden) return;
+      el.classList.remove('wiggle');
+      el.getBoundingClientRect(); // a reflow: the animation starts again
+      el.classList.add('wiggle');
+    },
     /** The word again (the figure was reset). */
     rearm() {
       used = false;

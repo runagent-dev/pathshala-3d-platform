@@ -10,6 +10,7 @@ import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createDragHandle } from '@shared/student/draghandle.js';
 import { createAudio } from '@shared/student/audio.js';
+import { createHowTo } from '@shared/student/howto.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
@@ -497,6 +498,19 @@ export function createApp(root, options = {}) {
     pulse: Boolean(o.coach),
     when: canDrag,
   });
+
+  // ── how to use, in the panel: the paper's disc, the rotate pill and the সামনে button, drawn as on the view ────────
+  createHowTo(
+    ui,
+    t,
+    [
+      { kind: 'orbit', cue: rotate },
+      { kind: 'front' },
+      // last: before the paper can be dragged it keeps its place unseen, so the panel keeps its height
+      { kind: 'drag', axis: 'x', text: t('howto_paper'), aria: t('aria_howto_paper'), handle: paperHandle, when: () => s.stage >= 3 },
+    ],
+    { stage },
+  );
 
   // ── labels on the picture: few and short, each pinned to what it names ───────────────────────────────────
   let action = null;

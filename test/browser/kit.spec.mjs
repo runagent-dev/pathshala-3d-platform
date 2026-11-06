@@ -319,6 +319,100 @@ test('front view button (side layout): cross hairs and a word, not a circular ar
   expect(errors).toEqual([]);
 });
 
+test('how-to row: the same icons as the view, under the action row; a tap pulses the handle, rocks the pill; hidden in the test', async ({
+  page,
+}) => {
+  const errors = await openKit(page, { width: 844, height: 390 });
+  await shellWithStage(page, {
+    layout: 'side',
+    learn: '<div class="pvc-act-row"><button class="pvc-quiet">x</button></div><p class="after">after</p>',
+  });
+  const r = await page.evaluate(async () => {
+    const { THREE, createDragHandle, createRotateCue, createHowTo } = /** @type {any} */ (window).kit;
+    const { root, ui, stage } = /** @type {any} */ (window).t;
+    const words = { howto_orbit: 'turn the view', view_front_short: 'Front', howto_label: 'How to use it' };
+    const t = Object.assign((/** @type {string} */ k) => words[k] ?? k, { num: (/** @type {number} */ x) => `n${x}` });
+    const handle = createDragHandle(stage, { point: new THREE.Vector3(0, 0, 0), axis: 'x', label: 'drag me', onMove: () => {} });
+    const cue = createRotateCue(stage, { layer: ui.stage, short: 'n360°', label: 'turn me' });
+    let canDrag = false;
+    let taps = 0;
+    const howto = createHowTo(
+      ui,
+      t,
+      [
+        { kind: 'orbit', cue },
+        { kind: 'front' },
+        { kind: 'drag', axis: 'x', text: 'drag the paper', handle, when: () => canDrag },
+        { kind: 'tap', text: 'tap the flame', onTap: () => taps++ },
+      ],
+      { stage },
+    );
+    stage.invalidate();
+    await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+    const [orbit, front, drag, tap] = howto.buttons;
+    const place = `${howto.el.previousElementSibling?.className} / ${howto.el.nextElementSibling?.className}`;
+    const disc = (/** @type {Element} */ el) => el.querySelector('.pvc-dh-disc svg path').getAttribute('d');
+    const same = {
+      disc: disc(drag) === disc(handle.el),
+      pill: orbit.querySelector('.pvc-howto-rc').innerHTML === cue.el.querySelector('svg').outerHTML + cue.el.querySelector('.pvc-rc-deg').outerHTML,
+      // the shell here has its own t (the key as the word): the same cross hairs, and the figure's word
+      front:
+        front.querySelector('.pvc-howto-front svg').outerHTML === ui.$('[data-view="front"] svg').outerHTML &&
+        front.querySelector('.pvc-howto-front span').textContent === 'Front',
+    };
+    const size = Math.round(drag.querySelector('.pvc-dh-disc').getBoundingClientRect().width);
+    const offStep = { visibility: getComputedStyle(drag).visibility, disabled: drag.disabled, hidden: drag.hidden };
+    const h0 = howto.el.offsetHeight;
+    canDrag = true;
+    await new Promise((done) => requestAnimationFrame(done));
+    const onStep = { visibility: getComputedStyle(drag).visibility, disabled: drag.disabled, steady: howto.el.offsetHeight === h0 };
+    drag.click();
+    const pulsed = handle.el.classList.contains('flash');
+    orbit.click();
+    const rocked = cue.el.classList.contains('wiggle');
+    tap.click();
+    const labels = howto.buttons.map((/** @type {HTMLElement} */ b) => b.getAttribute('aria-label'));
+    const words2 = howto.buttons.map((/** @type {HTMLElement} */ b) => b.querySelector('.pvc-howto-word')?.textContent ?? '');
+    const font = Math.min(...[...howto.el.querySelectorAll('.pvc-howto-word')].map((w) => parseFloat(getComputedStyle(w).fontSize)));
+    const small = Math.min(...howto.buttons.map((/** @type {HTMLElement} */ b) => b.getBoundingClientRect().height));
+    root.dataset.mode = 'quiz';
+    const inTest = getComputedStyle(howto.el).display;
+    delete root.dataset.mode;
+    return {
+      place,
+      same,
+      size,
+      offStep,
+      onStep,
+      pulsed,
+      rocked,
+      taps,
+      labels,
+      words: words2,
+      font,
+      small,
+      inTest,
+      group: howto.el.getAttribute('aria-label'),
+    };
+  });
+  expect(r.place).toBe('pvc-act-row / after');
+  expect(r.same).toEqual({ disc: true, pill: true, front: true });
+  expect(r.size).toBeGreaterThanOrEqual(20);
+  expect(r.size).toBeLessThanOrEqual(22);
+  expect(r.offStep).toEqual({ visibility: 'hidden', disabled: true, hidden: false });
+  expect(r.onStep).toEqual({ visibility: 'visible', disabled: false, steady: true });
+  expect(r.pulsed).toBe(true);
+  expect(r.rocked).toBe(true);
+  expect(r.taps).toBe(1);
+  expect(r.words).toEqual(['turn the view', '', 'drag the paper', 'tap the flame']); // the front item: its miniature says it
+  expect(r.labels).toEqual(['turn the view', 'Front', 'drag the paper', 'tap the flame']);
+  expect(r.font).toBeGreaterThanOrEqual(13);
+  expect(r.small).toBeGreaterThanOrEqual(24);
+  expect(r.inTest).toBe('none');
+  expect(r.group).toBe('How to use it');
+  expect(errors).toEqual([]);
+});
+
 test('annotations: setText and update change a label in place; spots keep labels clear of each other', async ({ page }) => {
   const errors = await openKit(page);
   await shellWithStage(page);

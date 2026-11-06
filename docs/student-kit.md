@@ -259,7 +259,7 @@ image files). `textMesh(text, height, { color, weight, align })` for labels draw
   every label shown (e.g. `createAction({ avoid: [() => anno.boxes()] })`).
 
 ### `draghandle.js` (show what can be moved, kit 1.7.0)
-`createDragHandle(stage, options)` → `{ el, show, hide, update, visible, hit, markUsed, rearm, box, dispose }`. Every
+`createDragHandle(stage, options)` → `{ el, show, hide, update, visible, hit, markUsed, flash, rearm, box, dispose }`. Every
 part a student can drag carries one: without it nothing says the part moves. A white 30 px disc pinned to a 3D point,
 with arrows along the way the part goes, inside a 46 px target; a faint dashed track for the range; a word and a
 gentle pulse until the first drag; then it stays, smaller and calm.
@@ -283,9 +283,11 @@ gentle pulse until the first drag; then it stays, smaller and calm.
 - `box()` → boxes in canvas pixels for avoid lists: `createAnnotations({ avoid: [() => handle.box()] })` (the handle, its
   word, points along the track; empty while hidden; the arrays are reused, so don't keep them).
 - `rearm()`: the first-time look again (after a reset). Under `prefers-reduced-motion` there is no pulse.
+- `flash()` (kit 1.8.0): one clear pulse now, even after the first drag (the how-to row calls it). `dragDisc(axis)` is the
+  disc's markup, the one source for the handle and its miniature in the panel.
 
 ### `rotatecue.js` (the view turns all the way round, kit 1.7.0)
-`createRotateCue(stage, options)` → `{ el, held, markUsed, rearm, home, dispose }`. A dark pill in a corner of the stage: "⟲ ৩৬০°
+`createRotateCue(stage, options)` → `{ el, held, markUsed, wiggle, rearm, home, dispose }`. A dark pill in a corner of the stage: "⟲ ৩৬০°
 ঘুরিয়ে দেখো" until the first turn, then "⟲ ৩৬০°", which stays. Never the arrow alone: a plain circular arrow means reset. It sets up the orbit too: no azimuth limits,
 `polar` (degrees, default `[5, 88]`, so the camera stays above the table), zoom and damping on.
 - `short`: always shown beside the arrow (`` `${t.num(360)}°` ``). `label`: the words after it (`rotate_me: 'ঘুরিয়ে দেখো'`).
@@ -297,6 +299,38 @@ gentle pulse until the first drag; then it stays, smaller and calm.
 - `zoom: [0.6, 1.8]`: how far in and out, as parts of the distance when the student took over. These limits hold only
   while the student has the view: call `home()` when the guided camera takes over, so no flight is clamped.
 - `layer` (default the stage), `at: 'top-left' | 'bottom-right'`. Put `el` in the avoid lists. Hidden during the test.
+- `wiggle()` (kit 1.8.0): one rock of the arrow now (the how-to row calls it). `rotateFace(short)` is the pill's face, the
+  one source for the badge and its miniature in the panel.
+
+### `howto.js` (how to use the view, in the panel, kit 1.8.0)
+`createHowTo(ui, t, items, options)` → `{ el, buttons, update, show, hide, dispose }`. A small row in the শেখো sheet, under
+the action row, that shows each control of the 3D view with a **miniature of the very same icon** and a few words: the
+drag handle's white disc, the "⟲ ৩৬০°" pill, the সামনে button. The handle's disc (`dragDisc`), the pill's face
+(`rotateFace`) and the front button's face (`frontFace` in `shell.js`) are each built in one place, so the view and the
+panel never drift apart.
+
+```js
+import { createHowTo } from '@shared/student/howto.js';
+createHowTo(ui, t, [
+  { kind: 'orbit', cue: rotate },                                 // words: t('howto_orbit'), else t('rotate_me')
+  { kind: 'front' },                                              // words: t('howto_front'); the miniature says সামনে
+  { kind: 'drag', axis: 'x', text: t('howto_paper'), handle: paperHandle, when: () => s.stage >= 3 },
+], { stage });
+```
+- Items: `{ kind: 'drag', axis: 'x' | 'y' | 'turn', text, handle }` (the figure says what is moved: "টেনে কাগজ সরাও"),
+  `{ kind: 'orbit', cue, text? }`, `{ kind: 'front', text? }`, `{ kind: 'tap', text, onTap }` (tapping a thing does
+  something). Each may have `aria`, `onTap` and `when`.
+- A tap on an item points at its control: a drag item calls `handle.flash()` (one pulse on the 3D view), orbit calls
+  `cue.wiggle()`, front flashes the সামনে button when it shows. Each item is a button (keyboard, `aria-label` from its
+  words); the row is a group named `t('howto_label')`.
+- The kit holds no Bangla: the default words are the figure's keys `howto_orbit`, `howto_front`, `howto_tap`,
+  `howto_label` (a missing key: orbit falls back to `rotate_me`, the others show only the miniature).
+- `when` per item (read every frame with `stage`, or on `update()`): an item that does not apply in this step is hidden
+  but **keeps its place**, so the panel keeps its height; put such items last. `collapse: true` takes them out instead.
+  `when` on the options hides the whole row. Always hidden in the test.
+- Size: icons 20–22 px, words 13.5 px in `--ink-2`; the row wraps to a second line rather than squeezing. In the
+  tightest frames (a panel ≤ 560 × 600: a 390 × 520 phone, a phone held sideways) only the drag item keeps its words.
+  `after` places the row after another element instead of the action row.
 
 ### `pointer.js`
 `capturePointer(el, pointerId)` → `true` if captured, and `releasePointer(el, pointerId)`: pointer capture that never
