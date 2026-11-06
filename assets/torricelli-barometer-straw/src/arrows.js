@@ -1,6 +1,6 @@
 // The arrows are the point of the picture: thick flat colour in a white outline with a thin dark edge, drawn over the
-// glass and the scenery so they read on the dark chalkboard, the silver mercury and the bright sky alike. A straight
-// arrow (the kit's createArrow, three layers).
+// glass, the drink and the particles so they read on the dark drink, the pale table and the deep-blue backdrop alike.
+// A straight arrow (the kit's createArrow, three layers).
 import * as THREE from 'three';
 import { createArrow } from '@shared/arrow.js';
 
@@ -71,75 +71,6 @@ export function boldArrow(name, color, r, { order = 30 } = {}) {
     },
     hide() {
       core.hide();
-    },
-  };
-}
-
-/**
- * A dimension line (a height on the picture): a thin vertical bar with a small head at each end and a tick across
- * each end, drawn over the scene. `set(x, y0, y1, z)` places it; `ticks` (m) is how wide the end ticks are.
- */
-export function dimensionLine(name, color, r, { ticks = 0.018, order = 26, dashed = false } = {}) {
-  const root = new THREE.Group();
-  root.name = name;
-  root.userData.noExport = true;
-  const mat = flat(color);
-  const halo = flat('#ffffff');
-  halo.opacity = 0.85;
-  const bar = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 8).translate(0, 0.5, 0), mat);
-  const barHalo = new THREE.Mesh(new THREE.CylinderGeometry(r * 2.1, r * 2.1, 1, 8).translate(0, 0.5, 0), halo);
-  const hl = r * 7;
-  const hr = r * 3;
-  const headUp = new THREE.Mesh(new THREE.ConeGeometry(hr, hl, 12).translate(0, -hl / 2, 0), mat);
-  const headDown = new THREE.Mesh(new THREE.ConeGeometry(hr, hl, 12).translate(0, -hl / 2, 0), mat);
-  headDown.rotation.x = Math.PI;
-  const tick0 = new THREE.Mesh(new THREE.BoxGeometry(ticks, r * 1.6, r * 1.6), mat);
-  const tick1 = tick0.clone();
-  barHalo.renderOrder = order;
-  for (const m of [bar, headUp, headDown, tick0, tick1]) m.renderOrder = order + 1;
-  root.add(barHalo, bar, headUp, headDown, tick0, tick1);
-  let dashes = null;
-  if (dashed) {
-    // a dotted look: the bar drawn as short pieces (the book's figure 5.10 marks 76 cm with a dotted line)
-    bar.visible = false;
-    barHalo.visible = false;
-    dashes = new THREE.InstancedMesh(new THREE.CylinderGeometry(r, r, 1, 6), mat, 120);
-    dashes.renderOrder = order + 1;
-    root.add(dashes);
-  }
-  const M = new THREE.Matrix4();
-  const Q = new THREE.Quaternion();
-  const S = new THREE.Vector3();
-  const P = new THREE.Vector3();
-  return {
-    root,
-    set(x, y0, y1, z = 0) {
-      const len = Math.abs(y1 - y0);
-      root.visible = len > 1e-4;
-      if (!root.visible) return;
-      const lo = Math.min(y0, y1);
-      root.position.set(x, lo, z);
-      bar.scale.y = len;
-      barHalo.scale.y = len;
-      headUp.position.y = len;
-      headDown.position.y = 0;
-      tick0.position.y = 0;
-      tick1.position.y = len;
-      if (dashes) {
-        const dash = Math.max(r * 4, len / 60);
-        const n = Math.min(120, Math.floor(len / (dash * 1.9)));
-        for (let i = 0; i < n; i++) {
-          P.set(0, (i + 0.5) * (len / n), 0);
-          S.set(1, dash, 1);
-          M.compose(P, Q, S);
-          dashes.setMatrixAt(i, M);
-        }
-        dashes.count = n;
-        dashes.instanceMatrix.needsUpdate = true;
-      }
-    },
-    hide() {
-      root.visible = false;
     },
   };
 }

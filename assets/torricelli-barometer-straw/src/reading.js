@@ -22,8 +22,11 @@ export const columnPressure = (h, rho) => round(h * rho * G, 0);
 export const waterColumn = () => round(H_HG * RATIO, 3);
 
 // ── the straw ───────────────────────────────────────────────────────────────
-/** The straw (m): how far it reaches above the drink's surface in the bottle, to the mouth. */
-export const STRAW_RISE = 0.2;
+/** The book's long straw (m): "যদি তুমি কখনো 10.5 মিটার লম্বা একটা স্ট্র দিয়ে ..." */
+export const STRAW_LONG = 10.5;
+
+/** The steps: no sucking (equal pressures), sucking (the outside air pushes the drink up), the book's limit. */
+export const STEPS = ['rest', 'suck', 'max'];
 
 // ── numbers ─────────────────────────────────────────────────────────────────
 

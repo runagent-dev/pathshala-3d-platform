@@ -5,7 +5,7 @@
   "title": "A straw and the air's pressure (স্ট্র ও বাতাসের চাপ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "book": "physics-9-10",
   "page": 145,
   "topic": "5.4.1",
@@ -13,7 +13,7 @@
   "order": 2,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Drinking through a straw (page 145, topic 5.4.1) in a plain school lab (a teak bench, a blue-grey wall): one bottle of cold drink with a clear straw bending into a child's mouth (a head from the side, the inside of the mouth shown through a cut). One outlined blue arrow shows the outside air's pressure on the drink, one the air's pressure in the mouth. With no sucking they are equal and the drink in the straw stays at the bottle's level; one button, চুমুক দাও, shortens the mouth's arrow and the outside air pushes the drink up to the mouth (the difference is exaggerated). The panel shows one short line, the mouth's pressure against the outside air's and the rule (a cold drink never rises more than 10.3 m). Test tab: 3 questions (why nothing rises without sucking, why it rises when you suck, how high at most), every wrong choice with its own note. Split from torricelli-barometer. Phone-first, Bangla and English.",
+  "description": "Drinking through a straw (page 145, topic 5.4.1). A clear glass of cold drink on a plain table against a calm deep-blue backdrop, a clear plastic straw in it, and the straw's top end in a plain cut-away of a mouth (a section through the lips and the space inside, no face), labelled মুখের ভেতর. The air is drawn as small particles: the same crowd over the drink and inside the mouth. Three steps, one tap each, slow: (1) no sucking: outlined cyan arrows show the outside air pressing on the drink and violet ones the air in the mouth, equal, so there is no net force (কার্যকর বল) and the drink in the straw stays level with the glass; (2) sucking: the mouth's particles thin out, its arrows get fewer and shorter, a green arrow up the straw (কার্যকর বল) appears and the outside air pushes the drink up into the mouth; (3) the book's limit: the camera pulls back to a 10.5 m straw beside a person and a scale in metres, and the drink stops at 10.3 m. The panel: a calm intro card, then per step one lead-in line, the result and the rule with the book's term in bold; the kit's how-to row. Test tab: 4 questions (why nothing rises without sucking, where the pressure falls, why it rises, how high at most), every wrong choice with its own note. Split from torricelli-barometer. Phone-first, Bangla and English.",
   "tags": ["air pressure", "atmospheric pressure", "straw", "bangla"],
   "params": [
     {
@@ -45,7 +45,9 @@
   ],
   "commands": [
     { "name": "get", "payload": {} },
-    { "name": "set", "payload": { "suck": true } },
+    { "name": "set", "payload": { "step": "rest", "animate": false } },
+    { "name": "set", "payload": { "step": "suck", "animate": false } },
+    { "name": "set", "payload": { "step": "max", "animate": false } },
     { "name": "set", "payload": { "suck": false, "animate": false } },
     { "name": "set", "payload": { "view": "3d" } },
     { "name": "reset", "payload": {} },
