@@ -24,7 +24,7 @@ test(`${ID}: the whole story on one action`, async ({ page }) => {
   };
   let st = await fig.call('get');
   expect(st).toMatchObject({ stage: 'see', u: 10, v: -6, m: 0.6, rays: 0, ghost: false });
-  await expect(fig.frame.locator('.pvc-outcome')).toContainText('ছোট');
+  await expect(fig.frame.locator('.lab-lead')).toContainText('ছোট');
 
   // one new thing per tap: the parallel ray alone, then its extension, then the others
   st = await act();

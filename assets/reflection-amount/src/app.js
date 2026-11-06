@@ -103,6 +103,10 @@ export function createApp(root, options = {}) {
   const sheet = bindCleanSheet(ui.learn);
   const graph = createGraph(t);
   ui.learn.querySelector('.pvc-rule').before(graph.el);
+  // the line before the action: what the next tap will show (on the first screen, a few calm words that set the scene)
+  const lead = document.createElement('p');
+  lead.className = 'lab-lead';
+  ui.$('.pvc-act-row').before(lead);
   const caption = document.createElement('p');
   caption.className = 'lab-cap';
   caption.innerHTML = t('cap_book');
@@ -801,10 +805,11 @@ export function createApp(root, options = {}) {
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
   const ACT = ['act_look', 'act_lift', 'act_angles', 'act_amount'];
-  const steady = { act: '', row: -1, quiet: '' };
+  const steady = { act: '', row: -1, quiet: '', lead: '' };
   function ruleText() {
     const a = shown();
-    if (s.stage < LAST) return t(`rule_${['start', 'through', 'raise', 'angles'][s.stage]}`);
+    if (s.stage === 0) return ''; // the first screen: only the calm words above the action
+    if (s.stage < LAST) return t(`rule_${['', 'through', 'raise', 'angles'][s.stage]}`);
     if (a < 45) return t('rule_small', { a: BOOK.low, b: BOOK.high });
     if (a < 75) return t('rule_mid');
     if (STOPS.every((x) => s.seen.has(x))) return t('rule_end');
@@ -846,10 +851,23 @@ export function createApp(root, options = {}) {
     if (s.quiz) return;
     const last = s.stage === LAST;
     root.dataset.story = last ? 'amount' : 'story';
-    sheet.outcome(last ? t('out_now', { a, p: percent(a) }) : t(`out_${['start', 'through', 'raise', 'angles'][s.stage]}`));
+    sheet.outcome(last ? t('out_now', { a, p: percent(a) }) : s.stage ? t(`out_${['', 'through', 'raise', 'angles'][s.stage]}`) : '');
     sheet.rule(ruleText());
     words();
     const ready = testReady();
+    const calm = s.stage === 0;
+    const leadKey = !last ? `lead_${s.stage}` : ready ? 'lead_test' : nextStop(s.angle) ? 'lead_up' : 'lead_down';
+    const html = calm
+      ? `<span class="lab-long">${t('intro')}</span><span class="lab-short">${t('intro_short')}</span>`
+      : s.busy
+        ? steady.lead
+        : t(leadKey);
+    if (steady.lead !== html) {
+      steady.lead = html;
+      lead.innerHTML = html;
+      lead.classList.toggle('pvc-note', calm);
+      ui.learn.classList.toggle('lab-calm', calm);
+    }
     const word = s.busy ? 'act_wait' : !last ? ACT[s.stage] : ready ? 'act_test' : nextStop(s.angle) ? 'act_lift' : 'act_down';
     const step = s.busy || last ? '' : s.stage + 1;
     const enabled = !s.busy;

@@ -220,6 +220,10 @@ export function createApp(root, options = {}) {
     learnAlign: 'start',
   });
   const sheet = bindCleanSheet(ui.learn);
+  // the line before the action: what the next tap will show (on the first screen, a few calm words that set the scene)
+  const lead = document.createElement('p');
+  lead.className = 'lab-lead';
+  ui.$('.pvc-act-row').before(lead);
   const caption = document.createElement('p');
   caption.className = 'lab-cap';
   ui.learn.appendChild(caption);
@@ -903,7 +907,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
-  const steady = { act: '', cap: '', title: '' };
+  const steady = { act: '', cap: '', title: '', lead: '' };
   const ACTIONS = {
     busy: ['act_wait', ''],
     par: ['act_par', 1],
@@ -932,10 +936,12 @@ export function createApp(root, options = {}) {
     if (st === 'plane') return t('out_plane', { n: postsSeen(FLAT_R).length });
     if (st === 'eye') return t('out_eye', { n: postsSeen(R0).length });
     if (st === 'wide') return t('out_wide', { a: postsSeen(FLAT_R).length, b: postsSeen(R0).length });
+    if (st === 'see') return ''; // the first screen: only the calm words above the action
     return t(`out_${st}`);
   }
   function ruleNow() {
     const st = s.stage;
+    if (st === 'see') return '';
     if (st === 'move') return t(s.sawNear ? 'rule_move_both' : s.sawFar ? 'rule_move_far' : 'rule_move');
     if (st === 'formula') {
       const img = imageOf(s.u);
@@ -958,6 +964,18 @@ export function createApp(root, options = {}) {
     if (!s.busy) {
       sheet.outcome(outcomeNow());
       sheet.rule(ruleNow());
+      const calm = s.stage === 'see';
+      const ph = phase();
+      const html = calm
+        ? `<span class="lab-long">${t('intro')}</span><span class="lab-short">${t('intro_short')}</span>`
+        : t(`lead_${ACTIONS[ph] ? ph : 'test'}`);
+      if (steady.lead !== html) {
+        steady.lead = html;
+        lead.innerHTML = html;
+        lead.classList.toggle('pvc-note', calm);
+        ui.learn.classList.toggle('lab-calm', calm);
+      }
+      ui.learn.dataset.stage = s.stage; // the formula's step gets a taller rule on a phone
     }
     // the book's four properties, only where the tall panel has room and they say something new
     const cap = ZOOMED.has(s.stage) ? 'move' : '';
