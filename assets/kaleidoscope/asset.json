@@ -5,7 +5,7 @@
   "title": "Kaleidoscope (ক্যালাইডোস্কোপ)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "book": "physics-9-10",
   "page": 221,
   "topic": "8.3.1",

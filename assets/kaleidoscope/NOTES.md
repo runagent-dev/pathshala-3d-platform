@@ -20,6 +20,7 @@ Three strips of glass at 60° reflect a few pieces again and again, reflections 
 six-fold pattern that moves when the tube turns. Plain glass can do it because the eye looks at it at a grazing angle.
 
 ## How it works
+- **A calm start (the owner, after chapter 8: "start simpler, with some lines of explanation in the white panel").** The first screen shows only a few warm everyday sentences in a `.pvc-note` card (`intro`; `intro_short` on the 390 × 520 phone) and the action: no term and no number yet. After that, one plain line above the action says what the next tap will show (`lead_*`), and the rule below says what it meant, the book's term last and in bold. Same layout and classes as the spherical-mirror figures (`.lab-lead`, `.lab-calm`).
 - **Four steps, one tap at a time, and nothing moves on by itself.** Taps are ignored (not queued) while anything plays or the camera
   flies, and every step ends and waits; a quiet "আবার দেখো" plays its last part again, and the test tab stays quiet until the last step
   is done (a tap on it says what comes first; the test is then offered with "বুঝেছ? তাহলে পরীক্ষা দাও"). Timings, from the owner's rule:
