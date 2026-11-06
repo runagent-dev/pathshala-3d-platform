@@ -17,8 +17,8 @@
 //
 // The kit holds no Bangla: the default words are the figure's keys `howto_orbit`, `howto_front`, `howto_tap` and
 // `howto_label` (the row's name for screen readers). A key the figure lacks falls back (orbit: `rotate_me`) or leaves
-// the miniature alone, which still says what it is. Hidden in the test. In the tightest phone frame (390×520) only the
-// drag item keeps its words.
+// the miniature alone, which still says what it is. Hidden in the test. In the tightest frames (390×520, a short landscape
+// side panel) only drag and tap items keep their words: a bare hand says nothing.
 import { dragDisc } from './draghandle.js';
 import { ICONS } from './icons.js';
 import { rotateFace } from './rotatecue.js';
