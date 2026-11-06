@@ -29,30 +29,44 @@ export function spreadLabels(ys, gap, lo, hi) {
 
 /**
  * @param {HTMLElement} el
- * @param {{ t: (key: string, vars?: object) => string, N: (x: number | string) => string, colors: Record<string, string> }} o
+ * @param {{ t: (key: string, vars?: object) => string, N: (x: number | string) => string, colors: Record<string, string>, corner?: HTMLElement }} o
+ *   corner: an element in the graph's top right corner (the clock), kept clear of the graph's name
  */
-export function createGraph(el, { t, N, colors }) {
+export function createGraph(el, { t, N, colors, corner }) {
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('class', 'ns-graph-svg');
   svg.setAttribute('role', 'img');
   el.append(svg);
   let lastKey = '';
+  /** @type {any} */
+  let last = null;
+  // the panel's free space sets the graph's size: drawn again in real pixels whenever its box changes
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => last && draw(last)).observe(el);
 
   /**
    * past: [{ v0, a, dur, tag }] lines of the examples tried (over their whole push, dur s); cur: { v0, a, upto, held } the run now
    * (upto: s of the push shown so far), or null; aria: the words for a screen reader.
    */
-  function draw({ past = [], cur = null, aria = '' }) {
+  function draw(args) {
+    last = args;
+    const { past = [], cur = null, aria = '' } = args;
     const W = Math.max(110, el.clientWidth);
     const H = Math.max(60, el.clientHeight);
-    const key = JSON.stringify([W, H, past, cur, aria]);
+    const cw = corner && !corner.hidden ? corner.offsetWidth : 0;
+    const ch = corner && !corner.hidden ? corner.offsetHeight : 0;
+    const key = JSON.stringify([W, H, cw, ch, past, cur, aria]);
     if (key === lastKey) return;
     lastKey = key;
-    const f = H > 120 ? 11.5 : 9.5; // font size
-    const x0 = f * 1.5;
-    const x1 = W - f * 3.6; // room on the right for the tags
-    const y0 = H - f * 1.35;
-    const y1 = f * 1.5; // room over the plot for the axis's name
+    // font sizes (px): the numbers and tags at least 12, the axes' names and the title at least 13; a bigger graph,
+    // bigger text and a thicker line (the svg is drawn in real pixels for its box, never stretched)
+    // (Bangla digits are small for their size: the numbers at 13 px and up)
+    const f = Math.min(16, Math.max(13, H / 11));
+    const fn = f;
+    const lw = Math.min(5, Math.max(3, H / 45)); // the line of the run
+    const x0 = f * 1.6;
+    const x1 = W - f * 4; // room on the right for the tags
+    const y0 = H - f * 1.45;
+    const y1 = Math.max(fn * 1.6, ch + 6); // room over the plot for the axis's name (and the corner's element)
     const X = (s) => x0 + (s / T_MAX) * (x1 - x0);
     const Y = (v) => y0 - (Math.min(V_MAX, Math.max(0, v)) / V_MAX) * (y0 - y1);
     const vAt = (l, s) => l.v0 + l.a * s;
@@ -68,16 +82,17 @@ export function createGraph(el, { t, N, colors }) {
       out += `<text class="g-num" x="${X(s)}" y="${y0 + f * 1.1}" text-anchor="middle" font-size="${f}">${N(s)}</text>`;
     }
     out += `<path class="g-axis" d="M${x0} ${y1}V${y0}H${x1}"/>`;
-    out += `<text class="g-name" x="${X(T_MAX * 0.75)}" y="${y0 + f * 1.1}" text-anchor="middle" font-size="${f}">${esc(t('graph_t'))}</text>`;
-    out += `<text class="g-name" x="0" y="${f * 0.95}" font-size="${f}">${esc(t('graph_v'))}</text>`;
+    out += `<text class="g-name" x="${X(T_MAX * 0.75)}" y="${y0 + f * 1.1}" text-anchor="middle" font-size="${fn}">${esc(t('graph_t'))}</text>`;
+    out += `<text class="g-name" x="0" y="${fn * 1.05}" font-size="${fn}">${esc(t('graph_v'))}</text>`;
     // the graph's name over the plot, at its right (the axis's name is at its left), where there is room for both
     const name = t('graph_name');
-    if (x1 > f * (0.55 * (t('graph_v').length + name.length) + 1.2))
-      out += `<text class="g-title" x="${x1}" y="${f * 0.95}" text-anchor="end" font-size="${f}">${esc(name)}</text>`;
+    const nameW = fn * 0.55 * name.length;
+    if (W - cw - 8 - nameW > fn * (0.55 * t('graph_v').length + 1.2))
+      out += `<text class="g-title" x="${W - cw - 8}" y="${fn * 1.05}" text-anchor="end" font-size="${fn}">${esc(name)}</text>`;
 
     const tags = []; // in the right margin: { y, text, cls }
     for (const l of past) {
-      out += `<line class="g-past" x1="${X(0)}" y1="${Y(l.v0)}" x2="${X(l.dur)}" y2="${Y(vAt(l, l.dur))}"/>`;
+      out += `<line class="g-past" stroke-width="${lw * 0.75}" x1="${X(0)}" y1="${Y(l.v0)}" x2="${X(l.dur)}" y2="${Y(vAt(l, l.dur))}"/>`;
       tags.push({ y: Y(vAt(l, l.dur)), text: l.tag, cls: 'g-tag' });
     }
     if (cur) {
@@ -87,13 +102,13 @@ export function createGraph(el, { t, N, colors }) {
         const va = vAt(cur, k - 1);
         const vb = vAt(cur, k);
         out += `<path class="g-run" d="M${X(k - 1)} ${Y(va)}H${X(k)}"/>`;
-        out += `<path class="g-rise" d="M${X(k)} ${Y(va)}V${Y(vb)}" stroke="${colors.acc}"/>`;
+        out += `<path class="g-rise" d="M${X(k)} ${Y(va)}V${Y(vb)}" stroke="${colors.acc}" stroke-width="${lw * 0.85}"/>`;
         const text = `${cur.a > 0 ? '+' : '−'}${N(Math.abs(cur.a))}`;
         if (k < T_MAX)
           out += `<text class="g-step" x="${X(k) + f * 0.3}" y="${(Y(va) + Y(vb)) / 2 + f * 0.35}" font-size="${f}" fill="${colors.accText}">${esc(text)}</text>`;
         else tags.push({ y: (Y(va) + Y(vb)) / 2, text, cls: 'g-step', fill: colors.accText });
       }
-      out += `<line class="g-line" x1="${X(0)}" y1="${Y(cur.v0)}" x2="${X(upto)}" y2="${Y(vAt(cur, upto))}" stroke="${colors.vel}"/>`;
+      out += `<line class="g-line" x1="${X(0)}" y1="${Y(cur.v0)}" x2="${X(upto)}" y2="${Y(vAt(cur, upto))}" stroke="${colors.vel}" stroke-width="${lw}"/>`;
       for (let k = 0; k <= Math.floor(upto + 1e-6); k++)
         out += `<circle class="g-stamp" cx="${X(k)}" cy="${Y(vAt(cur, k))}" r="${f * 0.24}" fill="${colors.vel}"/>`;
       if (cur.held) out += `<circle class="g-ring" cx="${X(upto)}" cy="${Y(vAt(cur, upto))}" r="${f * 0.75}" stroke="${colors.acc}"/>`;

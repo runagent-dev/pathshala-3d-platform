@@ -10,12 +10,14 @@ body.bg-transparent { background: transparent; }
 .ns { --c-force: #a8550b; --c-acc: #087d72; --c-vel: #2161b8; --c-mom: #237a35; }
 .ns sup, .ns sub { font-size: 0.68em; line-height: 0; }
 
-/* the clock on the view: t and how fast time runs (a label with its value, top left, clear of the corner buttons) */
+/* the run's clock: t and how fast time runs (a label with its value) */
 .ns-outrow { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .ns-outrow .pvc-outcome { align-self: stretch; min-width: 0; }
 .ns-clock { flex: none; display: flex; align-items: baseline; gap: 5px; padding: 0 5px; border: 1px solid var(--line-2); border-radius: 5px; background: var(--panel); color: var(--ink-2); font-size: 11.5px; line-height: 1.25; white-space: nowrap; }
 .ns-clock b { font-size: 14px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
 .ns-clock.held { border-color: #c9a400; background: #fff6c4; }
+/* in the graph's top right corner (graph.js keeps its name clear of it) */
+.ns-graph .ns-clock { position: absolute; top: 0; right: 0; z-index: 1; }
 
 /* labels on the scene */
 .ns .pvc-anno { font-size: 12.5px; line-height: 1.3; padding: 2px 6px; transition: none; }
@@ -37,7 +39,7 @@ body.bg-transparent { background: transparent; }
 .ns .pvc-rule .ns-aside { font-size: 0.92em; color: var(--ink-2); white-space: nowrap; }
 
 /* the formula box: its head (what the scene shows, and F = ma, which opens the working), then the graph and the bars */
-.ns-formula { border-left: 3px solid #238f8d; background: #eff8f6; padding: 4px 8px 5px; color: #204f5f; font-size: 13px; line-height: 1.4; box-sizing: border-box; }
+.ns-formula { display: flex; flex-direction: column; border-left: 3px solid #238f8d; background: #eff8f6; padding: 4px 8px 5px; color: #204f5f; font-size: 13px; line-height: 1.4; box-sizing: border-box; }
 .ns-formula-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; }
 .ns-extras { display: flex; gap: 5px; }
 .ns-extras button { min-height: 28px; padding: 1px 8px; border: 1px solid #94aabc; border-radius: 5px; background: white; color: #234963; font: inherit; font-size: 12px; white-space: nowrap; }
@@ -45,31 +47,62 @@ body.bg-transparent { background: transparent; }
 .ns-maths { display: flex; align-items: baseline; gap: 7px; min-height: 28px; border: 0; background: transparent; color: #13576a; padding: 0; cursor: pointer; font: inherit; }
 .ns-maths b { font-size: 19px; white-space: nowrap; }
 .ns-maths span { font-size: 11px; text-decoration: underline; white-space: nowrap; }
-.ns-formula-body { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 8px; margin-top: 3px; }
-
-.ns-graph { position: relative; min-height: 76px; }
+/* the graph over the whole width of the box, the bars side by side under it */
+.ns-formula-body { display: flex; flex-direction: column; gap: 5px; margin-top: 3px; flex: 1 1 auto; min-height: 0; }
+.ns-graph { position: relative; flex: 1 1 auto; min-height: 100px; }
+/* the panel beside the 3D: the formula box takes all the free height, and the graph grows into it */
+.ns.ns-side .pvc-sheets { flex: 1 1 auto; }
+.ns.ns-side .pvc-learn { min-height: 0; }
+.ns.ns-side .ns-formula { flex: 1 1 auto; min-height: 0; max-height: 500px; }
+.ns.ns-side .ns-graph { min-height: 96px; }
+/* a narrow box (a side panel under 300 px): the three bars a little closer, so their names fit */
+@container pvc-panel (max-width: 300px) {
+  .ns .ns-formula-values { grid-template-columns: repeat(3, auto); justify-content: space-between; column-gap: 6px; }
+  .ns .ns-row { column-gap: 3px; }
+  .ns .ns-row-name, .ns .ns-row-val { font-size: 12px; }
+}
+/* when the three do not fit side by side (English in a narrow panel): the symbols alone (F, m, a), the word goes */
+.ns .ns-tight .ns-word { display: none; }
+.ns-word { white-space: pre; }
+/* a low side panel (844 × 390, 640 × 400): the lines closer, so the graph keeps about 95 px */
+@container pvc (max-height: 460px) {
+  .ns.ns-side .pvc-learn { gap: 3px; }
+  .ns.ns-side .ns-formula { padding-top: 2px; padding-bottom: 2px; }
+  .ns.ns-side .ns-formula-body { gap: 3px; margin-top: 2px; }
+  /* the graph fills what is left (about 95 px in Bangla); it may go lower rather than push the rule out of the panel */
+  .ns.ns-side .ns-graph { min-height: 60px; }
+  .ns.ns-side .ns-extras button, .ns.ns-side .ns-maths { min-height: 24px; }
+  .ns.ns-side .ns-row { row-gap: 1px; }
+  .ns.ns-side .ns-row .ns-bar { height: 5px; }
+}
+/* a short phone embed (390 × 520): a smaller graph, so the 3D view keeps a third of the height */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .ns:not(.ns-side) .ns-graph { min-height: 84px; }
+  .ns:not(.ns-side) .ns-formula-body { gap: 3px; margin-top: 2px; }
+}
 .ns .ns-graph .ns-graph-svg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; overflow: visible; font-family: inherit; }
 .ns-graph-svg text { paint-order: stroke; stroke: #eff8f6; stroke-width: 3px; stroke-linejoin: round; }
 .ns-graph-svg .g-grid { stroke: #d2e5e2; stroke-width: 1; }
-.ns-graph-svg .g-axis { stroke: #58717d; stroke-width: 1.3; fill: none; }
+.ns-graph-svg .g-axis { stroke: #58717d; stroke-width: 1.6; fill: none; }
 .ns-graph-svg .g-num { fill: #58717d; }
 .ns-graph-svg .g-name { fill: #3d5a66; }
 .ns-graph-svg .g-title { fill: #3d5a66; font-weight: 600; }
-.ns-graph-svg .g-past { stroke: #9fb1bb; stroke-width: 2; stroke-linecap: round; }
+.ns-graph-svg .g-past { stroke: #9fb1bb; stroke-linecap: round; }
 .ns-graph-svg .g-tag { fill: #5f7480; }
-.ns-graph-svg .g-line { stroke-width: 3; stroke-linecap: round; }
+.ns-graph-svg .g-line { stroke-linecap: round; }
 .ns-graph-svg .g-dot { stroke: #fff; stroke-width: 1.5; }
-.ns-graph-svg .g-run { stroke: #6f93a8; stroke-width: 1.2; stroke-dasharray: 3 2; fill: none; }
-.ns-graph-svg .g-rise { stroke-width: 2.6; fill: none; }
+.ns-graph-svg .g-run { stroke: #6f93a8; stroke-width: 1.5; stroke-dasharray: 4 3; fill: none; }
+.ns-graph-svg .g-rise { fill: none; }
 .ns-graph-svg .g-step, .ns-graph-svg .g-slope { font-weight: 600; }
 .ns-graph-svg .g-ring { fill: none; stroke-width: 2; }
 .ns-graph-svg .g-hint { fill: #58717d; font-style: italic; }
 
-/* the bars: name and value over a bar, how the value comes (the pieces) under it */
-.ns-formula-values { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
-.ns-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 6px; row-gap: 1px; align-items: center; line-height: 1.2; white-space: nowrap; }
-.ns-row-name { font-size: 12.5px; }
-.ns-row-val { font-size: 12.5px; text-align: right; }
+/* the bars, side by side: name and value over a bar (a tall side panel: how the value comes, the pieces, under it) */
+.ns-formula-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 12px; min-width: 0; flex: none; }
+.ns-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 4px; row-gap: 2px; align-items: center; align-content: start; line-height: 1.2; white-space: nowrap; min-width: 0; }
+.ns-row .ns-bar { grid-column: 1 / -1; }
+.ns-row-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+.ns-row-val { font-size: 13px; text-align: right; }
 .ns-row .ns-bar { position: relative; height: 6px; border-radius: 4px; background: #d7e8e5; overflow: hidden; }
 .ns-row .ns-bar i { position: absolute; top: 0; bottom: 0; left: 0; }
 .ns-row .ns-fill { border-radius: 4px; transition: width 0.12s linear; }
@@ -79,7 +112,10 @@ body.bg-transparent { background: transparent; }
 .ns-row-m .ns-fill { background: #6b7680; }
 .ns-row-a .ns-fill { background: #0c8599; }
 .ns-row-a .ns-row-name, .ns-row-a .ns-row-val { color: #087d72; }
-.ns-formula .ns-row small { display: inline; font-size: 11px; color: #3f5864; white-space: nowrap; text-align: right; }
+.ns-formula .ns-row small { display: none; grid-column: 1 / -1; font-size: 12px; color: #3f5864; white-space: nowrap; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+@container pvc (min-height: 700px) {
+  .ns.ns-side .ns-formula .ns-row small { display: block; }
+}
 
 /* the working, in its own dialog */
 .ns-math-dialog { box-sizing: border-box; width: min(530px, calc(100vw - 24px)); max-height: calc(100vh - 20px); border: 1px solid #9bbfc3; border-radius: 8px; padding: 15px; color: #214958; background: #fffdf5; font-size: 14px; line-height: 1.6; }
@@ -116,15 +152,6 @@ body.bg-transparent { background: transparent; }
   .ns-maths b { font-size: 17px; text-decoration: underline dotted 1.5px; text-underline-offset: 3px; }
   .ns .pvc-act { font-size: 14px; gap: 7px; padding-right: 11px; }
   .ns .pvc-act-row { gap: 6px; }
-  .ns-formula-body { margin-top: 2px; }
-  .ns-row { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .ns-row .ns-bar { grid-row: 1; grid-column: 2; }
-  .ns-row-val { grid-column: 3; }
-  .ns-formula .ns-row small { display: none; }
-  .ns-row-name { font-size: 11.5px; }
-  .ns-row-val { font-size: 12px; }
-  .ns-graph { min-height: 62px; }
-  .ns-formula-values { gap: 4px; }
   /* the test, as low as reads well (it shares its height with the learn sheet) */
   .ns .pvc-q-ask { gap: 6px; }
   .ns .pvc-q-head { min-height: 32px; }
@@ -134,7 +161,7 @@ body.bg-transparent { background: transparent; }
   .ns .pvc-q-options { gap: 6px; }
   .ns .pvc-opt { height: 40px; }
 }
-/* phone embeds that are not very tall (390 × 520): the bars alone in the box (the graph would be too low to read) */
+/* phone embeds that are not very tall (390 × 520): every line of the sheet a little lower */
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .ns .pvc-panel { padding-top: 6px; padding-bottom: 8px; gap: 5px; }
   .ns .pvc-learn { gap: 4px; }
@@ -147,9 +174,6 @@ body.bg-transparent { background: transparent; }
   .ns .pvc-act-num { width: 27px; height: 27px; font-size: 15px; }
   .ns .pvc-outcome { font-size: 12.5px; }
   .ns .pvc-rule { font-size: 11.5px; }
-  .ns-formula-body { grid-template-columns: minmax(0, 1fr); }
-  .ns-graph { display: none; }
-  .ns-formula-values { gap: 3px; }
   .ns .pvc-q-ask { gap: 5px; }
   .ns .pvc-q-head { min-height: 30px; }
   .ns .pvc-q-head .pvc-btn { height: 30px; }
@@ -159,12 +183,10 @@ body.bg-transparent { background: transparent; }
   .ns-math-dialog { font-size: 13px; padding: 12px; }
   .ns-math-dialog p { font-size: 11.5px; }
 }
-/* a phone held upright: the graph a little lower and the lines closer, so the 3D view keeps 55 % of the height */
+/* a phone held upright: the lines closer, so the 3D view keeps as much of the height as it can */
 @container pvc (max-aspect-ratio: 1/1) and (min-height: 640px) and (min-width: 375px) {
   .ns .pvc-learn { gap: 4px; }
-  .ns-graph { min-height: 48px; }
   .ns-formula { padding-top: 3px; padding-bottom: 3px; }
-  .ns-formula-values { gap: 1px; }
   .ns-outrow { gap: 0; }
   .ns-clock { line-height: 1.1; }
   .ns-clock b { font-size: 13px; }
