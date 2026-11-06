@@ -18,6 +18,7 @@ import { CANDLE, COUNT, GLASS, M, NAMED, REFLECTANCE, row } from './reading.js';
 
 const GHOST = 0.44; // common.md: a virtual image is a translucent ghost of about 45 %
 const FADE = 0.86; // the ghosts fade a little faster than the true 90 %, so that a phone shows the step; the panel says so
+const M2_SLIDE = 90; // cm: M₂ starts this far to the left of its place, out of the first view
 const GHOST_FLAME = { size: 0.78, light: 0.74 }; // no image is a flame: smaller and dimmer than the real one
 
 function gradient(stops, w = 4, h = 256) {
@@ -387,6 +388,11 @@ ${sh.fragmentShader}`.replace(
     images.get(id).alpha = a;
     paintImages();
   }
+  /** M₂ on its way in from the left: 0 gone, 1 in its place. */
+  function setM2(k) {
+    m2.group.visible = k > 0;
+    m2.group.position.x = M.m2 - (1 - k) * M2_SLIDE;
+  }
   /** 0 the row of ghosts, 1 the real view into M₁. */
   function setInside(k) {
     inside = k;
@@ -484,6 +490,7 @@ ${sh.fragmentShader}`.replace(
       [m2, M.m2, Math.PI],
     ]) {
       const c = m.group.clone(true);
+      c.visible = true; // the book's model has both mirrors, whatever the step on the screen
       c.traverse((n) => {
         if (n.isMesh) n.castShadow = n.receiveShadow = false;
         if (n.isMesh && n.material === glassM1) n.material = glassM2;
@@ -497,5 +504,5 @@ ${sh.fragmentShader}`.replace(
 
   setCandle(CANDLE.start);
   setInside(0);
-  return { setCandle, setImage, setInside, setDetail, updateClip, tickFlames, setFloorFade, exportModel, real, m1, m2 };
+  return { setCandle, setImage, setM2, setInside, setDetail, updateClip, tickFlames, setFloorFade, exportModel, real, m1, m2 };
 }

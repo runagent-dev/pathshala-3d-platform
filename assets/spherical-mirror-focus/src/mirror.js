@@ -2,6 +2,8 @@
 // and silvered on one face, swinging on two pins in a black ring on a post. Its pole P is at the origin of `dish`, its axis
 // along +x, toward the light. The same dish is both mirrors: face A is the sphere's inner surface (concave toward +x) and face B
 // its outer surface; a half turn on the pins brings B to the front, a convex mirror with its pole in the same place.
+// While the piece is being shown, each surface wears its own colour and the rim is bright (setTint): teaching colours, gone by the
+// time it is a mirror. Only the surface that faces the eye shows its colour, so the two sides can't be mistaken.
 // The silver is a second drawing of a face: its triangles are stored from the middle out, so that drawing more of them lets
 // the coat spread across the glass. The surface is the exact sphere of radius r, and it is rewritten in place when r changes.
 import * as THREE from 'three';
@@ -76,6 +78,30 @@ export function createDish({ env }) {
     envMapIntensity: 1.1,
     transparent: true,
   });
+  // the teaching colours: the same surfaces wound to face out, so that each is seen from its own side only
+  const tintMat = (name, color, emissiveIntensity) =>
+    new THREE.MeshStandardMaterial({
+      name,
+      color,
+      emissive: color,
+      emissiveIntensity,
+      roughness: 0.38,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      envMapIntensity: 1.2,
+    });
+  const tintA = new THREE.Mesh(of(faceIndex(0, false)), tintMat('InnerTint', 0x4dabf7, 0.42));
+  const tintB = new THREE.Mesh(of(faceIndex(PER_FACE, true)), tintMat('OuterTint', 0xf7b733, 0.1));
+  tintA.renderOrder = tintB.renderOrder = 3;
+  tintA.userData.noExport = tintB.userData.noExport = true;
+  const rimLight = new THREE.Mesh(
+    new THREE.TorusGeometry(MIRROR.half, 0.3, 8, 64),
+    new THREE.MeshBasicMaterial({ name: 'PieceRim', color: 0xffe36e, toneMapped: false, transparent: true, opacity: 0 }),
+  );
+  rimLight.rotation.y = Math.PI / 2;
+  rimLight.userData.noExport = true;
   const faces = new THREE.Mesh(of([...a, ...b]), glassMat);
   faces.renderOrder = 3;
   const edge = new THREE.Mesh(of(rim), edgeMat);
@@ -86,7 +112,7 @@ export function createDish({ env }) {
   // everything in one holder, whose origin is the pivot
   const body = new THREE.Group();
   body.position.x = MIRROR.thick / 2;
-  body.add(faces, edge, coatA, coatB);
+  body.add(faces, edge, coatA, coatB, tintA, tintB, rimLight);
   root.add(body);
 
   let radius = 0;
@@ -125,6 +151,7 @@ export function createDish({ env }) {
     }
     // the ground edge of the glass, straight across
     const s = sag(r, MIRROR.half);
+    rimLight.position.x = s - t / 2;
     for (let k = 0; k < SEGS; k++) {
       const th = (k / SEGS) * Math.PI * 2;
       const y = MIRROR.half * Math.cos(th);
@@ -140,6 +167,9 @@ export function createDish({ env }) {
   return {
     root,
     setRadius,
+    get radius() {
+      return radius;
+    },
     /** How far the silver has spread on the face that is at the front: 0 … 1 (whole rings of triangles). flip: B is at the front. */
     setCoat(k, flip) {
       const on = flip ? coatB : coatA;
@@ -149,9 +179,16 @@ export function createDish({ env }) {
       const tris = FACE_INDICES / 3;
       on.geometry.setDrawRange(0, k >= 1 ? FACE_INDICES : Math.round(k ** 1.5 * tris) * 3);
     },
-    /** The half turn on the pins: 0 shows face A (concave), 1 shows face B (convex). */
-    setTurn(k) {
-      root.rotation.y = Math.PI * k;
+    /** The teaching colours of the two surfaces and the bright rim: 0 none … 1 full. */
+    setTint(k) {
+      const on = k > 0.005;
+      tintA.visible = tintB.visible = rimLight.visible = on;
+      tintA.material.opacity = tintB.material.opacity = 0.78 * k;
+      rimLight.material.opacity = k;
+    },
+    /** The half turn on the pins (0 shows face A, concave; 1 shows face B, convex), and a further turn `spin` in radians. */
+    setTurn(k, spin = 0) {
+      root.rotation.y = Math.PI * k + spin;
     },
   };
 }

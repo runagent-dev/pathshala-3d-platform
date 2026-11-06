@@ -101,3 +101,18 @@ test('periodic-motion: the detailed heart pauses, repeats its count and exports 
   expect(after.measured).toBeCloseTo(0.8, 6);
   expect(log.errors).toEqual([]);
 });
+
+test('periodic-motion: the lap strip moves by whole device pixels, so its picture never depends on timing', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'periodic-motion', { params: { example: 'comet', time: '218' } });
+  const shift = () =>
+    fig.frame.locator('.pm-strip-learn .pm-strip-tape').evaluate((el) => Number(/translateX\((.+)px\)/.exec(el.style.transform)?.[1]));
+  for (let i = 0; i < 4; i++) {
+    await fig.advance(700);
+    const x = await shift();
+    expect(Number.isFinite(x)).toBe(true);
+    expect(x).toBe(Math.round(x));
+  }
+  expect(log.errors).toEqual([]);
+});

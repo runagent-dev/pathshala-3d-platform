@@ -5,7 +5,7 @@
   "title": "How much light is reflected (কতটুকু প্রতিফলন)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "book": "physics-9-10",
   "page": 216,
   "topic": "8.2.1",
@@ -13,7 +13,7 @@
   "order": 2,
   "maintainers": ["RadeenXALNW"],
   "units": "cm",
-  "description": "Interactive 3D figure for how much light is reflected, book page 216, topic 8.2.1, চিত্র ৮.০৫. A boy, a red hibiscus at the height of his eye, and between them a slab of clear glass on a lab jack. The student lifts the glass (a tap or a drag) and the light meets it at a larger and larger angle of incidence, from 30° to 87°. The reflected ray grows and the refracted ray thins, each as thick as the light it carries, by Fresnel's equations for n = 1.5; a small picture shows what the boy really sees, the pattern under the glass fading as the flower comes up in it; a graph in the panel follows. Five test questions. Offline, Bangla and English.",
+  "description": "Interactive 3D figure for how much light is reflected, book page 216, topic 8.2.1, চিত্র ৮.০৫. A boy, a red hibiscus at the height of his eye, and between them a large sheet of clear glass on a lab jack. A story of one idea to a tap comes first: he sees the pattern through the glass, the glass rises and the flower comes up in it, then the two angles, and only then the numbers. The student lifts the glass (a tap, or a drag on its handle) and the light meets it at a larger and larger angle of incidence, from 30° to 87°; the view turns all the way round. The reflected ray grows and the refracted ray thins, each as thick as the light it carries, by Fresnel's equations for n = 1.5; a small picture shows what the boy really sees, the pattern under the glass fading as the flower comes up in it; a graph in the panel follows. Five test questions. Offline, Bangla and English.",
   "tags": ["light", "reflection", "fresnel", "angle of incidence", "glass", "refraction", "bangla"],
   "params": [
     {
@@ -23,7 +23,20 @@
       "options": [["bn", "বাংলা"], ["en", "English"]],
       "default": "bn"
     },
-    { "name": "angle", "label": "Angle of incidence (°)", "type": "number", "default": "30", "placeholder": "30 to 87" },
+    {
+      "name": "step",
+      "label": "Open at step (0 the glass … 4 how much)",
+      "type": "number",
+      "default": "0",
+      "placeholder": "0 to 4"
+    },
+    {
+      "name": "angle",
+      "label": "Angle of incidence (°); another than 30 opens step 4",
+      "type": "number",
+      "default": "30",
+      "placeholder": "30 to 87"
+    },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
       "name": "mode",
@@ -45,7 +58,7 @@
   ],
   "commands": [
     { "name": "get", "payload": {} },
-    { "name": "set", "payload": { "angle": 80, "animate": false } },
+    { "name": "set", "payload": { "step": 2, "angle": 80, "animate": false } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
@@ -53,17 +66,19 @@
   ],
   "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "angle": "80" } },
+    "poster": { "params": { "coach": "0", "step": "4", "angle": "80" } },
     "glb": [{ "name": "default" }],
     "video": {
       "kind": "script",
-      "seconds": 20,
+      "seconds": 36,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
-        { "at": 2, "command": "set", "payload": { "angle": 60 } },
-        { "at": 7, "command": "set", "payload": { "angle": 80 } },
-        { "at": 12, "command": "set", "payload": { "angle": 87 } }
+        { "at": 2, "command": "set", "payload": { "step": 1 } },
+        { "at": 9, "command": "set", "payload": { "step": 2 } },
+        { "at": 17, "command": "set", "payload": { "step": 3 } },
+        { "at": 25, "command": "set", "payload": { "step": 4 } },
+        { "at": 32, "command": "set", "payload": { "angle": 87 } }
       ]
     }
   }

@@ -23,13 +23,15 @@ To listen to it or control it from the book page, use the helper shipped in the 
 
 ## URL parameters
 
+Since 0.3.0 `step` takes `one`, `two`, `image`, `again`, `many`, `book` (it was `first`, `second`, `many`), and `stage` counts taps into that step.
+
 <!-- generated:params (npm run docs) -->
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `step` | Step of the book | `first` The image · `second` Its image · `many` Countless | `first` |
+| `step` | Step of the book | `one` One mirror · `two` Second mirror · `image` Its image · `again` Once more · `many` Countless · `book` The book's picture | `one` |
 | `x` | Candle on the row (cm from the middle of the gap, −7 to 7) | number | `5` |
-| `stage` | How far the step is built (0–3) | number | `0` |
+| `stage` | How many taps into the step (0–2) | number | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The ring on the part pulses at first | `1` · `0` | `1` |

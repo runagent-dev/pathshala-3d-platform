@@ -5,7 +5,7 @@
   "title": "Images in two mirrors (দুটি আয়নায় প্রতিবিম্ব)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "book": "physics-9-10",
   "page": 216,
   "topic": "8.2.1",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "cm",
-  "description": "Interactive 3D figure for the উদাহরণ on book page 216, topic 8.2.1, চিত্র ৮.০৪. A lit candle x stands on a table between two parallel silvered-glass mirrors M₂ and M₁. One tap at a time the student builds the book's row: the image x′ in each mirror with d₁ and d₂ before and behind it, then the image of the image x″ with d₃ and x‴ with d₄, each with its ray traced by the law of reflection; dragging the candle moves every image to its exact place. Then the row runs on both ways, and the camera looks into M₁, where the same images stand as a real pair of mirrors shows them, each reflection a little dimmer. Any named image can be tapped to trace its light. Five test questions. Offline, Bangla and English.",
+  "description": "Interactive 3D figure for the উদাহরণ on book page 216, topic 8.2.1, চিত্র ৮.০৪. It starts simply and builds up one slow tap at a time: a lit candle x and one silvered-glass mirror M₁ with its image x′ and the equal distance d₁ before and behind it; then M₂ slides in with its own x′ and d₂; then the first x′ acts as an object for M₂ and makes x″, with one ray traced segment by segment to the eye; the same on the other side, x″ and x‴ with d₃ and d₄; then the row fades in one image at a time and the camera looks into M₁, where the same images stand as a real pair of mirrors shows them. Only then comes the book's whole picture with all its distances. The candle has a visible drag handle, and every image follows it to its exact place. The view turns all the way round. Any named image can be tapped to trace its light. Five test questions. Offline, Bangla and English.",
   "tags": [
     "light",
     "reflection",
@@ -36,8 +36,15 @@
       "name": "step",
       "label": "Step of the book",
       "type": "select",
-      "options": [["first", "The image"], ["second", "Its image"], ["many", "Countless"]],
-      "default": "first"
+      "options": [
+        ["one", "One mirror"],
+        ["two", "Second mirror"],
+        ["image", "Its image"],
+        ["again", "Once more"],
+        ["many", "Countless"],
+        ["book", "The book's picture"]
+      ],
+      "default": "one"
     },
     {
       "name": "x",
@@ -45,7 +52,7 @@
       "type": "number",
       "default": "5"
     },
-    { "name": "stage", "label": "How far the step is built (0–3)", "type": "number", "default": "0" },
+    { "name": "stage", "label": "How many taps into the step (0–2)", "type": "number", "default": "0" },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
       "name": "mode",
@@ -68,8 +75,9 @@
   "commands": [
     { "name": "get", "payload": {} },
     { "name": "set", "payload": { "x": 3, "animate": false } },
-    { "name": "set", "payload": { "step": "second", "stage": 3, "animate": false } },
+    { "name": "set", "payload": { "step": "book", "stage": 1, "animate": false } },
     { "name": "set", "payload": { "trace": "r2", "animate": false } },
+    { "name": "set", "payload": { "azimuth": 180, "polar": 75, "animate": false } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
@@ -77,11 +85,11 @@
   ],
   "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "step": "second", "stage": "3" } },
+    "poster": { "params": { "coach": "0", "step": "book", "stage": "1" } },
     "glb": [
       {
         "name": "default",
-        "setup": [{ "command": "set", "payload": { "step": "second", "stage": 3, "animate": false } }]
+        "setup": [{ "command": "set", "payload": { "step": "book", "stage": 1, "animate": false } }]
       }
     ],
     "video": {
@@ -91,17 +99,16 @@
       "params": { "coach": "0" },
       "script": [
         { "at": 0.8, "command": "set", "payload": { "stage": 1, "animate": false } },
-        { "at": 2.4, "command": "set", "payload": { "stage": 2, "animate": false } },
-        { "at": 4, "command": "set", "payload": { "x": -3 } },
-        { "at": 5.4, "command": "set", "payload": { "x": 5 } },
-        { "at": 6.6, "command": "set", "payload": { "step": "second", "stage": 0, "animate": false } },
-        { "at": 7.4, "command": "set", "payload": { "stage": 1, "animate": false } },
-        { "at": 8.2, "command": "set", "payload": { "trace": "r2", "animate": false } },
-        { "at": 10, "command": "set", "payload": { "stage": 2, "animate": false } },
-        { "at": 11.2, "command": "set", "payload": { "stage": 3, "animate": false } },
-        { "at": 12.6, "command": "set", "payload": { "trace": "r3", "animate": false } },
-        { "at": 14.2, "command": "set", "payload": { "step": "many", "stage": 1, "animate": false } },
-        { "at": 16.4, "command": "set", "payload": { "stage": 2, "animate": false } }
+        { "at": 2.8, "command": "set", "payload": { "x": -3 } },
+        { "at": 4.2, "command": "set", "payload": { "x": 5 } },
+        { "at": 5.4, "command": "set", "payload": { "step": "two", "stage": 1, "animate": false } },
+        { "at": 7.2, "command": "set", "payload": { "step": "image", "stage": 1, "animate": false } },
+        { "at": 9, "command": "set", "payload": { "stage": 2, "animate": false } },
+        { "at": 11, "command": "set", "payload": { "step": "again", "stage": 1, "animate": false } },
+        { "at": 12.8, "command": "set", "payload": { "stage": 2, "animate": false } },
+        { "at": 14.6, "command": "set", "payload": { "step": "many", "stage": 1, "animate": false } },
+        { "at": 16.2, "command": "set", "payload": { "stage": 2, "animate": false } },
+        { "at": 18, "command": "set", "payload": { "step": "book", "stage": 1, "animate": false } }
       ]
     }
   }

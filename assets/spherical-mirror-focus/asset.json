@@ -5,7 +5,7 @@
   "title": "Spherical mirrors and their focus (গোলীয় আয়না ও ফোকাস)",
   "type": "interactive",
   "entry": "index.html",
-  "version": "0.1.0",
+  "version": "0.3.1",
   "book": "physics-9-10",
   "page": 223,
   "topic": "8.4",
@@ -45,6 +45,7 @@
         ["rays", "parallel light meets at F"],
         ["measure", "f and r measured"],
         ["wide", "a wide bundle"],
+        ["turned", "the mirror turned over, its outer surface coated"],
         ["convex", "the convex mirror spreads the light"],
         ["virtual", "the rays extended to F behind it"],
         ["torch", "a bulb at F"]
@@ -79,7 +80,7 @@
   ],
   "commands": [
     { "name": "get", "payload": {} },
-    { "name": "set", "payload": { "stage": "measure", "r": 40, "animate": false } },
+    { "name": "set", "payload": { "stage": "measure", "r": 40, "animate": false, "az": 200, "el": 14 } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
@@ -91,17 +92,18 @@
     "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "stage": "coated", "animate": false } }] }],
     "video": {
       "kind": "script",
-      "seconds": 30,
+      "seconds": 92,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 0.6, "command": "set", "payload": { "stage": "cut" } },
-        { "at": 3, "command": "set", "payload": { "stage": "coated" } },
-        { "at": 8, "command": "set", "payload": { "stage": "rays" } },
-        { "at": 14, "command": "set", "payload": { "stage": "measure" } },
-        { "at": 17, "command": "set", "payload": { "stage": "convex" } },
-        { "at": 23, "command": "set", "payload": { "stage": "virtual" } },
-        { "at": 26.5, "command": "set", "payload": { "stage": "torch" } }
+        { "at": 11, "command": "set", "payload": { "stage": "coated" } },
+        { "at": 22, "command": "set", "payload": { "stage": "rays" } },
+        { "at": 32, "command": "set", "payload": { "stage": "measure" } },
+        { "at": 38, "command": "set", "payload": { "stage": "turned" } },
+        { "at": 51, "command": "set", "payload": { "stage": "convex" } },
+        { "at": 62, "command": "set", "payload": { "stage": "virtual" } },
+        { "at": 72, "command": "set", "payload": { "stage": "torch" } }
       ]
     }
   }
