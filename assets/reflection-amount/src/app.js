@@ -12,6 +12,7 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
+import { createHowTo } from '@shared/student/howto.js';
 import { createDragHandle } from '@shared/student/draghandle.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
@@ -751,6 +752,19 @@ export function createApp(root, options = {}) {
     pulse: Boolean(o.coach),
     when: () => !s.locked && !s.busy && s.stage >= 2 && camK >= 1,
   });
+
+  // ── how to use, in the panel: the same icons as on the view, with a few words (kit createHowTo) ──────────
+  createHowTo(
+    ui,
+    t,
+    [
+      { kind: 'orbit', cue: rotate },
+      { kind: 'front' },
+      // last: before the glass can be raised (step 2) it keeps its place unseen, so the panel keeps its height
+      { kind: 'drag', axis: 'y', text: t('howto_glass'), aria: t('aria_howto_glass'), handle: glassHandle, when: () => s.stage >= 2 },
+    ],
+    { stage },
+  );
   if (!o.coach) glassHandle.markUsed(); // for pictures and tests: the small disc from the start
   stage.onAfterRender(labels); // after the handle has been placed: the labels keep off it
 

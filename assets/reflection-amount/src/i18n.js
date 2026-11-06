@@ -3,6 +3,11 @@
 
 export const STRINGS = {
   bn: {
+    howto_label: 'কীভাবে নাড়াবে',
+    howto_orbit: 'ঘুরিয়ে দেখো',
+    howto_front: 'শুরুর দৃশ্যে ফেরো',
+    howto_glass: 'টেনে কাচ তোলো',
+    aria_howto_glass: 'টেনে কাচ তোলো: ছবিতে কাচের সাদা চাকতিটি দেখাও',
     panel_hide: 'লেখা লুকাও',
     panel_show: 'লেখা দেখাও',
     rotate_title: 'ফোনটি আড়াআড়ি ধরো',
@@ -128,6 +133,11 @@ export const STRINGS = {
     n_window_90: 'আপতন কোণ মাপা হয় অভিলম্ব থেকে: এখানে তা {a}°, প্রতিফলন প্রায় {p}%।',
   },
   en: {
+    howto_label: 'How to use it',
+    howto_orbit: 'Turn the view',
+    howto_front: 'Back to the start view',
+    howto_glass: 'Drag to raise the glass',
+    aria_howto_glass: 'Drag to raise the glass: show the glass’s white disc on the picture',
     panel_hide: 'Hide the text',
     panel_show: 'Show the text',
     rotate_title: 'Turn your phone sideways',

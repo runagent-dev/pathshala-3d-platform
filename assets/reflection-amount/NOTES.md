@@ -49,6 +49,7 @@ How much light a surface reflects depends on the angle: glass gives back 4–5 %
   the picture from his eye alone, large, at 30°, 80° or 87° at random (30° and 60° look nearly alike, 4 % and 9 %, so they are never side by side); the percent that goes in, read off the reflected ray's label at 60°, 80° or 87°; and the window, as an
   angle to the glass (5°, 30°, 60°, 90°: the trap is that 90° to the glass is 0° from the normal). The kit scores numbers,
   so the choices are places in a list. A browser test answers all five right, and one wrong.
+- **How to use** (v0.4.0, kit 1.8.0 `createHowTo`): under the action, the same icons as on the view, with a few words: the ⟲ ৩৬০° pill, the সামনে button and the glass's ↕ disc ("টেনে কাচ তোলো", from step 2 on, in its place before that). In a short side panel at the last step the lead question goes, as on an upright phone, so the row fits. Tapping an item points at its control on the view.
 
 ## Honest stylisation
 - **The glass is drawn big:** 32 × 32 × 4 cm where a real sheet of this size would be about 1 cm thick, so that it reads as glass on a phone. It stands on four rubber feet, 1.4 cm above the jack's dark plate, so that nobody takes one for the other.
