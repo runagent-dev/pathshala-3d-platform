@@ -179,6 +179,10 @@ export function createApp(root, options = {}) {
     const word = ui.$(`[data-example="c${i}"] .pvc-ex-word`);
     if (word) word.textContent = t.num(u);
   });
+  // the line before the action: what the next tap will show (on the first screen, a few calm words that set the scene)
+  const lead = document.createElement('p');
+  lead.className = 'lab-lead';
+  ui.$('.pvc-act-row').before(lead);
   const caption = document.createElement('p');
   caption.className = 'lab-cap';
   ui.learn.appendChild(caption);
@@ -970,7 +974,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────────────────────────────────
-  const steady = { act: '', cap: '' };
+  const steady = { act: '', cap: '', lead: '' };
   const ACTIONS = {
     busy: ['act_wait', ''],
     points: ['act_points', 1],
@@ -1005,6 +1009,7 @@ export function createApp(root, options = {}) {
       return t(on.sharp ? 'out_screen_sharp' : 'out_screen');
     }
     if (FREE.has(st)) return caseOutcome(s.u);
+    if (st === 'start') return ''; // the first screen: only the calm words above the action
     return t(`out_${st}`, { nature: '' });
   }
   const frac = (a, b) => `<span class="pvc-frac"><span>${a}</span><span>${b}</span></span>`;
@@ -1034,6 +1039,7 @@ export function createApp(root, options = {}) {
     const st = s.stage;
     if (st === 'formula') return formulaHtml(s.u);
     if (st === 'table') return tableHtml(s.u);
+    if (st === 'start') return '';
     if (st === 'screen') return t(onScreen(V.s, V.u).sharp ? 'rule_screen_sharp' : 'rule_screen');
     if (st === 'cases') {
       const z = zoneOf(s.u);
@@ -1059,6 +1065,19 @@ export function createApp(root, options = {}) {
     if (!s.busy) {
       sheet.outcome(outcomeNow());
       sheet.rule(ruleNow());
+      const calm = s.stage === 'start';
+      const next = phase();
+      const html = calm
+        ? `<span class="lab-long">${t('intro')}</span><span class="lab-short">${t('intro_short')}</span>`
+        : next === 'busy'
+          ? steady.lead
+          : t(`lead_${next}`);
+      if (steady.lead !== html) {
+        steady.lead = html;
+        lead.innerHTML = html;
+        lead.classList.toggle('pvc-note', calm);
+        ui.learn.classList.toggle('lab-calm', calm);
+      }
     }
     const cap = FREE.has(s.stage) ? zoneOf(s.u) : 'far';
     if (steady.cap !== cap) {

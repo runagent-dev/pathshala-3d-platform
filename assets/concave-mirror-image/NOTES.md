@@ -23,6 +23,7 @@ screen can catch: smaller beyond O, equal at O, bigger between O and F), at F th
 খর্বিত and বিবর্ধিত. Added by the figure, not on the page: "সমান" alone in the chip (for সমান দৈর্ঘ্যের), ঝাপসা and স্পষ্ট for the picture on the screen, টেনে সরাও.
 
 ## How the figure works
+- **A calm start (the owner, after chapter 8: "start simpler, with some lines of explanation in the white panel").** The first screen shows only a few warm everyday sentences in a `.pvc-note` card (`intro`; `intro_short` on the 390 × 520 phone) and the action: no term and no number yet. After that, one plain line above the action says what the next tap will show (`lead_*`), and the rule below says what it meant, the book's term last and in bold.
 - The owner's two rules decide the pace: a student gets the idea from the 3D, and nothing gets complex too fast. It opens on just the pencil, the
   mirror and the image, with its words beside it. Then one thing a tap (`STAGES`, `POSE` in `src/app.js`): F, O, P → the parallel ray, its rule on
   the ray → the ray through F, meeting at X′ → the screen (dragged, or the action does it) until sharp: "real" → the pencil to 30, 22.5, 15, 10,
