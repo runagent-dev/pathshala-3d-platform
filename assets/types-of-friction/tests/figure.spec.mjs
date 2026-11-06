@@ -132,10 +132,6 @@ test('types-of-friction: the test, two rounds in different orders, then reset', 
   const log = await preparePage(page);
   const fig = await openFigure(page, 'types-of-friction');
   const text = async (sel) => (await fig.frame.locator(sel).first().textContent()).replace(/\u00a0/g, ' ');
-  const tap = async () => {
-    await fig.frame.locator('.pvc-act').click();
-    await fig.advance(1300);
-  };
 
   // the test: five questions, each on its own scene; the ring hides; the scene is locked; no number in the question
   // text that the picture shows; a second round comes in another order
