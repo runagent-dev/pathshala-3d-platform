@@ -8,9 +8,11 @@ import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
+import { createDragHandle } from '@shared/student/draghandle.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { CAP, createSetting, EYE, FRAMES, RAIL } from './bench.js';
@@ -211,7 +213,8 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: Object.keys(WORDS).map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'replay', label: 'act_replay', icon: ICONS.reset }],
+      quiet: [{ act: 'replay', label: 'act_replay', icon: ICONS.play }],
+      tight: true,
       lines: { action: 1, outcome: 2, rule: 4 },
     }),
     learnAlign: 'start',
@@ -228,23 +231,11 @@ export function createApp(root, options = {}) {
   const title = document.createElement('div');
   title.className = 'lab-title';
   ui.stage.appendChild(title);
-  // the pencil's drag handle: always there while it can be moved, so that nobody has to guess (the owner's rule). A finger on it
-  // is found by distance in the pointerdown below; the element itself lets every touch through
-  const handle = document.createElement('div');
-  handle.className = 'lab-handle';
-  handle.hidden = true;
-  handle.innerHTML = `<i class="lab-hd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M3 12l5-5M3 12l5 5M21 12l-5-5M21 12l-5 5"/></svg></i><span class="lab-hl">${t('l_drag')}</span>`;
-  ui.stage.appendChild(handle);
 
   // ── 3D ──────────────────────────────────────────────────────────────────────────────────────────────────
   const stage = createStage(ui.canvasHost, { fov: 22, near: 10, far: 1600, environmentIntensity: 0.8 });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = false;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(30);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(91);
-  controls.minAzimuthAngle = THREE.MathUtils.degToRad(6); // the silver faces the pencil: never from behind the mirror
-  controls.maxAzimuthAngle = THREE.MathUtils.degToRad(91);
   const setting = createSetting({ stage, shadow: Boolean(o.shadow), t });
   const rays = createRays({ stage, host: ui.canvasHost });
 
@@ -449,6 +440,7 @@ export function createApp(root, options = {}) {
   function fly(frame, duration = 1.5) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
+      rotate.home();
       s.view = 'front';
       syncUI();
     }
@@ -471,12 +463,14 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
+    rotate.home();
     syncUI();
     if (animate) fly(s.frame, 1.5);
     else camK = 1;
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
+  /** The student has really turned the view. */
+  function turnedByHand() {
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
@@ -485,13 +479,18 @@ export function createApp(root, options = {}) {
       syncUI();
       emit('view', { view: s.view });
     }
+  }
+  const rotate = createRotateCue(stage, {
+    layer: ui.stage,
+    short: `${t.num(360)}°`,
+    label: t('rotate_me'),
+    pulse: Boolean(o.coach),
+    at: 'bottom-right',
+    when: () => s.frame !== 'eye' && s.frame !== 'zoom',
+    onTurn: turnedByHand,
   });
+  // the stage also calls this when it lowers its resolution mid-turn: a view the student has turned stays theirs
   stage.onResize(() => {
-    s.userMovedCamera = false;
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
-    }
     draw();
   });
   /** Where the eye of this view sees the pencil on the silver. */
@@ -515,10 +514,22 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture: few and short, each pinned to what it names ───────────────────────────────────
   let action = null;
+  // the pencil's drag handle: on its rod, always there while it can be moved, and its range along the rail
+  const onRod = new THREE.Vector3();
+  const pencilHandle = createDragHandle(stage, {
+    point: () => onRod.set(V.u, RAIL.axis + TRACK_Y, 0),
+    axis: 'x',
+    direction: new THREE.Vector3(1, 0, 0),
+    track: { from: new THREE.Vector3(U.min, RAIL.axis + TRACK_Y, 0), to: new THREE.Vector3(U.max, RAIL.axis + TRACK_Y, 0) },
+    label: o.coach ? t('l_drag') : '',
+    aria: t('aria_drag_pencil'),
+    pulse: Boolean(o.coach),
+    when: () => movable() && V.row <= 0 && V.axis >= 1 && camK >= 1 && !s.quiz,
+  });
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, title, () => handleBoxes(), ui.$('.pvc-panel-toggle'), () => rays.boxes(), () => action?.ringBox()],
+    avoid: [ui.corner, rotate.el, note, title, () => pencilHandle.box(), ui.$('.pvc-panel-toggle'), () => rays.boxes(), () => action?.ringBox()],
   });
   const shown = new Map();
   const pts = new Map();
@@ -659,41 +670,13 @@ export function createApp(root, options = {}) {
       { dx: 30, dy: 14 },
     ],
   };
-  const grip = { on: false, x: 0, y: 0, used: null, up: null };
-  const gripPoint = new THREE.Vector3();
-  /** On the pencil's rod, or at the edge of the view when the pencil is out of it. */
+  /** The handle calms down once the pencil has been moved by hand. */
+  let handleUsed = false;
   function placeHandle() {
-    const on = movable() && V.row <= 0 && V.axis >= 1 && camK >= 1 && !s.quiz;
-    rays.view.track = on ? 1 : 0;
-    if (on !== grip.on) {
-      grip.on = on;
-      handle.hidden = !on;
-    }
-    if (!on) return;
-    gripPoint.set(V.u, AX + TRACK_Y, 0).project(camera);
-    grip.x = Math.min(stage.width - 52, Math.max(26, ((gripPoint.x + 1) / 2) * stage.width));
-    grip.y = Math.min(stage.height - 26, Math.max(26, ((1 - gripPoint.y) / 2) * stage.height));
-    handle.style.transform = `translate(${grip.x}px, ${grip.y}px)`;
-    const up = grip.y > stage.height - 60;
-    if (up !== grip.up) {
-      grip.up = up;
-      handle.classList.toggle('up', up);
-    }
-    const used = s.dragged;
-    if (used !== grip.used) {
-      grip.used = used;
-      handle.classList.toggle('used', used);
-      handle.classList.toggle('calm', !o.coach);
-    }
-  }
-  function handleBoxes() {
-    if (!grip.on) return null;
-    const r = grip.used ? 16 : 22;
-    const box = { left: grip.x - r, right: grip.x + r, top: grip.y - r, bottom: grip.y + r };
-    if (grip.used || !o.coach) return box;
-    // the first-time words, under the disc or over it
-    const y = grip.up ? grip.y - 44 : grip.y + 22;
-    return [box, { left: grip.x - 40, right: grip.x + 40, top: y, bottom: y + 22 }];
+    if (s.dragged === handleUsed) return;
+    handleUsed = s.dragged;
+    if (handleUsed) pencilHandle.markUsed();
+    else pencilHandle.rearm();
   }
   const big = (x) => `<span class="lab-big">${x}</span>`;
   const camPoint = new THREE.Vector3();
@@ -1056,7 +1039,7 @@ export function createApp(root, options = {}) {
       // close on the image the pencil may be out of the view: there a finger anywhere moves it, a width of the view for most of the rail
       const anywhere = ZOOMED.has(s.stage);
       const box = ui.canvasHost.getBoundingClientRect();
-      const onGrip = grip.on && Math.hypot(e.clientX - box.left - grip.x, e.clientY - box.top - grip.y) <= 26; // a 52 px target for a finger
+      const onGrip = pencilHandle.hit(e.clientX - box.left, e.clientY - box.top);
       if (!anywhere && !onGrip && !ray.intersectObject(setting.hit, false).length) return;
       // the rail on the screen: how many pixels to a centimetre, and which way
       pa.set(0, AX, 0).project(camera);
@@ -1075,11 +1058,6 @@ export function createApp(root, options = {}) {
     { capture: true },
   );
   ui.canvasHost.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'mouse' && !drag) {
-      const box = ui.canvasHost.getBoundingClientRect();
-      const over = grip.on && Math.hypot(e.clientX - box.left - grip.x, e.clientY - box.top - grip.y) <= 26;
-      ui.canvasHost.style.cursor = over ? 'grab' : '';
-    }
     if (!drag || e.pointerId !== drag.id) return;
     const along = (e.clientX - drag.x) * drag.ux + (e.clientY - drag.y) * drag.uy;
     setPencil(drag.from + along / drag.perCm);
@@ -1404,7 +1382,7 @@ export function createApp(root, options = {}) {
       curve: V.curve,
       row: V.row >= 1,
       seen: postsSeen(radiusOf(V.curve)).length,
-      handle: { shown: grip.on, used: s.dragged },
+      handle: { shown: pencilHandle.visible, used: s.dragged },
       imagePx: Math.round(imagePx()),
       sawFar: s.sawFar,
       sawNear: s.sawNear,

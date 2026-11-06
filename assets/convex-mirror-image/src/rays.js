@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { RAIL } from './bench.js';
 import { SHAPE } from './pencil.js';
-import { EYE_X, FLAT_R, fieldOf, MIRROR, PENCIL, postsSeen, R0, ROW_X, sag, U } from './reading.js';
+import { EYE_X, FLAT_R, fieldOf, MIRROR, PENCIL, postsSeen, R0, ROW_X, sag } from './reading.js';
 
 export const C = {
   ray: '#f59f00',
@@ -64,8 +64,6 @@ export function createRays({ stage, host }) {
     imageK: 0,
     ghostK: 0, // the image's amber rim, as far as it has grown
     size: 0, // the object's height, as a faint outline at the image's depth
-    track: 0, // the dashed range of the pencil's handle
-    trackY: -2,
     tie: 0, // the arrow from the pencil to its picture in the silver
     tieFrom: { x: 0, y: 0, z: 0 },
     tieTo: { x: 0, y: 0, z: 0 },
@@ -283,37 +281,6 @@ export function createRays({ stage, host }) {
     }
     ctx.globalAlpha = 1;
   }
-  /** Where the pencil can go: a faint dashed line along the rail, with its two ends marked. */
-  function track() {
-    if (v.track <= 0) return;
-    P(U.min, v.trackY);
-    const x0 = sx;
-    const y0 = sy;
-    P(U.max, v.trackY);
-    const x1 = sx;
-    const y1 = sy;
-    const l = Math.hypot(x1 - x0, y1 - y0) || 1;
-    const nx = (-(y1 - y0) / l) * 6;
-    const ny = ((x1 - x0) / l) * 6;
-    ctx.lineCap = 'butt';
-    ctx.setLineDash([7, 6]);
-    for (const [c, wd] of [
-      ['rgba(12,16,22,0.4)', 3.4],
-      ['rgba(255,255,255,0.8)', 1.6],
-    ]) {
-      ctx.strokeStyle = c;
-      ctx.lineWidth = wd;
-      line(x0, y0, x1, y1);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-    ctx.lineWidth = 2;
-    line(x0 - nx, y0 - ny, x0 + nx, y0 + ny);
-    ctx.stroke();
-    line(x1 - nx, y1 - ny, x1 + nx, y1 + ny);
-    ctx.stroke();
-  }
   /** A ring round each post a mirror shows, at the level of the axis. */
   function marks(r, color, k, radius) {
     if (k <= 0) return;
@@ -434,7 +401,6 @@ export function createRays({ stage, host }) {
     const cx = -v.r;
     const fx = -v.r / 2;
     if (v.axis > 0) axis(v.axis);
-    track();
     if (v.bars > 0) {
       bar(0, v.u, RAIL.top + 1.6, '#1f2933', v.bars);
     }
@@ -495,7 +461,6 @@ export function createRays({ stage, host }) {
   function boxes() {
     out.length = 0;
     used = 0;
-    if (v.track > 0) along({ x: U.min, y: v.trackY }, { x: U.max, y: v.trackY });
     v.rays.forEach((r, i) => {
       const k = v.keys[i];
       if (k.in >= 1) along(r.start, r.hit);

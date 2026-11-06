@@ -10,6 +10,7 @@ import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
 import { ICONS } from '@shared/student/icons.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
@@ -18,6 +19,7 @@ import { createRays } from './rays.js';
 import { BLOCK, clampAngle, EVENTS, paths, shuffle, START_ANGLE } from './reading.js';
 import { createSetting, FRAMES } from './scene.js';
 
+const RESULT_HOLD = 1000; // ms a finished step's result stays up: a tap on the action before that is ignored
 export const DEFAULTS = {
   show: 'none', // 'none' | 'reflection' | 'refraction' | 'absorption' | 'all'
   angle: START_ANGLE, // degrees from the vertical
@@ -56,7 +58,11 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: EVENTS.map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [
+        { act: 'replay', label: 'act_replay', icon: ICONS.play },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
+      tight: true,
       lines: { action: 1, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
@@ -76,15 +82,11 @@ export function createApp(root, options = {}) {
   const stage = createStage(ui.canvasHost, { fov: 24, near: 4, far: 900, environmentIntensity: 0.7 });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = false;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(50);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(88);
-  controls.minAzimuthAngle = THREE.MathUtils.degToRad(-50);
-  controls.maxAzimuthAngle = THREE.MathUtils.degToRad(60);
   const setting = createSetting({ stage, shadow: Boolean(o.shadow) });
   const rays = createRays({ stage, host: ui.canvasHost });
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
+  let restUntil = 0; // no action before this (performance.now): the last step's result is being looked at
   const s = {
     seen: new Set(), // which of the three the student has seen
     focus: null, // what is being looked at: one of EVENTS, 'all', or null at the start
@@ -171,7 +173,7 @@ export function createApp(root, options = {}) {
     const names = name === 'all' ? EVENTS : [name];
     // a part left half way by an earlier tap goes back, and an earlier glow dies with the dimming
     for (const n of EVENTS) if (!s.seen.has(n) && !names.includes(n)) v[n].k = 0;
-    const flying = quick ? true : fly(name, 0.95);
+    const flying = quick ? true : fly(name, 1.5);
     const from = EVENTS.map((n) => v[n].alpha);
     const lit = EVENTS.map((n) => v[n].shine);
     const dimming = tween('dim', 0.4, (k) => {
@@ -201,6 +203,7 @@ export function createApp(root, options = {}) {
     for (const n of names) s.seen.add(n);
     if (!s.quiz) s.last = name;
     s.busy = false;
+    restUntil = performance.now() + RESULT_HOLD;
     audio.tick();
     if (name === 'all') audio.success();
     draw();
@@ -234,9 +237,10 @@ export function createApp(root, options = {}) {
     controls.update();
   }
   /** The camera goes to a frame. Its promise settles when it arrives (or a finger takes over). */
-  function fly(frame, duration = 0.8) {
+  function fly(frame, duration = 1.5) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
+      rotate.home();
       s.view = 'front';
       syncUI();
     }
@@ -259,12 +263,14 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
+    rotate.home();
     syncUI();
-    if (animate) fly(s.frame, 0.8);
+    if (animate) fly(s.frame, 1.5);
     else camK = 1;
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
+  /** The student has really turned the view. */
+  function turnedByHand() {
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
@@ -273,13 +279,17 @@ export function createApp(root, options = {}) {
       syncUI();
       emit('view', { view: s.view });
     }
+  }
+  const rotate = createRotateCue(stage, {
+    layer: ui.stage,
+    short: `${t.num(360)}°`,
+    label: t('rotate_me'),
+    pulse: Boolean(o.coach),
+    at: 'bottom-right',
+    onTurn: turnedByHand,
   });
+  // the stage also calls this when it lowers its resolution mid-turn: a view the student has turned stays theirs
   stage.onResize(() => {
-    s.userMovedCamera = false;
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
-    }
     draw();
   });
   stage.onBeforeRender(() => {
@@ -289,7 +299,7 @@ export function createApp(root, options = {}) {
 
   // ── labels on the picture: few and short, each pinned to what it names ───────────────────────────────────
   let action = null;
-  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, note, ui.$('.pvc-panel-toggle'), () => rays.boxes()] });
+  const anno = createAnnotations({ stage, layer: ui.annoLayer, avoid: [ui.corner, rotate.el, note, ui.$('.pvc-panel-toggle'), () => rays.boxes()] });
   const shown = new Map();
   const pts = new Map();
   /** A label pinned to a world point. `spots` are the places it may take, best first; key labels have no `optional`. */
@@ -416,19 +426,32 @@ export function createApp(root, options = {}) {
   function phase() {
     if (s.busy) return 'busy';
     for (const n of EVENTS) if (!s.seen.has(n)) return n;
-    return s.focus === 'all' ? 'again' : 'all';
+    return s.focus === 'all' ? 'test' : 'all';
   }
   let lastAct = -1e9;
   function act() {
     if (s.locked) return lockedNudge();
     const now = performance.now();
-    if (now - lastAct < 400) return;
+    if (now - lastAct < 400 || now < restUntil) return;
     lastAct = now;
     audio.unlock();
     const ph = phase();
     if (ph === 'busy') return;
-    if (ph === 'again') return home();
+    if (ph === 'test') return quiz.start();
     return run(ph);
+  }
+  /** The step that has just ended, slowly: what it brought goes, and comes again. */
+  function replay() {
+    if (s.locked) return lockedNudge();
+    if (s.busy || !s.last) return;
+    audio.unlock();
+    const name = s.last;
+    const v = rays.view;
+    for (const n of name === 'all' ? EVENTS : [name]) {
+      s.seen.delete(n);
+      v[n].k = 0;
+    }
+    return run(name);
   }
   function pick(name) {
     if (s.locked) return lockedNudge();
@@ -450,10 +473,15 @@ export function createApp(root, options = {}) {
     refraction: ['act_refraction', 2],
     absorption: ['act_absorption', 3],
     all: ['act_all', ''],
-    again: ['act_again', ''],
+    test: ['act_test', ''],
   };
+  const replayBtn = ui.$('[data-act="replay"]');
+  const homeBtn = ui.$('[data-act="home"]'); // it gives way to the test's offer, which needs the room
   function panel() {
     if (s.quiz) return;
+    replayBtn.hidden = !s.last;
+    replayBtn.disabled = s.busy;
+    homeBtn.hidden = phase() === 'test';
     sheet.outcome(outcome());
     sheet.rule(t(`rule_${s.focus || 'start'}`));
     sheet.choose(s.focus);
@@ -681,7 +709,7 @@ export function createApp(root, options = {}) {
     const from = s.frame;
     settle();
     s.frame = from;
-    fly('start', 0.7);
+    fly('start', 1.5);
     draw();
     emitChange();
   }
@@ -705,6 +733,7 @@ export function createApp(root, options = {}) {
     if (act_ === 'q-next') quiz.next();
     if (act_ === 'q-again') quiz.start();
     if (act_ === 'home') home();
+    if (act_ === 'replay') replay();
     if (act_ === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});

@@ -8,10 +8,12 @@ import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
+import { createDragHandle } from '@shared/student/draghandle.js';
 import { createAudio } from '@shared/student/audio.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
+import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
@@ -40,6 +42,7 @@ import {
 } from './reading.js';
 import { createSetting, frameOf } from './setting.js';
 
+const RESULT_HOLD = 1000; // ms a finished step's result stays up: a tap on the action before that is ignored
 export const DEFAULTS = {
   stage: 0, // how far the story has come, 0 … 6
   u: U.start, // the candle's distance from the board, cm
@@ -55,6 +58,8 @@ export const DEFAULTS = {
 
 const LAST = 6;
 const STEPS = ['hole', 'x', 'y', 'drag', 'big', 'tiny', 'again'];
+const CARRIER_Y = 0.9; // cm above the bench, on the carriers that ride the rail: where the two handles sit
+const CARRIER_Z = 3; // cm: at the carrier's front edge, so that neither the flame nor the image is covered
 const WORDS = ['real', 'inverted', 'bigger', 'sharp'];
 const FRAME_AT = ['start', 'both', 'rays', 'drag', 'drag', 'big', 'drag'];
 const NEXT_WORD = ['real', 'inverted', 'inverted', 'bigger', 'sharp', 'sharp', null];
@@ -86,7 +91,11 @@ export function createApp(root, options = {}) {
     layout: 'side',
     learn: cleanSheet(t, {
       examples: { label: 'ex_label', items: WORDS.map((id) => ({ id, label: `ex_${id}` })) },
-      quiet: [{ act: 'home', label: 'act_home', icon: ICONS.reset }],
+      quiet: [
+        { act: 'replay', label: 'act_replay', icon: ICONS.play },
+        { act: 'home', label: 'act_home', icon: ICONS.reset },
+      ],
+      tight: true,
       lines: { action: 1, outcome: 1, rule: 4 },
     }),
     learnAlign: 'start',
@@ -107,15 +116,11 @@ export function createApp(root, options = {}) {
   const stage = createStage(ui.canvasHost, { fov: 24, near: 4, far: 900, environmentIntensity: 0.32 });
   const { camera, controls } = stage;
   controls.enablePan = false;
-  controls.enableZoom = false;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(55);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(88);
-  controls.minAzimuthAngle = THREE.MathUtils.degToRad(-72);
-  controls.maxAzimuthAngle = THREE.MathUtils.degToRad(-6);
   const setting = createSetting({ stage, shadow: Boolean(o.shadow), num: N });
   const dia = createDiagram({ stage, host: ui.canvasHost });
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
+  let restUntil = 0; // no action before this (performance.now): the last step's result is being looked at
   const s = {
     stage: Math.max(0, Math.min(LAST, Math.round(Number(o.stage)) || 0)),
     u: clampU(Number(o.u) || U.start),
@@ -241,6 +246,7 @@ export function createApp(root, options = {}) {
     s.stage = stageNow;
     if (word) s.seen.add(word);
     s.busy = false;
+    restUntil = performance.now() + RESULT_HOLD;
     audio.tick();
     draw();
     emitChange();
@@ -265,7 +271,7 @@ export function createApp(root, options = {}) {
     async hole() {
       const { alive, tween } = begin();
       const v = dia.view;
-      await fly('hole', 0.9);
+      await fly('hole', 1.5);
       if (!alive()) return;
       s.d = HOLES.tiny;
       v.point = 0;
@@ -274,7 +280,7 @@ export function createApp(root, options = {}) {
       await tween('hole', 0.3, () => {});
       if (!alive()) return;
       // back to see the candle and the paper together, and only then the first light goes through
-      await fly('both', 1);
+      await fly('both', 1.5);
       if (!alive()) return;
       const going = tween('pulse', 1.5, (k) => (v.pulse = 1.55 * k), ease.linear);
       const showing = tween(
@@ -295,7 +301,7 @@ export function createApp(root, options = {}) {
     async x() {
       const { alive, tween } = begin();
       const v = dia.view;
-      const flying = fly('rays', 1);
+      const flying = fly('rays', 1.5);
       const thin = s.thin;
       await Promise.all([flying, tween('thin', 0.8, (k) => (s.thin = thin + (BOARD_THIN - thin) * k))]);
       if (!alive()) return;
@@ -331,23 +337,23 @@ export function createApp(root, options = {}) {
         ease.inOutSine,
         0.7,
       );
-      await Promise.all([coming, fly('drag', 0.9, 0.7)]);
+      await Promise.all([coming, fly('drag', 1.5, 0.7)]);
       if (my === token) draw();
     },
     async drag() {
       const { alive, tween } = begin();
       const v = dia.view;
-      if (s.frame !== 'drag' || camK < 1) await fly('drag', 0.8);
+      if (s.frame !== 'drag' || camK < 1) await fly('drag', 1.5);
       if (!alive()) return;
       v.bars = 1;
       v.lengths = 1;
-      if (!(await moveTo(tween, alive, 'paper', s.v === SHOWN_V ? V.start : SHOWN_V, 1.3))) return;
+      if (!(await moveTo(tween, alive, 'paper', s.v === SHOWN_V ? V.start : SHOWN_V, 1.8))) return;
       finish(4, 'bigger');
     },
     async big() {
       const { alive, tween } = begin();
       const v = dia.view;
-      await fly('big', 1);
+      await fly('big', 1.5);
       if (!alive()) return;
       s.bigLabel = true;
       const d = s.d;
@@ -362,7 +368,7 @@ export function createApp(root, options = {}) {
     async tiny() {
       const { alive, tween } = begin();
       const v = dia.view;
-      if (s.frame !== 'big' || camK < 1) await fly('big', 0.8);
+      if (s.frame !== 'big' || camK < 1) await fly('big', 1.5);
       if (!alive()) return;
       const d = s.d;
       await tween('hole', 0.9, (k) => {
@@ -372,10 +378,10 @@ export function createApp(root, options = {}) {
       });
       if (!alive()) return;
       s.bigLabel = false;
-      await fly('drag', 0.9);
+      await fly('drag', 1.5);
       if (!alive()) return;
       // near and far: sharp all the way
-      if (!(await moveTo(tween, alive, 'paper', V.min, 1.3))) return;
+      if (!(await moveTo(tween, alive, 'paper', V.min, 1.8))) return;
       if (!(await moveTo(tween, alive, 'paper', V.max, 1.9))) return;
       if (!(await moveTo(tween, alive, 'paper', V.start, 1))) return;
       finish(6, 'sharp');
@@ -406,9 +412,10 @@ export function createApp(root, options = {}) {
     controls.update();
   }
   /** The camera goes to a frame. Its promise settles when it arrives (or a finger takes over). */
-  function fly(frame, duration = 0.8, delay = 0) {
+  function fly(frame, duration = 1.5, delay = 0) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
+      rotate.home();
       s.view = 'front';
       syncUI();
     }
@@ -432,12 +439,14 @@ export function createApp(root, options = {}) {
   function setView(view, { animate = true } = {}) {
     s.view = view === '3d' ? '3d' : 'front';
     s.userMovedCamera = false;
+    rotate.home();
     syncUI();
-    if (animate) fly(s.frame, 0.8);
+    if (animate) fly(s.frame, 1.5);
     else camK = 1;
     stage.invalidate();
   }
-  controls.addEventListener('start', () => {
+  /** The student has really turned the view (the cue tells a turn from a bare tap). */
+  function turnedByHand() {
     s.userMovedCamera = true;
     tweener.cancel('camera');
     camK = 1;
@@ -446,13 +455,16 @@ export function createApp(root, options = {}) {
       syncUI();
       emit('view', { view: s.view });
     }
+  }
+  const rotate = createRotateCue(stage, {
+    layer: ui.stage,
+    short: `${t.num(360)}°`,
+    label: t('rotate_me'),
+    pulse: Boolean(o.coach),
+    onTurn: turnedByHand,
   });
+  // the stage also calls this when it lowers its resolution mid-turn: a view the student has turned stays theirs
   stage.onResize(() => {
-    s.userMovedCamera = false;
-    if (s.view === '3d') {
-      s.view = 'front';
-      syncUI();
-    }
     draw();
   });
   stage.onBeforeRender(() => {
@@ -461,12 +473,47 @@ export function createApp(root, options = {}) {
     setting.face(camera);
   });
 
+  // ── what can be moved: a handle on the carrier of each, and the stretch of rail it can go ──────────────────
+  const canDrag = () => !s.locked && !s.busy && s.stage >= 3 && s.frame === 'drag' && camK >= 1;
+  const paperAt = new THREE.Vector3();
+  const candleAt = new THREE.Vector3();
+  const paperHandle = createDragHandle(stage, {
+    point: () => paperAt.set(s.v, CARRIER_Y, CARRIER_Z),
+    axis: 'x',
+    track: { from: new THREE.Vector3(V.min, CARRIER_Y, CARRIER_Z), to: new THREE.Vector3(V.max, CARRIER_Y, CARRIER_Z) },
+    label: t('drag_me'),
+    labelAt: 'right',
+    aria: t('aria_drag_paper'),
+    pulse: Boolean(o.coach),
+    when: canDrag,
+  });
+  const candleHandle = createDragHandle(stage, {
+    point: () => candleAt.set(-s.u, CARRIER_Y, CARRIER_Z),
+    axis: 'x',
+    track: { from: new THREE.Vector3(-U.max, CARRIER_Y, CARRIER_Z), to: new THREE.Vector3(-U.min, CARRIER_Y, CARRIER_Z) },
+    label: t('drag_me'),
+    labelAt: 'left',
+    aria: t('aria_drag_candle'),
+    pulse: Boolean(o.coach),
+    when: canDrag,
+  });
+
   // ── labels on the picture: few and short, each pinned to what it names ───────────────────────────────────
   let action = null;
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, note, ui.$('.pvc-panel-toggle'), () => dia.boxes(), () => dia.flameBox(), () => action?.ringBox()],
+    avoid: [
+      ui.corner,
+      rotate.el,
+      note,
+      ui.$('.pvc-panel-toggle'),
+      () => dia.boxes(),
+      () => dia.flameBox(),
+      () => action?.ringBox(),
+      () => paperHandle.box(),
+      () => candleHandle.box(),
+    ],
   });
   const shown = new Map();
   const pts = new Map();
@@ -626,13 +673,27 @@ export function createApp(root, options = {}) {
   function act() {
     if (s.locked) return lockedNudge();
     const now = performance.now();
-    if (now - lastAct < 400) return;
+    if (now - lastAct < 400 || now < restUntil) return;
     lastAct = now;
     audio.unlock();
     if (s.busy) return;
     const step = STEPS[s.stage];
-    if (step === 'again') return home();
+    if (step === 'again') return quiz.start();
     return RUN[step]();
+  }
+  /** The step that has just ended, slowly, from where it began. */
+  function replay() {
+    if (s.locked) return lockedNudge();
+    if (s.busy || s.stage === 0) return;
+    audio.unlock();
+    const was = s.frame;
+    stopRun();
+    clearLabels();
+    s.stage -= 1;
+    s.from = { u: s.u, v: s.v };
+    settle();
+    s.frame = was;
+    return RUN[STEPS[s.stage]]();
   }
   /** The words: the place in the story where each one is found. */
   function pick(word) {
@@ -665,7 +726,7 @@ export function createApp(root, options = {}) {
     s.from = { u: s.u, v: s.v };
     settle();
     s.frame = was;
-    fly(frame || FRAME_AT[n], 0.9);
+    fly(frame || FRAME_AT[n], 1.5);
     draw();
     emitChange();
   }
@@ -693,10 +754,15 @@ export function createApp(root, options = {}) {
     drag: ['act_drag', 4, ICONS.drag],
     big: ['act_big', 5, ICONS.hand],
     tiny: ['act_tiny', 6, ICONS.hand],
-    again: ['act_again', '', ICONS.reset],
+    again: ['act_test', '', ICONS.hand],
   };
+  const replayBtn = ui.$('[data-act="replay"]');
+  const homeBtn = ui.$('[data-act="home"]'); // it gives way to the test's offer, which needs the room
   function panel() {
     if (s.quiz) return;
+    replayBtn.hidden = !(s.stage > 0);
+    replayBtn.disabled = s.busy;
+    homeBtn.hidden = STEPS[s.stage] === 'again';
     sheet.outcome(outcome());
     sheet.rule(t(`rule_${s.stage === 5 && !s.bigLabel ? 6 : told()}`));
     sheet.choose(WORD_AT[s.stage]);
@@ -748,7 +814,9 @@ export function createApp(root, options = {}) {
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
   function grabAt(x, y, touch) {
-    if (s.locked || s.busy || s.stage < 3 || s.frame !== 'drag' || camK < 1) return null;
+    if (!canDrag()) return null;
+    if (paperHandle.hit(x, y)) return 'paper';
+    if (candleHandle.hit(x, y)) return 'candle';
     const slack = touch ? 22 : 10;
     const bottom = HOLE_Y - PAPER.height / 2;
     const top = HOLE_Y + PAPER.height / 2;
@@ -777,6 +845,7 @@ export function createApp(root, options = {}) {
       controls.enabled = false;
       capturePointer(ui.canvasHost, e.pointerId);
       s.drag = { what, id: e.pointerId, x: p.x, y: p.y, u: s.u, v: s.v };
+      (what === 'paper' ? paperHandle : candleHandle).markUsed();
       action.hide('drag');
       audio.unlock();
       emit('dragstart', { part: what });
@@ -1110,7 +1179,7 @@ export function createApp(root, options = {}) {
     const was = s.frame;
     settle();
     s.frame = was;
-    fly('start', 0.8);
+    fly('start', 1.5);
     draw();
     emitChange();
   }
@@ -1134,6 +1203,7 @@ export function createApp(root, options = {}) {
     if (act_ === 'q-next') quiz.next();
     if (act_ === 'q-again') quiz.start();
     if (act_ === 'home') home();
+    if (act_ === 'replay') replay();
     if (act_ === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else root.requestFullscreen?.().catch(() => {});
@@ -1149,6 +1219,7 @@ export function createApp(root, options = {}) {
       if (s.busy || s.stage < 3 || s.frame !== 'drag') return;
       s.v = clampV(s.v + (paper || 0));
       s.u = clampU(s.u + (candle || 0));
+      (paper ? paperHandle : candleHandle).markUsed();
       apply();
       movedEnough();
       draw();

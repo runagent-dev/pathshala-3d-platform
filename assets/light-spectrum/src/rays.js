@@ -369,23 +369,6 @@ export function createRays({ stage, host, t }) {
       ctx.globalAlpha = 1;
       return;
     }
-    // the handle, a knob on the scale, with its two small arrows
-    ctx.beginPath();
-    ctx.arc(ax, ay, 10, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.strokeStyle = INK.mark;
-    ctx.lineWidth = 1.6;
-    ctx.stroke();
-    ctx.fillStyle = INK.mark;
-    for (const k of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(ax, ay + k * 7.2);
-      ctx.lineTo(ax - 3.8, ay + k * 2.6);
-      ctx.lineTo(ax + 3.8, ay + k * 2.6);
-      ctx.closePath();
-      ctx.fill();
-    }
     ctx.globalAlpha = 1;
   }
   v.handle = { x: 0, y: 0 };

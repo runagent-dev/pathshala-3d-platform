@@ -152,7 +152,7 @@ export function createDish() {
     color: 0xffffff,
     roughness: 0.06,
     metalness: 1,
-    side: THREE.DoubleSide,
+    side: THREE.BackSide, // wound away from the pencil: the silver is seen from the pencil's side only, and behind it is the painted back
     envMapIntensity: 1.1,
     transparent: true,
   });
@@ -177,11 +177,17 @@ export function createDish() {
   faces.renderOrder = 3;
   const edge = new THREE.Mesh(of(rim), edgeMat);
   const coat = new THREE.Mesh(of(b), silverMat);
+  // the back of a silvered mirror is painted: the same surface seen from behind, one more draw call
+  const paint = new THREE.Mesh(
+    coat.geometry,
+    new THREE.MeshStandardMaterial({ name: 'MirrorBack', color: 0x39414a, roughness: 0.62, metalness: 0.1 }),
+  );
+  paint.name = 'mirror-back';
   for (const m of [edge, coat]) m.castShadow = true;
   coat.renderOrder = 4;
   const body = new THREE.Group();
   body.position.x = MIRROR.thick / 2;
-  body.add(faces, edge, coat);
+  body.add(faces, edge, coat, paint);
   root.add(body);
   root.rotation.y = Math.PI; // the outer surface toward the pencil
 

@@ -70,7 +70,7 @@ export function createGraph(t, { onScrub } = {}) {
       <text class="lab-gy" x="${W - PAD.r - 2}" y="${gy(1) + 11}" text-anchor="end">${t('g_y')}</text>
       <text x="${(gx(400) + gx(700)) / 2}" y="${H - 3}" text-anchor="middle">${t('g_x')}</text>
       <line class="lab-drop" y1="${gy(0)}"/>
-      <circle class="lab-now" r="5.5"/>
+      <g class="lab-now"><circle r="10"/><path d="M-6 0h12M-3.4 -3 -6 0l2.6 3M3.4 -3 6 0l-2.6 3"/></g>
     </g>`;
   }
   function barSvg() {
@@ -140,8 +140,7 @@ export function createGraph(t, { onScrub } = {}) {
     const y = gy(sensitivity(n)).toFixed(1);
     const dot = svg.querySelector('.lab-now');
     const drop = svg.querySelector('.lab-drop');
-    dot.setAttribute('cx', x);
-    dot.setAttribute('cy', y);
+    dot.setAttribute('transform', `translate(${x} ${y})`);
     dot.style.display = seen && dotOn ? '' : 'none';
     drop.style.display = seen && dotOn ? '' : 'none';
     drop.setAttribute('x1', x);
