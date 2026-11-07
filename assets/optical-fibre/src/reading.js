@@ -56,9 +56,17 @@ export function reflectance(theta, n1 = N_CORE, n2 = N_CLAD) {
   return (rs * rs + rp * rp) / 2;
 }
 
+/**
+ * A piece of the centre line: a line from (x0, y0) to (x1, y1), or an arc round (cx, cy) of radius r from the angle a0
+ * through da (radians, + anticlockwise); len is its length (cm).
+ * @typedef {{ kind: string, x0?: number, y0?: number, x1?: number, y1?: number, cx?: number, cy?: number, r?: number,
+ *   a0?: number, da?: number, len?: number }} Piece
+ */
+
 /** The centre line for a far end raised by h (cm): its pieces, lines and arcs. */
 export function centreLine(h = 0) {
   const { s1, span, length } = FIBRE;
+  /** @type {Piece[]} */
   const pieces = [];
   if (Math.abs(h) < 1e-6) {
     pieces.push({ kind: 'line', x0: 0, y0: 0, x1: length, y1: 0 });
