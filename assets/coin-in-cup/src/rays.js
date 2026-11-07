@@ -405,7 +405,7 @@ export function createRays({ stage, host }) {
     if (v.eye > 0 && used < pool.length) {
       P(EYE.x, EYE.y);
       const r = pool[used++];
-      const s = 26 * unit;
+      const s = 24 * unit * (Math.min(w, h) < 450 ? 1.3 : 1.1); // the eye icon's reach, as drawn
       r.left = sx - s;
       r.right = sx + s;
       r.top = sy - s;

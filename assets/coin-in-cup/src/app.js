@@ -277,6 +277,8 @@ export function createApp(root, options = {}) {
   let rotateEl = null;
   /** @type {ReturnType<typeof createDragHandle> | null} */
   let levelHandle = null;
+  /** @type {HTMLElement | null} */
+  let levelWord = null;
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
@@ -289,6 +291,7 @@ export function createApp(root, options = {}) {
       () => action?.ringBox(),
       () => boxOf(rotateEl),
       handleDisc, // the handle's disc only: its faint dashed track may pass behind a label
+      () => boxOf(levelWord), // and its first-use word
     ],
   });
   const discBox = { left: 0, top: 0, right: 0, bottom: 0 };
@@ -313,20 +316,24 @@ export function createApp(root, options = {}) {
   const ABOVE = [spot(0, -24), spot(18, -24), spot(-18, -24), spot(0, -40)];
   const BELOW = [spot(0, 24), spot(-20, 24), spot(20, 24)];
   const inQuiz = () => s.mode === 'quiz';
+  const tight = () => stage.height < 260;
   const LABELS = {
     eye: {
       text: () => t('lbl_eye'),
       point: () => V(EYE.x, EYE.y),
       color: COLORS.ink,
-      spots: [...ABOVE, ...LEFT_OF, ...BELOW],
-      show: () => true,
+      // beside the eye, never on it (the eye's reach is in the drawing's boxes, which every label avoids)
+      spots: [spot(0, -42), spot(0, -50), spot(-38, -34), spot(40, -40), spot(-46, 0)],
+      // in the smallest frame the glowing eye with its "দেখা যায়" needs no name
+      show: () => !(tight() && (s.seen || s.edgeSeen) && s.v.ray >= 0.999 && s.v.cut > 0.9 && !inQuiz() && !s.busy),
     },
     see: {
       text: () => (s.seen ? t('lbl_seen') : s.edgeSeen ? t('lbl_edge_seen') : t('lbl_q')),
       point: () => V(EYE.x, EYE.y),
       color: () => (s.seen || s.edgeSeen ? COLORS.seen : COLORS.stop),
       // beside the eye, away from the light that comes in from the lower right
-      spots: [spot(-30, 4), spot(-30, -14), spot(-28, 22), spot(26, -30), spot(-10, 34)],
+      // left of the eye; near the view's left edge, to its right, above the light that leaves it down to the right
+      spots: [spot(-40, 4), spot(-40, -16), spot(-38, 24), spot(40, -8), spot(40, -22), spot(38, -36)],
       show: () => s.v.ray >= 0.999 && s.v.cut > 0.9 && !inQuiz() && !s.busy,
     },
     coin: {
@@ -352,19 +359,11 @@ export function createApp(root, options = {}) {
       text: () => t('lbl_water'),
       point: () => V(CUP.ri - 1.4, (CUP.base + s.v.level) / 2, 0),
       color: COLORS.water,
-      spots: [...RIGHT_OF, ...LEFT_OF],
+      // clear of the level's handle, its word and its track (the handle sits on the right of the water)
+      spots: [...LEFT_OF, ...BELOW, spot(-30, -20)],
+      avoid: [() => levelHandle?.box() ?? []],
       optional: true,
       show: () => depthOf(s.v.level) > 1.6 && s.v.cut > 0.9 && s.v.normal < 0.5 && s.v.back < 0.5 && !behind() && stage.height >= 260,
-    },
-    normal: {
-      text: () => t('lbl_normal'),
-      point: () => {
-        const S = s.geo.surface;
-        return V(S.x, S.y + rays.NORMAL_UP);
-      },
-      color: COLORS.normal,
-      spots: [...ABOVE, ...RIGHT_OF, ...LEFT_OF],
-      show: () => Boolean(s.geo.surface) && s.v.normal > 0.9 && !behind(),
     },
     t1: {
       text: () => t('lbl_t1', { a: whole(s.geo.theta1) }),
@@ -385,8 +384,21 @@ export function createApp(root, options = {}) {
         return V(S.x, S.y + rays.ARC * 0.85);
       },
       color: COLORS.t2,
-      spots: [spot(24, 0), spot(24, -14), spot(24, 12), spot(20, -30)],
+      spots: [spot(24, 0), spot(24, -14), spot(24, 12), spot(20, -30), spot(16, -46)],
       show: () => Boolean(s.geo.surface) && s.v.arcs > 0.9 && rv.showT2 && !behind(),
+    },
+    normal: {
+      text: () => t('lbl_normal'),
+      point: () => {
+        const S = s.geo.surface;
+        return V(S.x, S.y + rays.NORMAL_UP * 0.8);
+      },
+      color: COLORS.normal,
+      // to the right of the normal, a little below its top: the eye's labels have the top of the view
+      spots: [spot(16, 0), spot(16, -14), spot(16, 14), ...ABOVE, ...LEFT_OF],
+      // placed after θ₁ and θ₂; where there is no clear spot (the smallest frames) the dashed line and the panel name it
+      optional: true,
+      show: () => Boolean(s.geo.surface) && s.v.normal > 0.9 && !behind(),
     },
     image: {
       text: () => t('lbl_image'),
@@ -398,15 +410,23 @@ export function createApp(root, options = {}) {
   };
   const shownText = new Map();
   function syncLabels() {
+    // the kit places labels in the order they were added: keep that the order of LABELS (θ₁ and θ₂ before লম্ব), so a
+    // label added now puts the later ones in again after it
+    let added = false;
     for (const [id, L] of Object.entries(LABELS)) {
       const want = L.show();
       if (want) {
         const text = L.text();
         const color = typeof L.color === 'function' ? L.color() : L.color;
         const key = `${text}|${color}`;
-        if (!anno.has(id) || shownText.get(id) !== key) {
+        if (!anno.has(id) || added) {
+          added = true;
           if (anno.has(id)) anno.remove(id);
-          anno.add(id, { text, point: L.point, kind: 'force', color, spots: L.spots, optional: Boolean(L.optional) });
+          anno.add(id, { text, point: L.point, kind: 'force', color, spots: L.spots, optional: Boolean(L.optional), avoid: L.avoid ?? [] });
+          shownText.set(id, key);
+        } else if (shownText.get(id) !== key) {
+          // a new value (θ while the water moves): in place, no fade
+          anno.update(id, { text, color });
           shownText.set(id, key);
         }
       } else if (anno.has(id)) {
@@ -769,7 +789,7 @@ export function createApp(root, options = {}) {
     if (next) return go(next);
     return quiz.start();
   }
-  const cupBox = new THREE.Box3(V(-5.9, 0, -5.9), V(5.9, 6.7, 5.9));
+  const cupMid = V(0, 3.4, 0);
   action = createAction({
     stage,
     layer: ui.coachLayer,
@@ -778,8 +798,9 @@ export function createApp(root, options = {}) {
     step: 1,
     label: 'act_look',
     icon: ICONS.hand,
-    target: () => cupBox,
-    pad: 6,
+    // a ring round the cup itself (its middle, its radius), clear of the eye
+    target: () => cupMid,
+    worldRadius: 6.4,
     avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
@@ -815,6 +836,15 @@ export function createApp(root, options = {}) {
     when: canDrag,
   });
   if (stage.height < 260) levelHandle.markUsed();
+  levelWord = /** @type {HTMLElement | null} */ (levelHandle.el.querySelector('.pvc-dh-word'));
+  // the handle shows and hides on its own between frames: draw once more then, so the labels make room for it
+  let handleShown = false;
+  stage.addTicker(() => {
+    const v = Boolean(levelHandle?.visible);
+    if (v === handleShown) return false;
+    handleShown = v;
+    return true;
+  });
 
   createHowTo(
     ui,
