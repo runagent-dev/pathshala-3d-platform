@@ -10,6 +10,7 @@ body.bg-transparent { background: transparent; }
 /* the charges' legend: the same chips as on the spheres */
 .ge .ge-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; margin: 0; color: var(--ink-2); font-size: 13px; line-height: 1.3; }
 .ge .ge-legend span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.ge .ge-legend em { font-style: normal; }
 .ge .ge-legend i { display: inline-flex; flex-direction: column; }
 .ge .ge-legend i svg { width: 12px; height: 12px; }
 .ge .ge-legend i svg + svg { margin-top: -3px; }
@@ -137,6 +138,8 @@ body.bg-transparent { background: transparent; }
 /* a short side panel (844 × 390, 640 × 400): the words shrink too */
 @container pvc-panel (max-height: 430px) {
   .ge .pvc-learn { gap: 4px; }
+  .ge .ge-legend { flex-wrap: nowrap; gap: 0 10px; font-size: 12px; }
+  .ge .ge-legend em { display: none; }
   .ge .pvc-learn.ge-calm .pvc-howto { display: none; }
   .ge .ge-lead .ge-long { display: none; }
   .ge .ge-lead .ge-short { display: inline; }

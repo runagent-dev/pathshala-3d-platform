@@ -23,18 +23,18 @@ touching (আবেশ) or by touching (আহিতকরণ), and with a known
   on the leaves. The rod can be dragged (`createDragHandle`, ← → keys): the electrons follow, three states of the sentence.
 - **৩ ছোঁয়ানো**: the rod touches the disc's rim: five electrons go into the glass and pair up with its +; the rod goes; the leaves stay apart.
 - **৪, ৫ চার্জ চেনা**: the book's test: the comb near a positive instrument makes the gap smaller, the glass rubbed again makes it
-  wider. A faint copy of the leaves stays at the known gap, labelled "আগের ফাঁক". Both bodies can be dragged.
+  wider. A dashed outline of the leaves stays at the known gap, labelled "আগের ফাঁক". Both bodies can be dragged.
 - **Test**: five questions (leaves' charge by induction, why they stay apart, the unknown rod, charge from a comb's touch, the rainy
   day). Signs on the instrument are hidden where they would give the answer and come back with the worked answer.
 
 ## Physics (src/reading.js, test/unit/gold-leaf-electroscope.test.mjs)
 - A chip is a packet of many electrons. Metal: three + on the disc, three down each leaf (nine pairs when neutral). The numbers are
   counts of drawn chips, never a measurement. Total charge is always kept (`parts`).
-- **Leaf balance**: each leaf hangs from its top edge. Taking the push between the lower parts of the leaves and the weight at the
+- **Leaf balance** (unchanged in round 2): each leaf hangs from its top edge. Taking the push between the lower parts of the leaves and the weight at the
   middle of the leaf gives sin²θ · tan θ = C q²; C is chosen so three chips on a leaf open it about 38°. So 1, 2, 3 chips give gaps of
   about 37°, 58° and 76°: more charge, wider, but not in proportion. The shape is right; the scale is chosen.
 - **Induction**: chips moved per leaf κ q / (1 + (d/d₀)²), rounded. Qualitative: the book gives no formula.
-- **The comb does not shut the gap**: the leaves keep one chip each, because the disc has only three bare + to give. The book says "ফাঁক কমে
+- **The comb does not shut the gap**: the leaves keep one chip each, because the disc has only three bare + to give (the reviewer agrees). The book says "ফাঁক কমে
   যায়", and a gap that visibly shrinks reads better than one that disappears. A real electroscope would close, then reopen, with a
   stronger or nearer body; that is left out.
 
@@ -48,11 +48,16 @@ touching (আবেশ) or by touching (আহিতকরণ), and with a known
   disc). Chapter 10 says only electrons move (10.2, 10.3, and the chapter's shared decision), so the picture shows electrons leaving for the glass, and
   the rule keeps the book's sentence that the charge spreads over the disc, rod and leaves.
 - **Leaves on a plate**: the book's picture has two tilted sheets. A real instrument has flat leaves on the faces of a small plate, opening
-  away from it; it is built that way, turned about 40° from the first view, so both the opening and the faces show. Orbit to see it edge on.
+  away from it; it is built that way, fan-shaped (34 mm wide at the foot) with a thin dark-amber edge so the leaves read on the table and the
+  glass, turned about 45° from the first view so both leaves show as parallelograms at every gap. Orbit to see them edge on.
+- **The table** is a darker sand than the sister figures', on purpose: gold on a cream table was the review's main complaint.
+- **Camera**: the first two steps show the whole bottle; from step ২ on it is closer on the leaves and the disc, off-centre so the rod's charges
+  stay in view, and the bottle's sides and the table may leave the frame. When the student turns the view, the pivot glides to the bottle's axis.
 - Glass is an insulator: only charge at the touching spot leaves it, so the rod keeps some + after the touch.
 - "কয়েকটি চার্জ আঁকা, আসলে অসংখ্য" in a corner, as in `electrostatic-induction`.
 - The unknown rod in the test is a grey rod; its charge is chosen at random each time (never shown; the gap tells).
-- Added by the figure: বুজে এসেছে for leaves closing, "আগের ফাঁক", "অজানা দণ্ড", "পরিচিত চার্জ" (the book's words).
+- The damp day of the test: drops on the bottle and the label "ভেজা বাতাস"; a picture of the cause, not a measurement.
+- Added by the figure: "আগের ফাঁক", "অজানা দণ্ড", "ভেজা বাতাস"; "পরিচিত চার্জ" is the book's.
 
 ## Terms (as in the book)
 তড়িৎবীক্ষণ যন্ত্র, ইলেকট্রোস্কোপ, সোনার পাত, সুপরিবাহী দণ্ড, ধাতব চাকতি, অপরিবাহী ছিপি, কাচের বোতল, চার্জ আহিতকরণ, চার্জের প্রকৃতি বের করা, চার্জের আবেশ,

@@ -2,7 +2,8 @@
 // bottle with a slight green-blue tint, a reddish insulating stopper (অপরিবাহী ছিপি) in its neck, a brass conducting
 // rod (সুপরিবাহী দণ্ড) through the stopper, a thick copper disc (ধাতব চাকতি) on top, and at the rod's foot a flat brass
 // plate with one gold leaf (সোনার পাত) on each face, as in a real instrument: each leaf turns about its top edge, away
-// from the plate. The plate is turned about 40° from the view, so the opening shows and so do the leaves' faces.
+// from the plate, fan-shaped as in the book. The plate is turned about 45° from the view, so the opening shows and both
+// leaves' faces do, at every gap.
 // Also the places where charges sit (slots): three in a row on the disc, three down each leaf, and room for extras.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -10,11 +11,11 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 /** Sizes (mm). */
 export const JAR = { r: 58, body: 104, neckR: 23, neckY: 128, top: 142, wall: 2.6, base: 6 };
 export const STOPPER = { bottom: 130, top: 155, rBottom: JAR.neckR - JAR.wall, rTop: 25 };
-export const ROD = { r: 3.4, bottom: 90, top: 182 };
-export const DISC = { r: 34, y: 182, h: 7 };
-export const LEAF = { hinge: 86, len: 66, wTop: 20, wBot: 25 };
+export const ROD = { r: 3.4, bottom: 104, top: 182 };
+export const DISC = { r: 40, y: 182, h: 7 };
+export const LEAF = { hinge: 100, len: 80, wTop: 14, wBot: 34 };
 /** The leaves' plate, turned about y: its faces look along `SWING` (the way the right leaf opens), `ACROSS` lies along it. */
-const TURN = Math.PI / 2 - 0.3;
+const TURN = Math.PI / 2 - 0.39;
 export const SWING = new THREE.Vector3(Math.sin(TURN), 0, Math.cos(TURN));
 export const ACROSS = new THREE.Vector3(Math.cos(TURN), 0, -Math.sin(TURN));
 /** The disc's charges are laid out across the opening view (`ROW`, to the right) and toward it (`FWD`). */
@@ -142,7 +143,106 @@ function corkTexture() {
   return tex;
 }
 
-/** One leaf: a thin, slightly tapered sheet hanging down from its top edge (local origin, across = x), finely crinkled. */
+/** A leaf's skin: strong gold with a few fine creases and a thin dark-amber edge, so its shape reads on the table and
+ * the pale glass (128 × 256, made once). */
+function leafTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffc62e';
+  g.fillRect(0, 0, 128, 256);
+  g.strokeStyle = 'rgba(176, 112, 8, 0.4)';
+  g.lineWidth = 1.5;
+  for (const [x0, y0, x1, y1] of [
+    [30, 40, 62, 150],
+    [92, 30, 74, 190],
+    [48, 120, 100, 236],
+    [20, 150, 40, 240],
+  ]) {
+    g.beginPath();
+    g.moveTo(x0, y0);
+    g.lineTo(x1, y1);
+    g.stroke();
+  }
+  g.strokeStyle = '#7d4a00';
+  g.lineWidth = 14;
+  g.strokeRect(0, -10, 128, 263);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+/** The leaves' earlier gap: a clear dashed outline, white on a dark line so it reads on blue and on the table. */
+function ghostTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = 'rgba(255, 255, 255, 0.16)';
+  g.fillRect(0, 0, 128, 256);
+  const edge = () => g.strokeRect(6, -10, 116, 260);
+  g.strokeStyle = 'rgba(11, 42, 91, 0.75)';
+  g.lineWidth = 15;
+  edge();
+  g.strokeStyle = '#ffffff';
+  g.lineWidth = 8;
+  g.setLineDash([26, 16]);
+  edge();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+/** Fine drops of water on the bottle's outside, for the damp day of the test (one draw; hidden unless asked). */
+function droplets() {
+  const c = document.createElement('canvas');
+  c.width = 32;
+  c.height = 32;
+  const g = c.getContext('2d');
+  const r = g.createRadialGradient(13, 12, 1, 16, 16, 15);
+  r.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+  r.addColorStop(0.55, 'rgba(205, 232, 245, 0.6)');
+  r.addColorStop(1, 'rgba(120, 170, 200, 0)');
+  g.fillStyle = r;
+  g.fillRect(0, 0, 32, 32);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const N = 110;
+  const pos = new Float32Array(N * 3);
+  let seed = 29;
+  const rnd = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  for (let i = 0; i < N; i++) {
+    const a = rnd() * Math.PI * 2;
+    pos[i * 3] = (JAR.r + 0.6) * Math.cos(a);
+    pos[i * 3 + 1] = 8 + rnd() * (JAR.body - 8);
+    pos[i * 3 + 2] = (JAR.r + 0.6) * Math.sin(a);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({
+    name: 'Droplets',
+    map: tex,
+    size: 9,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
+  const pts = new THREE.Points(geo, mat);
+  pts.name = 'Droplets';
+  pts.visible = false;
+  pts.renderOrder = 11;
+  pts.userData.noExport = true;
+  return pts;
+}
+
+/** One leaf: a thin fan, narrow at its top edge (local origin, across = x), wide at the foot, finely crinkled. */
 function leafGeometry(seedStart) {
   const { len, wTop, wBot } = LEAF;
   const g = new THREE.PlaneGeometry(1, 1, 4, 14);
@@ -185,7 +285,7 @@ export function createElectroscope(mats) {
     color: '#b9ddd2',
     roughness: 0.1,
     transparent: true,
-    opacity: 0.2,
+    opacity: 0.12,
     depthWrite: false,
   });
   const jarBase = new THREE.Mesh(new THREE.CylinderGeometry(JAR.r - 1.2, JAR.r - 1.6, JAR.base - 0.6, 64), baseMat);
@@ -215,7 +315,7 @@ export function createElectroscope(mats) {
   nut.translate(0, DISC.y - 3, 0);
   const collar = new THREE.CylinderGeometry(7.5, 8.5, 2.6, 24);
   collar.translate(0, STOPPER.top + 1.3, 0);
-  const plate = new THREE.BoxGeometry(LEAF.wTop + 2, 14, 1.6);
+  const plate = new THREE.BoxGeometry(LEAF.wTop + 4, 14, 1.6);
   plate.rotateY(TURN);
   plate.translate(0, LEAF.hinge + 4, 0);
   const rod = new THREE.Mesh(mergeGeometries([rodGeo.toNonIndexed(), nut.toNonIndexed(), collar.toNonIndexed(), plate.toNonIndexed()]), rodMat);
@@ -228,17 +328,20 @@ export function createElectroscope(mats) {
   disc.receiveShadow = true;
 
   // the leaves
-  const leafMat = new THREE.MeshPhysicalMaterial({
+  const leafSkin = leafTexture();
+  const leafMat = new THREE.MeshStandardMaterial({
     name: 'GoldLeaf',
-    color: '#ffd76e',
-    metalness: 1,
-    roughness: 0.34,
+    color: '#ffffff',
+    map: leafSkin,
+    metalness: 0.7,
+    roughness: 0.36,
     side: THREE.DoubleSide,
-    envMapIntensity: 1.7,
-    emissive: '#7a5410',
-    emissiveIntensity: 0.6,
+    envMapIntensity: 1.5,
+    emissive: '#c98a12',
+    emissiveMap: leafSkin,
+    emissiveIntensity: 0.62,
   });
-  leafMat.userData = { emissive: '#7a5410', intensity: 0.6 };
+  leafMat.userData = { emissive: '#c98a12', intensity: 0.62 };
   const makeRig = (side, geometry, material, order) => {
     const rig = new THREE.Group(); // turned with the plate
     rig.position.set(side * SWING.x * 0.9, LEAF.hinge, side * SWING.z * 0.9);
@@ -257,14 +360,14 @@ export function createElectroscope(mats) {
     l.rig.name = `${l.mesh.name}Rig`;
     return l;
   });
-  // a faint copy of the leaves at an earlier gap (the test of the sign compares with it)
+  // a dashed copy of the leaves at an earlier gap (the test of the sign compares with it)
   const ghostMat = new THREE.MeshBasicMaterial({
     name: 'LeafBefore',
-    color: '#ffe8a8',
+    map: ghostTexture(),
     transparent: true,
-    opacity: 0.3,
     depthWrite: false,
     side: THREE.DoubleSide,
+    toneMapped: false,
   });
   const ghosts = [-1, 1].map((sideSign, i) => {
     const g = makeRig(sideSign, leaves[i].mesh.geometry, ghostMat, 3);
@@ -274,7 +377,8 @@ export function createElectroscope(mats) {
     return g;
   });
 
-  root.add(jarBack, jarBase, rod, disc, cork, ...leaves.map((l) => l.rig), ...ghosts.map((g) => g.rig), jar);
+  const drops = droplets();
+  root.add(jarBack, jarBase, rod, disc, cork, ...leaves.map((l) => l.rig), ...ghosts.map((g) => g.rig), jar, drops);
 
   /** Each leaf's angle from the vertical (radians), away from the plate. */
   let angle = 0;
@@ -300,18 +404,18 @@ export function createElectroscope(mats) {
 
   // ── the slots ───────────────────────────────────────────────────────────────
   /** The pairs stand in a row on the far side from the bodies, leaving the near side for the electrons a + body gathers. */
-  const DISC_ROW = [-26, -13, 0];
+  const DISC_ROW = [-30, -17, -4];
   /** Extras: [along ROW, along FWD]; the two rows are one chip apart on the screen, seen at a slant. */
   const EXTRA = [
-    [13, 12],
-    [13, -12],
-    [24, 11],
-    [24, -11],
-    [31, 0],
-    [18, 0],
+    [11, 12],
+    [11, -12],
+    [22, 12],
+    [22, -12],
+    [33, 8],
+    [33, -8],
   ];
-  const LEAF_DOWN = [13, 33, 53];
-  const LEAF_DOWN_X = [23, 43, 62];
+  const LEAF_DOWN = [22, 44, 66];
+  const LEAF_DOWN_X = [33, 55, 75];
   /** World position of a slot ('D0', 'DX2', 'L2', 'RX1'…) into `out`. */
   function slot(id, out) {
     const extra = id[1] === 'X';
@@ -336,14 +440,23 @@ export function createElectroscope(mats) {
     disc: new THREE.Vector3(-DISC.r * 0.74, DISC_TOP - 1, DISC.r * 0.66),
     rod: new THREE.Vector3(-ROD.r, 115, ROD.r * 0.4),
     stopper: new THREE.Vector3(-STOPPER.rTop * 0.75, STOPPER.top - 8, STOPPER.rTop * 0.65),
+    leafHinge: new THREE.Vector3(0, LEAF.hinge, 0),
     leaf: (i, out) => onLeaf(i ? 1 : -1, LEAF.len * 0.8, angle, out),
-    /** The foot of a leaf at an earlier gap. */
-    ghostTip: (a, out) => onLeaf(-1, LEAF.len * 0.92, a, out),
+    /** The foot of the right leaf at an earlier gap. */
+    ghostTip: (a, out) => onLeaf(1, LEAF.len * 0.9, a, out),
+    /** The foot of a leaf at angle `a` (now, if left out), to one side across its width (−1, 0, +1). */
+    tip: (side, across, a, out) => onLeaf(side, LEAF.len, a ?? angle, out).addScaledVector(ACROSS, (across * LEAF.wBot) / 2),
   };
   return {
     root,
     setLeaves,
     setGhost,
+    /** The damp day: the drops on the bottle, 0…1. */
+    setDamp(k) {
+      drops.visible = k > 0;
+      drops.material.opacity = k;
+    },
+    drops,
     slot,
     points,
     metal: [rodMat, discMat, leafMat],

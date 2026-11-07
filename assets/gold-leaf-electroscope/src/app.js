@@ -78,11 +78,11 @@ const POOL = 16; // electron chips: nine on the neutral metal, room for the extr
 const GLASS_N = CHARGE_AT.length;
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 /** The line bodies come in along: from the disc's rim, out to the right, a little up and toward the viewer. */
-const OUT = V(1, 0.3, 0.25).normalize();
+const OUT = V(1, 0.16, 0.25).normalize();
 const FACING = Math.atan2(OUT.z, OUT.x);
 const CONTACT = V((DISC.r + 0.4) * Math.cos(FACING), DISC.y + DISC.h / 2 + 2, (DISC.r + 0.4) * Math.sin(FACING));
 /** How far along a body its drag handle sits: just behind its charges. */
-const HANDLE_AT = 106;
+const HANDLE_AT = 104;
 const BODY_KEYS = ['glass', 'comb', 'unknown'];
 const PREV = { parts: 'intro', near: 'parts', touch: 'near', testNeg: 'touch', testPos: 'testNeg' };
 const NEXT = { intro: 'parts', parts: 'near', near: 'touch', touch: 'testNeg', testNeg: 'testPos', testPos: null };
@@ -123,7 +123,7 @@ export function createApp(root, options = {}) {
     `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="${CHARGE_COLORS.edge}"/><circle cx="10" cy="10" r="7.6" fill="${fill}"/><path d="M5.6 10h8.8${plus ? 'M10 5.6v8.8' : ''}" stroke="#fff" stroke-width="2.3"/></svg>`;
   const legend = document.createElement('p');
   legend.className = 'ge-legend';
-  legend.innerHTML = `<span>${chipSvg(CHARGE_COLORS.plus, true)}${t('legend_plus')}</span><span>${chipSvg(CHARGE_COLORS.minus, false)}${t('legend_minus')}</span><span class="ge-pair"><i>${chipSvg(CHARGE_COLORS.plus, true)}${chipSvg(CHARGE_COLORS.minus, false)}</i>${t('legend_pair')}</span>`;
+  legend.innerHTML = `<span>${chipSvg(CHARGE_COLORS.plus, true)}${t('legend_plus')}<em> ${t('legend_charge')}</em></span><span>${chipSvg(CHARGE_COLORS.minus, false)}${t('legend_minus')}<em> ${t('legend_minus_more')}</em></span><span class="ge-pair"><i>${chipSvg(CHARGE_COLORS.plus, true)}${chipSvg(CHARGE_COLORS.minus, false)}</i>${t('legend_pair')}</span>`;
   $('.pvc-examples')?.after(legend);
   // the line before the action: what the next tap will show (on the first screen, a few calm words in a card)
   const lead = document.createElement('p');
@@ -204,6 +204,7 @@ export function createApp(root, options = {}) {
     userMovedCamera: false,
     labelsOn: 0, // how many of the parts' labels show
     chips: 0, // the electroscope's own charges: how much they show (none on the calm first screen)
+    damp: 0, // the drops on the bottle, in the test's damp day
     hideMetal: false, // the electroscope's own charges hidden (a test question that must not give the answer)
     leafOverride: null, // a test scene that sets the leaves' charge directly (the rainy day)
     ghost: null, // the leaves' earlier angle, drawn faintly
@@ -475,10 +476,11 @@ export function createApp(root, options = {}) {
   // ── camera: a gentle three-quarter view of the whole instrument; closer on the disc and leaves for the charges ──
   const BOXES = {
     whole: new THREE.Box3(V(-JAR.r - 4, 0, -JAR.r), V(JAR.r + 4, DISC_TOP + 4, JAR.r)),
-    charge: new THREE.Box3(V(-JAR.r - 6, 6, -24), V(186, DISC_TOP + 30, 40)),
+    charge: new THREE.Box3(V(-50, 16, -10), V(176, DISC_TOP + 16, 12)),
   };
-  /** The two poses look from the same side; the charges' a little higher, to see the disc's top. */
-  const DIRS = { whole: V(0.42, 0.34, 1).normalize(), charge: V(0.42, 0.46, 1).normalize() };
+  /** The two poses look from the same side; the charges' is close on the leaves and the disc, a little higher, to see
+   * the disc's top. The bottle's sides and the table may leave the view there; the leaves, the disc and the rod never do. */
+  const DIRS = { whole: V(0.42, 0.34, 1).normalize(), charge: V(0.42, 0.4, 1).normalize() };
   const poses = { whole: null, charge: null };
   function fitPoses() {
     for (const key of Object.keys(BOXES)) {
@@ -506,6 +508,7 @@ export function createApp(root, options = {}) {
   /** The guided camera flies to the pose (or takes the view back from the student). */
   function flyTo(pose, duration = T.fly) {
     const was = s.userMovedCamera;
+    tweener.cancel('recentre');
     if (was) {
       s.userMovedCamera = false;
       rotate.home();
@@ -547,6 +550,21 @@ export function createApp(root, options = {}) {
       emit('view', { view: s.view });
       emitChange();
     }
+    // the close view is framed off-centre: as the student turns it, the pivot glides to the bottle's axis, so the
+    // instrument stays in view from every side
+    const shift = V(0, 112, 0).sub(controls.target);
+    let moved = 0;
+    tweener.animate({
+      key: 'recentre',
+      duration: 0.6,
+      ease: ease.inOutCubic,
+      onUpdate: (k) => {
+        controls.target.addScaledVector(shift, k - moved);
+        camera.position.addScaledVector(shift, k - moved);
+        moved = k;
+        stage.invalidate();
+      },
+    });
   }
   const rotate = createRotateCue(stage, {
     layer: ui.stage,
@@ -559,6 +577,7 @@ export function createApp(root, options = {}) {
   });
   function setView(view, { animate = true } = {}) {
     if (view === '3d') {
+      tweener.cancel('recentre');
       s.view = '3d';
       s.userMovedCamera = false;
       rotate.home();
@@ -591,12 +610,52 @@ export function createApp(root, options = {}) {
     refresh();
   });
 
+  // ── boxes on the screen (canvas pixels) that the ring's badge and some labels keep off ───────────────────────
+  const onScreen = new THREE.Vector3();
+  function grow(b, p) {
+    onScreen.copy(p).project(camera);
+    const x = ((onScreen.x + 1) / 2) * stage.width;
+    const y = ((1 - onScreen.y) / 2) * stage.height;
+    b.left = Math.min(b.left, x);
+    b.right = Math.max(b.right, x);
+    b.top = Math.min(b.top, y);
+    b.bottom = Math.max(b.bottom, y);
+  }
+  const emptyBox = (b) => Object.assign(b, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+  const padded = (b, pad) => ({ left: b.left - pad, top: b.top - pad, right: b.right + pad, bottom: b.bottom + pad });
+  const RIM = Array.from({ length: 8 }, (_, i) => V(DISC.r * Math.cos((i * Math.PI) / 4), DISC_TOP, DISC.r * Math.sin((i * Math.PI) / 4)));
+  const B = { disc: {}, leaves: {}, rod: {} };
+  function discBox() {
+    emptyBox(B.disc);
+    for (const p of RIM) grow(B.disc, p);
+    return padded(B.disc, 14);
+  }
+  const TIP = new THREE.Vector3();
+  function leavesBox() {
+    emptyBox(B.leaves);
+    grow(B.leaves, scope.points.leafHinge);
+    for (const side of [-1, 1])
+      for (const across of [-1, 1]) {
+        grow(B.leaves, scope.points.tip(side, across, undefined, TIP));
+        if (s.ghost != null) grow(B.leaves, scope.points.tip(side, across, s.ghost, TIP));
+      }
+    return padded(B.leaves, 6);
+  }
+  function rodBox() {
+    const k = DRAGS[s.step];
+    if (!k || !bodies[k].root.visible) return null;
+    emptyBox(B.rod);
+    for (const x of [0, HANDLE_AT]) grow(B.rod, bodyPoint(k, TIP.set(x, 0, 0), TIP));
+    return padded(B.rod, 12);
+  }
+
   // ── labels on the picture: short ─────────────────────────────────────────────
   const handleBox = () => dragHandle?.box();
+  const handleWordBox = () => boxOf(ui.stage.querySelector('.pvc-dh-word'));
   const anno = createAnnotations({
     stage,
     layer: ui.annoLayer,
-    avoid: [ui.corner, ui.hint, noteEl, () => action?.box(), () => action?.ringBox(), () => boxOf(rotate.el), handleBox],
+    avoid: [ui.corner, ui.hint, noteEl, () => action?.box(), () => action?.ringBox(), () => boxOf(rotate.el), handleBox, handleWordBox],
   });
   function boxOf(el) {
     if (!el) return null;
@@ -614,9 +673,11 @@ export function createApp(root, options = {}) {
     if (!pts.has(id)) pts.set(id, new THREE.Vector3());
     return pts.get(id);
   };
-  const bodyLabelPoint = (k, at) => () => bodyPoint(k, ptOf(`b-${k}-local`).set(at, k === 'comb' ? 10 : GLASS_ROD.r, 0), ptOf(`b-${k}`));
+  const bodyLabelPoint = (k, at) => () => bodyPoint(k, ptOf(`b-${k}-local`).set(at, k === 'comb' ? -17 : -GLASS_ROD.r, 0), ptOf(`b-${k}`));
   const clothPoint = (k) => () => bodyPoint(k, ptOf(`c-${k}-local`).set(Math.max(0, s.bodies[k].cloth), 8, 0), ptOf(`c-${k}`));
   const near = (k) => s.bodies[k].d < 200;
+  const UNDER_BODY = [spot(0, 24), spot(26, 24), spot(-26, 24), ...ABOVE, ...RIGHT_OF];
+  const FAR_RIGHT = [spot(70, 0), spot(70, 22), spot(70, -22), spot(96, 10), spot(0, 44), spot(44, 40)];
   const LABELS = {
     disc: { text: 'lbl_disc', point: () => scope.points.disc, spots: [...LEFT_OF, ...ABOVE], show: () => s.labelsOn >= 1 },
     rod: { text: 'lbl_rod', point: () => scope.points.rod, spots: LEFT_OF, show: () => s.labelsOn >= 2 },
@@ -629,8 +690,9 @@ export function createApp(root, options = {}) {
     stopper: { text: 'lbl_stopper', point: () => scope.points.stopper, spots: [...LEFT_OF, ...BELOW], show: () => s.labelsOn >= 4 },
     glass: {
       text: 'lbl_glass',
-      point: bodyLabelPoint('glass', 46),
-      spots: [...ABOVE, ...RIGHT_OF, ...BELOW],
+      point: bodyLabelPoint('glass', 28),
+      spots: UNDER_BODY,
+      avoid: [discBox],
       show: () => near('glass') && s.bodies.glass.cloth < 0 && (s.step !== 'intro' || s.mode === 'quiz'),
     },
     silk: {
@@ -641,8 +703,10 @@ export function createApp(root, options = {}) {
     },
     comb: {
       text: 'lbl_comb',
-      point: bodyLabelPoint('comb', 24),
-      spots: [...ABOVE, ...BELOW],
+      point: () => bodyPoint('comb', ptOf('b-comb-local').set(53, 10, 0), ptOf('b-comb')),
+      // on the smallest view the ring's badge and the handle fill the row above the comb: past the handle instead
+      spots: () => [...(stage.height < 300 ? [spot(70, -24)] : []), spot(0, -24), spot(-14, -24), spot(14, -24), spot(30, 50), spot(0, 54)],
+      avoid: [discBox],
       show: () => near('comb') && s.bodies.comb.cloth < 0,
     },
     flannel: {
@@ -651,11 +715,24 @@ export function createApp(root, options = {}) {
       spots: [...ABOVE, ...BELOW],
       show: () => s.bodies.comb.cloth >= 0 && s.bodies.comb.cloth < 200,
     },
-    unknown: { text: 'lbl_unknown', point: bodyLabelPoint('unknown', 46), spots: [...ABOVE, ...RIGHT_OF, ...BELOW], show: () => near('unknown') },
+    unknown: {
+      text: 'lbl_unknown',
+      point: bodyLabelPoint('unknown', 28),
+      spots: UNDER_BODY,
+      avoid: [discBox],
+      show: () => near('unknown'),
+    },
+    damp: {
+      text: 'lbl_damp',
+      point: () => ptOf('damp').set(JAR.r * 0.95, 66, JAR.r * 0.3),
+      spots: [...RIGHT_OF, spot(40, 40)],
+      show: () => s.damp > 0.2,
+    },
     before: {
       text: 'lbl_before',
       point: () => scope.points.ghostTip(s.ghost ?? 0, ptOf('before')),
-      spots: [...LEFT_OF, ...BELOW],
+      spots: FAR_RIGHT,
+      avoid: [leavesBox],
       show: () => s.ghost != null && Math.abs(s.ghost - leaf.a) > 0.06 && !s.busy,
       optional: true,
     },
@@ -665,7 +742,14 @@ export function createApp(root, options = {}) {
       const want = L.show();
       if (want && !anno.has(id)) {
         const key = typeof L.text === 'function' ? L.text() : L.text;
-        anno.add(id, { text: t(key), point: L.point, kind: 'part', spots: L.spots, optional: L.optional });
+        anno.add(id, {
+          text: t(key),
+          point: L.point,
+          kind: 'part',
+          spots: typeof L.spots === 'function' ? L.spots() : L.spots,
+          avoid: L.avoid,
+          optional: L.optional,
+        });
       } else if (!want && anno.has(id)) anno.remove(id);
     }
   }
@@ -692,6 +776,8 @@ export function createApp(root, options = {}) {
     );
     if (name === 'testNeg' || name === 'testPos') s.ghost = leafAngle(sceneLeaf(SCENES.touch));
     scope.setGhost(s.ghost);
+    s.damp = 0;
+    scope.setDamp(0);
     const shift = shiftNow();
     placeElectrons(layout(s.Q, shift));
     laidFor = { Q: s.Q, shift };
@@ -1029,6 +1115,7 @@ export function createApp(root, options = {}) {
     return quiz.start();
   }
   const ringAt = new THREE.Vector3();
+  const DISC_RING = new THREE.Box3(V(-DISC.r * 0.72, DISC.y, -DISC.r * 0.72), V(DISC.r * 0.72, DISC_TOP + 2, DISC.r * 0.72));
   action = createAction({
     stage,
     layer: ui.coachLayer,
@@ -1037,11 +1124,11 @@ export function createApp(root, options = {}) {
     step: 1,
     label: 'act_parts',
     icon: ICONS.hand,
-    // low on the bottle's front: never over the disc's or the leaves' charges
-    target: () => ringAt.set(36, 10, 40),
+    // on what the action is about: the bottle at first, the rod's tip where it will touch, else the disc things come to
+    target: () => (s.step === 'intro' ? ringAt.set(0, 142, 0) : s.step === 'near' ? ringAt.copy(CONTACT) : DISC_RING),
     radius: 22,
     pad: 8,
-    avoid: [ui.corner, ui.hint, noteEl, () => anno.boxes()],
+    avoid: [ui.corner, ui.hint, noteEl, () => anno.boxes(), discBox, leavesBox, rodBox, handleBox],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -1057,6 +1144,8 @@ export function createApp(root, options = {}) {
   };
   function pick(p) {
     if (dragHandle.hit(p.x, p.y)) return false;
+    const ring = action?.ringBox();
+    if (ring && p.x >= ring.left && p.x <= ring.right && p.y >= ring.top && p.y <= ring.bottom) return true;
     ndc.set((p.x / stage.width) * 2 - 1, -(p.y / stage.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
     return raycaster.intersectObjects(scope.hitMeshes, false).length > 0;
@@ -1222,7 +1311,18 @@ export function createApp(root, options = {}) {
           applyScene('touch', { hideMetal: true, leafOverride: sceneLeaf(SCENES.touch) });
           stepLeaves(0, true);
           await wait(0.4, my);
-          await tween('leak', 3.2, (x) => (s.leafOverride = sceneLeaf(SCENES.touch) * (1 - x) ** 1.5), my, ease.linear);
+          await tween(
+            'leak',
+            3.2,
+            (x) => {
+              s.leafOverride = sceneLeaf(SCENES.touch) * (1 - x) ** 1.5;
+              s.damp = smooth(0, 0.3, x);
+              scope.setDamp(s.damp);
+              syncLabels();
+            },
+            my,
+            ease.linear,
+          );
         }
         syncLabels();
         stage.invalidate();
@@ -1236,7 +1336,7 @@ export function createApp(root, options = {}) {
           return { text: t('q_unknown'), ...choicesOf([right, wrong, 'c_none', 'c_cant'], kind) };
         }
         if (kind === 'comb') return { text: t('q_comb'), ...choicesOf(['c_neg', 'c_pos', 'c_none', 'c_mixed'], kind) };
-        return { text: t('q_rain'), ...choicesOf(['c_rain_right', 'c_rain_heavy', 'c_rain_more', 'c_rain_cold'], kind) };
+        return { text: t('q_rain'), ...choicesOf(['c_rain_right', 'c_rain_heavy', 'c_rain_more', 'c_rain_cloud'], kind) };
       },
       reveal(q, correct) {
         const k = question.kind;
@@ -1252,7 +1352,7 @@ export function createApp(root, options = {}) {
           return t(why) + note({ c_pos: 'mis_un_flip', c_neg: 'mis_un_flip', c_none: 'mis_un_none', c_cant: 'mis_un_cant' });
         }
         if (k === 'comb') return t('why_comb') + note({ c_pos: 'mis_comb_pos', c_none: 'mis_comb_none', c_mixed: 'mis_mixed' });
-        return t('why_rain') + note({ c_rain_heavy: 'mis_rain_heavy', c_rain_more: 'mis_rain_more', c_rain_cold: 'mis_rain_cold' });
+        return t('why_rain') + note({ c_rain_heavy: 'mis_rain_heavy', c_rain_more: 'mis_rain_more', c_rain_cloud: 'mis_rain_cloud' });
       },
       done() {
         s.locked = false;
@@ -1336,7 +1436,7 @@ export function createApp(root, options = {}) {
   placeBodies();
   refresh();
   // parts of later steps are made now (hidden): compile their shaders before the first tap
-  stage.warmUp({ show: [...BODY_KEYS.map((k) => bodies[k].root), ...BODY_KEYS.map((k) => bodies[k].cloth).filter(Boolean)] });
+  stage.warmUp({ show: [...BODY_KEYS.map((k) => bodies[k].root), ...BODY_KEYS.map((k) => bodies[k].cloth).filter(Boolean), scope.drops] });
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
   })();

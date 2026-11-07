@@ -23,7 +23,7 @@ export const RUBBED = { glass: 7, comb: -6 };
 export const TOUCH_TAKES = 5;
 
 /** Distances (mm) from a body's tip to the disc's rim: touching, near (the closest a drag goes), far. */
-export const D = { touch: 0, near: 14, far: 60, rub: 62, park: 320 };
+export const D = { touch: 0, near: 14, far: 50, rub: 52, park: 320 };
 /** Induction: electrons pulled toward the disc per leaf by a body of charge q at distance d (mm), before rounding:
  * κ q / (1 + (d / d0)²): strongest when touching, about a third at 3 cm, under half a bead from 5 cm on. */
 export const KAPPA = 0.5;

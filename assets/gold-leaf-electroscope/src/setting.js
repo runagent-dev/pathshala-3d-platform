@@ -1,5 +1,5 @@
 // The setting: a calm deep-blue backdrop (a gradient, as in equations-of-motion) and a plain round table top in a quiet
-// sand colour, in millimetres, the top at y = 0. Nothing else.
+// dark-sand colour, so the gold stands out on it, in millimetres, the top at y = 0. Nothing else.
 import * as THREE from 'three';
 
 export const BG = ['#0b2a5b', '#123d7a'];
@@ -27,13 +27,13 @@ export function createTable() {
   root.userData.noExport = true;
   const top = new THREE.Mesh(
     new THREE.CylinderGeometry(TABLE_R, TABLE_R, 18, 96),
-    new THREE.MeshStandardMaterial({ name: 'TableTop', color: '#b9a688', roughness: 0.85, metalness: 0 }),
+    new THREE.MeshStandardMaterial({ name: 'TableTop', color: '#8f7b5c', roughness: 0.85, metalness: 0 }),
   );
   top.position.y = -9;
   top.receiveShadow = true;
   const edge = new THREE.Mesh(
     new THREE.CylinderGeometry(TABLE_R + 0.5, TABLE_R - 6, 18, 96, 1, true),
-    new THREE.MeshStandardMaterial({ name: 'TableEdge', color: '#8a785f', roughness: 0.85 }),
+    new THREE.MeshStandardMaterial({ name: 'TableEdge', color: '#6b5a43', roughness: 0.85 }),
   );
   edge.position.y = -9.5;
   root.add(top, edge);

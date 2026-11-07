@@ -28,7 +28,7 @@ test(`${ID}: near without touching: the leaves open, the charge stays zero, and 
   await fig.call('set', { d: 60, animate: false });
   st = await fig.call('get');
   expect(st.gap).toBe(0);
-  await expect(fig.frame.locator('.pvc-outcome')).toContainText('বুজে');
+  await expect(fig.frame.locator('.pvc-outcome')).toContainText('কাছে এসেছে');
   await fig.call('set', { d: 30, animate: false });
   const mid = (await fig.call('get')).gap;
   await fig.call('set', { d: 14, animate: false });
