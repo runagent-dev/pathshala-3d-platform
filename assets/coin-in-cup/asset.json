@@ -1,0 +1,78 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "coin-in-cup",
+  "title": "Coin in water (পানিতে মুদ্রা)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 246,
+  "topic": "9.1.1",
+  "placement": "Book page 246, topic 9.1.1, the নিজে করো with চিত্র ৯.০৩ (a coin in a cup, hidden from the eye, appears when water is poured in).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "The coin in the cup (page 246, topic 9.1.1, the নিজে করো with চিত্র ৯.০৩). A wide glazed tea cup on a plain sand table in a calm deep-blue setting, a coin on its bottom, and an eye drawn as in the book, placed so the rim just hides the coin. Four steps, one tap each: (1) the cup is cut open: the eye's line of sight passes the rim and lands beyond the coin, and the coin's light toward the eye is stopped by the wall; (2) a steel jug pours water: the light from the coin, traced exactly with n = 1.33, bends at the surface and, once there is enough water, clears the rim and reaches the eye (first from the coin's far edge, drawn thin, then from its middle); (3) the normal (লম্ব) at that point with θ₁ in the water and θ₂ in the air, n₁ sin θ₁ = n₂ sin θ₂ in numbers: away from the normal; (4) the eye looks straight back along the bent light, so the coin seems raised (a translucent copy labelled মুদ্রা যেমন দেখায়, beside আসল মুদ্রা; about 3 cm for 5.2 cm at this slant). From step 2 the water level can be dragged. A calm intro card, then per step a lead-in, the result and the book's words; a four-question test. Phone-first, Bangla and English.",
+  "tags": ["refraction", "light", "apparent depth", "coin in water", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "hidden", "animate": false } },
+    { "name": "set", "payload": { "step": "pour", "animate": false } },
+    { "name": "set", "payload": { "step": "angles", "animate": false } },
+    { "name": "set", "payload": { "step": "image", "animate": false } },
+    { "name": "set", "payload": { "water": 3 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "step": "image", "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "step": "pour", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 22,
+      "fps": 30,
+      "script": [
+        { "at": 0.5, "command": "set", "payload": { "step": "hidden" } },
+        { "at": 5.8, "command": "set", "payload": { "step": "pour" } },
+        { "at": 14.6, "command": "set", "payload": { "step": "angles" } },
+        { "at": 17.4, "command": "set", "payload": { "step": "image" } }
+      ]
+    }
+  }
+}
