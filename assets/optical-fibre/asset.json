@@ -1,0 +1,82 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "optical-fibre",
+  "title": "Optical fibre (অপটিক্যাল ফাইবার)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 253,
+  "topic": "9.3.1",
+  "placement": "Book page 253, topic 9.3.1 অপটিক্যাল ফাইবার, চিত্র ৯.১১ (a) and (b), and the 1.50 / 1.45 example (সংকট কোণ 75°).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Optical fibre (page 253, topic 9.3.1, চিত্র ৯.১১ a and b and the 1.50 / 1.45 example). A magnified optical fibre on a plain sand table in a calm deep-blue setting: a clear glass core (কোর, n₂ = 1.50) inside a pale-blue glass clad (ক্ল্যাড, n₁ = 1.45) and a thin dark plastic coating cut away on the near side, held level at both ends by black ring clamps; a light source on a swing arm turning about the near end face's centre, and a white screen on the far clamp. The light is traced exactly in the fibre's plane (Snell's law at the end faces, θc = sin⁻¹(1.45/1.50) = 75° at the core–clad wall, Fresnel shares where it leaks). Five steps, one tap each: (1) the camera flies to the near end face: core, clad, coating; (2) the light is sent and the camera follows it as it is totally reflected again and again, onto the screen; (3) one reflection close up (চিত্র ৯.১১b): the normal (লম্ব), θ₁ = 83° and θc = 75°; (4) the fibre bends into an S (চিত্র ৯.১১a; a drag handle on the far clamp): every θ₁ stays above 75° and the light follows the bends; (5) the source is tilted (a drag handle): θ₁ falls below 75°, most of the light leaves into the clad at every wall and the screen goes dark. A graph in the panel (landscape) shows θ₁ at each wall against the 75° line. A calm intro card, then a lead-in line, the result and the book's rule per step; the kit's how-to row. Test: five questions (what happens at the wall shown, the critical angle from the picture's indices, why no light arrives, why the bent fibre works, which rays real fibres carry), each wrong choice with its own note. The model is many times bigger than a real fibre and says so. Phone-first, Bangla and English.",
+  "tags": ["light", "optical fibre", "total internal reflection", "critical angle", "core", "clad", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "parts", "animate": false } },
+    { "name": "set", "payload": { "step": "light", "animate": false } },
+    { "name": "set", "payload": { "step": "one", "animate": false } },
+    { "name": "set", "payload": { "step": "bend", "animate": false } },
+    { "name": "set", "payload": { "step": "tilt", "animate": false } },
+    { "name": "set", "payload": { "h": -6 } },
+    { "name": "set", "payload": { "alpha": 20 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "step": "bend", "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "step": "bend", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 36,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "step": "parts" } },
+        { "at": 5, "command": "set", "payload": { "step": "light" } },
+        { "at": 17, "command": "set", "payload": { "step": "one" } },
+        { "at": 23, "command": "set", "payload": { "step": "bend" } },
+        { "at": 29, "command": "set", "payload": { "step": "tilt" } }
+      ]
+    }
+  }
+}
