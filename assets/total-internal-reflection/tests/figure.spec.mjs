@@ -63,6 +63,13 @@ test(`${ID}: the source turns by keys and stops on θc; the panel follows the li
   await fig.advance(300);
   // the rule follows the light, not the step word: past θc it names total internal reflection
   expect(await frame.locator('.pvc-rule b').first().textContent()).toBe('পূর্ণ অভ্যন্তরীণ প্রতিফলন');
+  // the step words and the action follow the light, not the step that was tapped (review, must-fix 1)
+  expect(await fig.call('set', { theta: 70 })).toMatchObject({ step: 'more', case: 'more', next: 'water' });
+  await fig.advance(300);
+  expect(await frame.locator('[data-example="more"]').getAttribute('aria-checked')).toBe('true');
+  expect(await frame.locator('.pvc-act').textContent()).toContain('উপরে পানি দাও');
+  expect(await frame.locator('.pvc-outcome').textContent()).toContain('১.৪১');
+  expect(await fig.call('set', { theta: 20 })).toMatchObject({ step: 'less', case: 'less' });
   // under water the same angle refracts
   await fig.call('set', { step: 'water', animate: false });
   expect(await fig.call('set', { theta: 62.2 })).toMatchObject({ theta2: 62.5, case: 'critical' });

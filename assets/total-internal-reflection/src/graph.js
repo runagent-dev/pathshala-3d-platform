@@ -6,6 +6,13 @@
 import { lightAt, N, outsideN, refracted, reflectance, thetaC } from './reading.js';
 
 const NS = 'http://www.w3.org/2000/svg';
+let measurer = null;
+/** The width of a text in the panel's font (px), so labels are placed by their real size. */
+function textWidth(text, size, weight = 400) {
+  if (!measurer) measurer = document.createElement('canvas').getContext('2d');
+  measurer.font = `${weight} ${size}px "Noto Sans Bengali", sans-serif`;
+  return measurer.measureText(text).width;
+}
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const COL = { t1: '#2b8a3e', t1Text: '#237032', r: '#e67700', rText: '#b35c00', crit: '#7048e8' };
 
@@ -74,7 +81,7 @@ export function createGraph(el, { t, N: num }) {
     const lw = Math.min(4, Math.max(2.4, H / 50));
     const x0 = f * 2.3;
     const x1 = W - f * 2.6;
-    const y1 = f * 1.5;
+    const y1 = f * 1.8;
     const y0 = H - f * 1.35;
     const X = (a) => x0 + (a / 90) * (x1 - x0);
     const Y = (d) => y0 - (d / 90) * (y0 - y1);
@@ -84,7 +91,7 @@ export function createGraph(el, { t, N: num }) {
     // the shaded part beyond θc: no refraction
     if (show) {
       out += `<rect class="g-none" x="${X(cv.c)}" y="${y1}" width="${x1 - X(cv.c)}" height="${y0 - y1}"/>`;
-      if (x1 - X(cv.c) > f * 4.5)
+      if (x1 - X(cv.c) >= textWidth(t('graph_none'), f) + f)
         out += `<text class="g-none-t" x="${(X(cv.c) + x1) / 2}" y="${Y(52)}" text-anchor="middle" font-size="${f}">${esc(t('graph_none'))}</text>`;
     }
     // grid and axes: a line every 30°; numbers at each when there is room, else at the ends
@@ -107,16 +114,24 @@ export function createGraph(el, { t, N: num }) {
       if (compare && outside !== 'air') {
         const air = curvesOf('air');
         out += `<path class="g-past" stroke-width="${lw * 0.7}" d="${poly(air.t1, Y)}"/>`;
-        out += `<text class="g-past-t" x="${X(air.c) + f * 0.2}" y="${Y(90) + f * 1.05}" font-size="${f * 0.92}">${esc(t('graph_air'))}</text>`;
+        // its name to the left of its end, only where there is room
+        const name = t('graph_air');
+        const right = X(air.c) - f * 0.35;
+        if (right - textWidth(name, f * 0.92) >= x0 + 4)
+          out += `<text class="g-past-t" x="${right}" y="${Y(88) + f * 0.35}" text-anchor="end" font-size="${f * 0.92}">${esc(name)}</text>`;
       }
-      // θc
+      // the names of the two scales over them (left θ₁, right the reflected part), and θc over its line, kept clear of both
+      const rName = t('graph_r');
+      const wr = textWidth(rName, f, 600);
+      out += `<text class="g-tag" x="${W - 1}" y="${y1 - f * 0.65}" text-anchor="end" font-size="${f}" fill="${COL.rText}">${esc(rName)}</text>`;
+      out += `<text class="g-tag" x="${x0 - f * 0.3}" y="${y1 - f * 0.65}" text-anchor="end" font-size="${f}" fill="${COL.t1Text}">θ<tspan baseline-shift="sub" font-size="${f * 0.7}">1</tspan></text>`;
+      const cText = `θc = ${num(cv.c)}°`;
+      const wc = textWidth(cText, f, 600);
+      const cx = Math.max(x0 + wc / 2, Math.min(X(cv.c), W - wr - f * 0.6 - wc / 2));
       out += `<line class="g-crit" x1="${X(cv.c)}" x2="${X(cv.c)}" y1="${y0}" y2="${y1 - f * 0.2}"/>`;
-      out += `<text class="g-crit-t" x="${X(cv.c)}" y="${y1 - f * 0.4}" text-anchor="middle" font-size="${f}" fill="${COL.crit}">θ<tspan baseline-shift="sub" font-size="${f * 0.7}">c</tspan> = ${num(cv.c)}°</text>`;
+      out += `<text class="g-crit-t" x="${cx}" y="${y1 - f * 0.65}" text-anchor="middle" font-size="${f}" fill="${COL.crit}">θ<tspan baseline-shift="sub" font-size="${f * 0.7}">c</tspan> = ${num(cv.c)}°</text>`;
       out += `<path class="g-r" stroke="${COL.r}" stroke-width="${lw * 0.8}" d="${poly(cv.r, YR)}"/>`;
       out += `<path class="g-t1" stroke="${COL.t1}" stroke-width="${lw}" d="${poly(cv.t1, Y)}"/>`;
-      // the names of the two lines
-      out += `<text class="g-tag" x="${X(4)}" y="${Y(cv.t1[4][1]) - f * 0.55}" font-size="${f}" fill="${COL.t1Text}">θ<tspan baseline-shift="sub" font-size="${f * 0.7}">1</tspan></text>`;
-      out += `<text class="g-tag" x="${X(3)}" y="${YR(cv.r[3][1]) - f * 0.5}" font-size="${f}" fill="${COL.rText}">${esc(t('graph_r'))}</text>`;
       // the light now
       out += `<line class="g-now" x1="0" x2="0" y1="${y0}" y2="${y1}"/>`;
       out += `<circle class="g-dot g-dot-t1" cx="0" cy="0" r="${f * 0.38}" fill="${COL.t1}"/>`;

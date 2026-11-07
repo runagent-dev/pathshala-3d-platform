@@ -35,6 +35,12 @@ body.bg-transparent { background: transparent; }
 .tir.tir-side .pvc-sheets { flex: 1 1 auto; }
 .tir.tir-side .pvc-learn { min-height: 0; }
 .tir .tir-graph.tir-off { visibility: hidden; }
+.tir .tir-none { display: none; }
+/* the prism's three facts, in place of the graph */
+.tir .tir-table { width: 100%; border-collapse: collapse; font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
+.tir .tir-table th { padding: 3px 6px 3px 0; font-weight: 400; text-align: left; border-bottom: 1px solid var(--line); }
+.tir .tir-table td { padding: 3px 0; text-align: right; white-space: nowrap; color: var(--ink); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); }
+.tir .tir-table b { font-weight: 600; color: #b35c00; }
 .tir .tir-graph .tir-graph-svg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; overflow: visible; font-family: inherit; }
 .tir-graph-svg text { paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
 .tir-graph-svg .g-grid { stroke: #e3e8ee; stroke-width: 1; }
@@ -99,7 +105,7 @@ body.bg-transparent { background: transparent; }
 /* a phone held upright (the panel under the 3D): no graph and no formula line, so the 3D keeps its height */
 @media (orientation: portrait), (max-width: 599px) {
   .tir .tir-formula { display: none; }
-  .tir .tir-graph { display: none; }
+  .tir .tir-graph, .tir .tir-table { display: none; }
   .tir .pvc-rule { --pvc-rule-lines: 3; }
 }
 

@@ -67,34 +67,6 @@ export function createRays({ stage, host }) {
     return geo;
   }
 
-  function seg(a, b, k, width, alpha, chevron) {
-    if (k <= 0) return;
-    P(a.x, a.y);
-    const x0 = sx;
-    const y0 = sy;
-    P(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k);
-    const x1 = sx;
-    const y1 = sy;
-    ctx.globalAlpha = alpha;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.strokeStyle = C.edge;
-    ctx.lineWidth = width + 2;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.strokeStyle = C.ray;
-    ctx.lineWidth = width;
-    ctx.stroke();
-    if (chevron != null && k >= chevron) {
-      P(a.x + (b.x - a.x) * chevron, a.y + (b.y - a.y) * chevron);
-      arrowhead(sx, sy, x1 - x0, y1 - y0, 9 + width * 1.15);
-    }
-    ctx.globalAlpha = 1;
-  }
   function arrowhead(x, y, dx, dy, length) {
     const l = Math.hypot(dx, dy) || 1;
     const ux = dx / l;
@@ -116,8 +88,13 @@ export function createRays({ stage, host }) {
     ctx.lineWidth = 1;
     ctx.stroke();
   }
-  /** A polyline of world points, drawn as far as k (0…1 of its length), a chevron at `at` of the whole. */
+  /**
+   * A polyline of world points, drawn as far as k (0…1 of its length) as ONE path (no bump where its parts join), with
+   * a chevron at `at` of the whole length.
+   */
   const lens = [];
+  const xs = [];
+  const ys = [];
   function path(pts, k, width, alpha, at) {
     if (k <= 0) return;
     lens.length = 0;
@@ -127,17 +104,52 @@ export function createRays({ stage, host }) {
       lens.push(l);
       total += l;
     }
+    // the screen points of the part drawn, and where the chevron goes
+    xs.length = 0;
+    ys.length = 0;
+    P(pts[0].x, pts[0].y);
+    xs.push(sx);
+    ys.push(sy);
     let left = k * total;
+    let chev = null;
     let done = 0;
     for (let i = 1; i < pts.length && left > 0; i++) {
       const l = lens[i - 1];
       const part = Math.min(1, left / l);
-      // the chevron sits on the segment that holds `at` of the whole length
-      const chev = at * total >= done && at * total <= done + l ? (at * total - done) / l : null;
-      seg(pts[i - 1], pts[i], part, width, alpha, chev);
+      const a = pts[i - 1];
+      const b = pts[i];
+      if (chev == null && at * total <= done + l * part && at * total >= done) {
+        const u = (at * total - done) / l;
+        chev = { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, dx: b.x - a.x, dy: b.y - a.y };
+      }
+      P(a.x + (b.x - a.x) * part, a.y + (b.y - a.y) * part);
+      xs.push(sx);
+      ys.push(sy);
       left -= l;
       done += l;
     }
+    ctx.globalAlpha = alpha;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (const [color, w] of [
+      [C.edge, width + 2],
+      [C.ray, width],
+    ]) {
+      ctx.beginPath();
+      ctx.moveTo(xs[0], ys[0]);
+      for (let i = 1; i < xs.length; i++) ctx.lineTo(xs[i], ys[i]);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = w;
+      ctx.stroke();
+    }
+    if (chev) {
+      P(chev.x, chev.y);
+      const cx = sx;
+      const cy = sy;
+      P(chev.x + chev.dx * 0.01, chev.y + chev.dy * 0.01);
+      arrowhead(cx, cy, sx - cx, sy - cy, 9 + width * 1.15);
+    }
+    ctx.globalAlpha = 1;
   }
   const widthOf = (share) => Math.max(THINNEST, FULL * share);
   const alphaOf = (share) => Math.min(1, Math.max(0.55, (FULL * share) / THINNEST));

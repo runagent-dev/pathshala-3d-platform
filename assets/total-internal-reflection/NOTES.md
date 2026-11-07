@@ -73,6 +73,22 @@ words): অভিলম্ব, প্রতিসরণাঙ্ক. Added by th
   **62.5°**, and the figure shows that (never two disagreeing numbers on one screen). The book's conclusion holds: 45° < θc, no TIR.
 - The 75° example (n = 1.45, θc = 43.6°) is correct in the book and is quoted in the test's worked answer.
 
+## After the independent review (round 2)
+- The step words and the action follow the light: turned past θc in the first step, the step word is "θ₂ > θc" and the action offers
+  the water next (`followLight`).
+- Beyond θc the result line gives the book's reason with the student's numbers (sin θ₁ = 1.50 × sin 60° = 1.30, which can never be
+  more than 1) and the rule quotes the book's second example (n = 1.45, 75° → 1.40). At θ₂ = 0 a neutral rule.
+- The prism step shows three facts in a small table (45°, 41.8°, 100 % reflected, 0 % out) where the block's graph was.
+- The graph names its two scales over them (θ₁ left, প্রতিফলিত % right), keeps θc's label clear of them, and shows "প্রতিসরণ নেই" and
+  the air's compare label only where their measured width fits.
+- The test no longer gives the angle in the text: the student reads it on the disc. An inner degree ring (every 5°, numbers 10–80)
+  between the block and the ray box makes that possible, since the box covers the rim's scale at its own angle. Every wrong choice is a
+  real mistake (48.2° measured from the surface, 41.8° named the angle of refraction, the water–air 48.8°, the air's 41.8° under water).
+- Stronger water (#3d8fd6, 55 %) with an outline; no clips on the block's curved face (the rays crossed them); the drawing, its labels
+  and the handle hide when the view is turned behind the disc; on a phone held upright the frame keeps the working part of the disc
+  (its top and the foot may fall outside) with small margins; each ray is drawn as one path.
+- A drag of the source no longer counts as a turn of the view (the orbit is off while dragging).
+
 ## Honest notes
 - Fresnel's equations give the shares; the light lost entering and leaving the curved faces (about 4 % at each) is not drawn, and the
   slit's beam is drawn as one ray.
@@ -98,6 +114,8 @@ words): অভিলম্ব, প্রতিসরণাঙ্ক. Added by th
 - Ready in about 2.6 s under the test harness.
 
 ## Open questions for the book team
+- **The figure uses n = 1.50, the value that gives the book's printed 41.8°** (the book's 1.52, here and in table ৯.০১,
+  gives 41.1°). The block's label says "কাচ, n₂ = ১.৫০".
 - **41.8° vs 1.52** (above): the figure uses n = 1.50 for glass. Should the book print 1.50 here (or 41.1° for 1.52)? Same for 61.6°
   (1.52) vs 62.5° (1.50) under water.
 - The book writes "ক্রান্তি কোণ বা সংকট কোণ" and then "ক্রান্তি কোণ"; the figure uses both as the book does, θc on the picture.

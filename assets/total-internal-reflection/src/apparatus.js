@@ -91,6 +91,34 @@ function scaleTexture(num, renderer) {
     g.fillText(num(v), 0, 0);
     g.restore();
   }
+  // an inner ring between the block and the ray box, where a ray's angle is read (the box covers the rim's scale at
+  // its own angle): a tick every 5°, a number every 10° from 10 to 80 (0 and 90 lie on the normal and the surface)
+  {
+    const r0 = (BLOCK.r + 0.45) * k;
+    g.lineWidth = 2.2;
+    for (let d = 0; d < 360; d += 5) {
+      if (d % 90 === 0) continue;
+      const a = (d * Math.PI) / 180;
+      const len = (d % 10 === 0 ? 0.6 : 0.35) * k;
+      g.beginPath();
+      g.moveTo(m + Math.sin(a) * r0, m - Math.cos(a) * r0);
+      g.lineTo(m + Math.sin(a) * (r0 + len), m - Math.cos(a) * (r0 + len));
+      g.stroke();
+    }
+    g.font = `700 ${Math.round(0.95 * k)}px ${FONT}`;
+    g.fillStyle = '#3d4a5a';
+    const rIn = r0 + 1.35 * k;
+    for (let d = 10; d < 360; d += 10) {
+      if (d % 90 === 0) continue;
+      const a = (d * Math.PI) / 180;
+      const v = d <= 90 ? d : d <= 180 ? 180 - d : d <= 270 ? d - 180 : 360 - d;
+      g.save();
+      g.translate(m + Math.sin(a) * rIn, m - Math.cos(a) * rIn);
+      g.rotate(a);
+      g.fillText(num(v), 0, 0);
+      g.restore();
+    }
+  }
   // the normal and the surface, printed faintly
   g.strokeStyle = 'rgba(42, 52, 66, 0.28)';
   g.lineWidth = 2;
@@ -229,14 +257,7 @@ export function createApparatus({ renderer, num }) {
   half.absarc(0, 0, BLOCK.r, 0, Math.PI, true);
   const block = glassPiece('GlassBlock', extruded(half, BLOCK.thick), mats);
   block.group.position.z = GLASS_Z;
-  // two small clips that hold it on the disc
-  const clipGeo = mergeGeometries([
-    new THREE.BoxGeometry(0.7, 0.5, BLOCK.thick + 0.3).translate(-BLOCK.r * 0.72, -BLOCK.r * 0.69 - 0.32, BLOCK.thick / 2),
-    new THREE.BoxGeometry(0.7, 0.5, BLOCK.thick + 0.3).translate(BLOCK.r * 0.72, -BLOCK.r * 0.69 - 0.32, BLOCK.thick / 2),
-  ]);
-  const clips = new THREE.Mesh(clipGeo, metal);
-  clips.name = 'Clips';
-  block.group.add(clips);
+  // (no clips on its curved face: every ray crosses that face somewhere between 0° and 80°)
   root.add(block.group);
 
   // ── the ray box on its arm, clamped to the rim: built pointing up from below O, turned about O ──
@@ -315,10 +336,10 @@ export function createApparatus({ renderer, num }) {
   const level = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
   const waterMat = new THREE.MeshPhysicalMaterial({
     name: 'Water',
-    color: '#5aa9e6',
+    color: '#3d8fd6',
     roughness: 0.1,
     transparent: true,
-    opacity: 0.42,
+    opacity: 0.55,
     depthWrite: false,
     clippingPlanes: [level],
     envMapIntensity: 1.1,
@@ -333,16 +354,23 @@ export function createApparatus({ renderer, num }) {
   water.renderOrder = 5;
   const surfaceMat = new THREE.MeshStandardMaterial({
     name: 'WaterTop',
-    color: '#9fd0f5',
+    color: '#d0ebff',
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.9,
     roughness: 0.15,
     depthWrite: false,
   });
   const surface = new THREE.Mesh(new THREE.PlaneGeometry(1, BLOCK.thick + 0.3).rotateX(-Math.PI / 2).translate(0, 0, BLOCK.thick / 2), surfaceMat);
   surface.name = 'WaterTop';
   surface.renderOrder = 6;
-  cell.add(water, surface, wall, front, cellLines);
+  // the water's outline on the front plate, so its edge reads against the white disc
+  const rim = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.ShapeGeometry(waterShape, 40), 10).translate(0, 0, BLOCK.thick + 0.16),
+    new THREE.LineBasicMaterial({ name: 'WaterLine', color: '#1864ab', transparent: true, opacity: 0.9, clippingPlanes: [level] }),
+  );
+  rim.userData.noExport = true;
+  rim.renderOrder = 7;
+  cell.add(water, surface, wall, front, cellLines, rim);
   cell.position.z = GLASS_Z;
   root.add(cell);
 
@@ -360,7 +388,7 @@ export function createApparatus({ renderer, num }) {
   root.add(prism.group);
 
   /** Where the pieces are: 0 in place, 1 away (lifted off toward the viewer and faded). */
-  const fadeMats = [mats[0], mats[1], block.lines.material, clips.material];
+  const fadeMats = [mats[0], mats[1], block.lines.material];
   const base = new Map(fadeMats.map((m) => [m, m.opacity ?? 1]));
   const state = { theta: 30, cell: 0, water: 0, block: 1, prism: 0 };
 
@@ -383,6 +411,7 @@ export function createApparatus({ renderer, num }) {
     const y = k * CELL.r;
     level.constant = y + cell.position.y + 1e-4; // the plane: keep y ≤ level (world y; the cell is at x = z = 0)
     water.visible = k > 0.002 && cell.visible;
+    rim.visible = water.visible;
     surface.visible = water.visible && k < 0.995;
     const w = 2 * Math.sqrt(Math.max(0, CELL.r * CELL.r - y * y));
     surface.scale.x = Math.max(0.001, w);

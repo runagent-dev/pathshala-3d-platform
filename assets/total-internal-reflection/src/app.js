@@ -29,6 +29,7 @@ import { createRays } from './rays.js';
 import {
   ANGLE,
   BLOCK,
+  caseOf,
   DISC,
   lightAt,
   N as INDEX,
@@ -124,6 +125,19 @@ export function createApp(root, options = {}) {
   graphBox.className = 'tir-graph';
   formula.after(graphBox);
   const graph = createGraph(graphBox, { t, N });
+  // in the prism step, beside the 3D: what happens at the long face, in three rows (the graph is the block's)
+  const table = document.createElement('table');
+  table.className = 'tir-table';
+  table.setAttribute('aria-label', t('tbl_label'));
+  const pr = prismPath();
+  table.innerHTML = [
+    ['tbl_inc', `${N(pr.incidence)}°`],
+    ['tbl_crit', `${num1(CRIT_AIR)}°`],
+    ['tbl_refl', `<b>${N(100)}%</b>`],
+  ]
+    .map(([k, v]) => `<tr><th scope="row">${t(k)}</th><td>${v}</td></tr>`)
+    .join('');
+  graphBox.after(table);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
 
   // ── 3D ──────────────────────────────────────────────────────────────────────
@@ -252,7 +266,8 @@ export function createApp(root, options = {}) {
         return P.set(-2.7 * Math.sin(h), -2.7 * Math.cos(h), Z_RAY);
       },
       color: '#1971c2',
-      spots: [spot(-22, 20), spot(-30, 6), spot(-14, 32), ...LEFT, ...BELOW],
+      // beside its arc first, then above the incoming ray (clear of the source's handle on the rim)
+      spots: [spot(-22, 20), spot(-30, 6), spot(-10, -26), spot(-34, -22), spot(-14, 32), ...LEFT, ...ABOVE, ...BELOW],
       show: () => s.v.arcs > 0.99 && s.v.light >= 1 && !prismOn() && !s.hideLabels && (!s.busy || s.dragging),
     },
     t1: {
@@ -349,14 +364,19 @@ export function createApp(root, options = {}) {
 
   // ── camera: a gentle three-quarter view; closer on the prism's light ─────────
   const discBox = new THREE.Box3(new THREE.Vector3(-DISC.r - 0.8, -DISC.r - 1.6, -1), new THREE.Vector3(DISC.r + 0.8, DISC.r + 0.4, 3));
+  // a phone held upright: the 3D is short, so the frame keeps the working part of the disc (the flat face, both rays, the
+  // source's arc) and lets the disc's top and the foot fall outside; only the corners need room for the buttons
+  const workBox = new THREE.Box3(new THREE.Vector3(-DISC.r - 0.4, -DISC.r - 0.9, -1), new THREE.Vector3(DISC.r + 0.4, 8.6, 3));
+  const PORTRAIT_MARGIN = { top: 14, bottom: 8, side: 6 };
   const prismBox = new THREE.Box3(new THREE.Vector3(-5.5, -DISC.r - 1, -1), new THREE.Vector3(DISC.r + 0.6, 5.2, 3));
   const DIR = new THREE.Vector3(Math.sin(22 * RAD) * Math.cos(13 * RAD), Math.sin(13 * RAD), Math.cos(22 * RAD) * Math.cos(13 * RAD));
   const poses = { disc: null, prism: null };
   function fitPoses() {
     const d = DIR.clone();
     if (s.view === '3d' && !s.userMovedCamera) d.add(new THREE.Vector3(0.7, 0.35, 0)).normalize();
-    const args = { dir: d, camera, width: stage.width, height: stage.height, margin: MARGIN };
-    const a = fitPose({ box: discBox, ...args });
+    const upright = root.clientHeight > root.clientWidth;
+    const args = { dir: d, camera, width: stage.width, height: stage.height, margin: upright ? PORTRAIT_MARGIN : MARGIN };
+    const a = fitPose({ box: upright ? workBox : discBox, ...args });
     const b = fitPose({ box: prismBox, ...args });
     poses.disc = { target: a.target, dist: a.position.distanceTo(a.target), dir: d };
     poses.prism = { target: b.target, dist: b.position.distanceTo(b.target), dir: d };
@@ -457,10 +477,20 @@ export function createApp(root, options = {}) {
     emitChange();
     return p;
   }
+  /** Seen from behind the disc, the light drawn on its face is hidden (the drawing, its labels and the handle). */
+  let behind = false;
   stage.onBeforeRender(() => {
     applyCamera();
     camera.updateMatrixWorld();
+    const facing = (camera.position.z - Z_RAY) / Math.max(1e-6, camera.position.distanceTo(controls.target));
+    if (behind !== facing < 0.06) {
+      behind = facing < 0.06;
+      ui.annoLayer.style.opacity = behind ? '0' : ''; // (each label sets its own visibility)
+      if (behind) action?.hide('behind');
+      else action?.show('behind');
+    }
     syncScene();
+    rays.view.show = !behind;
   });
   stage.onResize(() => {
     fitPoses();
@@ -589,12 +619,34 @@ export function createApp(root, options = {}) {
     labelAt: 'left',
     aria: t('aria_drag'),
     pulse: Boolean(o.coach),
-    when: canTurn,
+    when: () => canTurn() && !behind,
+  });
+  /**
+   * After the student turns the source in air, the step is the case the light is in now (the book's three cases), so
+   * the step words, the action and the lead-in agree with the result and the rule: turned past θc in the first step,
+   * the action offers the water next, not "turn more".
+   */
+  function followLight() {
+    if (s.busy || outside() !== 'air' || !['less', 'critical', 'more'].includes(s.step)) return;
+    const kase = caseOf(s.v.theta, 'air');
+    if (kase === s.step) return;
+    s.step = kase;
+    emitChange();
+  }
+  // the handle is placed after each frame, after the labels: when the source has moved, the labels are placed again
+  // against the handle's new place
+  let labelsAt = null;
+  stage.onAfterRender(() => {
+    if (labelsAt === s.v.theta) return;
+    labelsAt = s.v.theta;
+    handle.update();
+    anno.update();
   });
   function setTheta(a) {
     const x = snapAngle(a, outside());
     if (x === s.v.theta) return;
     s.v.theta = x;
+    followLight();
     audio.tick?.();
     refresh();
     stage.invalidate();
@@ -700,17 +752,23 @@ export function createApp(root, options = {}) {
       return t('out_prism', { a: N(p.incidence), b: N(p.turned), c: num1(CRIT_AIR) });
     }
     const L = lightAt(theta, out);
-    const m = t(out === 'water' ? 'in_water' : 'in_air');
     if (L.kase === 'critical') return t('out_critical', { a: num1(L.theta2), b: N(90) });
-    if (L.kase === 'more') return t('out_more', { a: num1(L.theta2) });
+    if (L.kase === 'more') {
+      // the book's reasoning, with the student's numbers: sin θ₁ would have to be more than 1
+      const n1 = out === 'water' ? INDEX.water : INDEX.air;
+      const f = `${N(INDEX.glass.toFixed(2))} × sin ${num1(L.theta2)}°${out === 'water' ? ` ÷ ${N(n1.toFixed(2))}` : ''}`;
+      const sin1 = (INDEX.glass * Math.sin((L.theta2 * Math.PI) / 180)) / n1;
+      return t('out_more', { a: num1(L.theta2), f, s: N(sin1.toFixed(2)) });
+    }
     const r = Math.max(1, Math.round(L.R * 100));
     if (L.theta2 < 0.5) return t('out_zero', { r });
-    return t('out_less', { a: num1(L.theta2), b: num1(L.theta1), m, r });
+    return t('out_less', { a: num1(L.theta2), b: num1(L.theta1), r });
   }
   /** The rule: by the case the light is in, so it never says something false after a drag. */
   function ruleHtml(theta = s.v.theta, out = outside(), prism = prismOn()) {
     if (prism) return t('rule_prism');
     const L = lightAt(theta, out);
+    if (L.theta2 < 0.5) return t('rule_zero');
     if (out === 'water') {
       const vars = { a: num1(L.theta2), c: num1(L.thetaC), air: num1(CRIT_AIR) };
       return t(`rule_water_${L.kase}`, vars);
@@ -801,6 +859,8 @@ export function createApp(root, options = {}) {
     }
     graph.draw({ theta: s.v.theta, outside: outside(), show: !calm && !prismOn() && s.v.light > 1, compare: outside() === 'water' });
     graphBox.classList.toggle('tir-off', calm);
+    graphBox.classList.toggle('tir-none', prismOn());
+    table.classList.toggle('tir-none', !prismOn() || s.v.light < 1.9);
     sheet.choose(calm ? null : s.step);
     sheet.next(NEXT[s.step] ?? null);
     const [word, step, icon] = ACTIONS[ph];
@@ -918,9 +978,9 @@ export function createApp(root, options = {}) {
   };
   const CHOICES = {
     away: ['c_away_right', 'c_away_toward', 'c_away_straight', 'c_away_back'],
-    crit: ['c_crit_right', 'c_crit_ninety', 'c_crit_refr', 'c_crit_45'],
+    crit: ['c_crit_right', 'c_crit_ninety', 'c_crit_surface', 'c_crit_name'],
     tir: ['c_tir_right', 'c_tir_out', 'c_tir_graze', 'c_tir_half'],
-    water: ['c_water_right', 'c_water_tir', 'c_water_graze', 'c_water_straight'],
+    water: ['c_water_right', 'c_water_tir', 'c_water_graze', 'c_water_wa'],
     prism: ['c_prism_right', 'c_prism_out', 'c_prism_straight', 'c_prism_half'],
   };
   let learnSaved = null;
@@ -1055,6 +1115,7 @@ export function createApp(root, options = {}) {
       const x = stepAngle(s.v.theta, dir, outside());
       if (x !== s.v.theta) {
         s.v.theta = x;
+        followLight();
         audio.tick?.();
         refresh();
         emitChange();
@@ -1097,6 +1158,7 @@ export function createApp(root, options = {}) {
       if (p.step) await go(p.step, { animate });
       if (p.theta != null && ['less', 'critical', 'more', 'water'].includes(s.step)) {
         s.v.theta = snapAngle(+p.theta, outside());
+        followLight();
         syncScene();
       }
       refresh();
