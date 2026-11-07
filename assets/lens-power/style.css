@@ -1,0 +1,111 @@
+/* The power of a lens: the page, the panel's calm first card and lead-in line, the formula, the P–f graph, the labels on the picture
+   (the plain white tabs and big letters of the sister lens figures) and the test's answers. The rest of the panel is the kit's clean
+   sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.lp { --c-focus: #5a37d0; --c-power: #c2255c; }
+.lp sub, .lp sup { font-size: 0.72em; line-height: 0; }
+
+/* the vector drawing over the view */
+.lp-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* labels on the picture: a plain white tab, a thin line, no dot (as convex-lens-image and lens-types) */
+.lp .pvc-anno { transition: none; font-size: 13px; font-weight: 600; color: var(--c); border: 0; border-radius: 4px; background: #fff; padding: 1px 6px; box-shadow: none; white-space: nowrap; }
+.lp .pvc-anno-lines line { stroke-width: 1.2; stroke: rgba(255, 255, 255, 0.9) !important; }
+.lp .pvc-anno-lines circle { display: none; }
+.lp .pvc-anno .lab-letter { font-size: 18px; font-weight: 700; line-height: 1.1; }
+
+/* the line before the action: what the next tap will show; on the first screen, a calm card that sets the scene */
+.lp .lp-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+.lp .lp-lead:empty { display: none; }
+.lp .lp-lead.pvc-note { font-size: 15px; line-height: 1.6; }
+.lp .lp-lead .lp-short { display: none; }
+/* the calm card stands in for the result, the rule and the graph (the sheets keep one height: see the end) */
+.lp .pvc-learn.lp-calm .pvc-outcome, .lp .pvc-learn.lp-calm .pvc-rule, .lp .pvc-learn.lp-calm .lp-graph { display: none; }
+
+/* the result (with the formula) and the rule */
+.lp .pvc-outcome { font-size: 15px; line-height: 1.5; }
+.lp .pvc-outcome b { font-size: 1.12em; font-weight: 600; color: var(--ink); }
+.lp .pvc-outcome .lp-read { color: var(--ink-2); font-size: 0.92em; white-space: nowrap; }
+.lp .lp-eq { display: inline-flex; align-items: center; gap: 0.3em; white-space: nowrap; }
+.lp .lp-eq b { color: var(--c-power); }
+.lp .pvc-rule { font-size: 14.5px; line-height: 1.6; }
+.lp .pvc-rule b { color: var(--ink); }
+
+/* the P–f graph: beside the 3D it fills the panel's free height; under the 3D (a phone held upright) there is no room for it */
+.lp .lp-graph { position: relative; display: none; flex: 1 1 0; min-height: 0; max-height: 340px; }
+.lp.lp-side .lp-graph { display: block; }
+.lp.lp-side .pvc-sheets { flex: 1 1 auto; }
+.lp.lp-side .pvc-learn { min-height: 0; }
+.lp .lp-graph.off { visibility: hidden; }
+.lp .lp-graph .lp-graph-svg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; overflow: visible; font-family: inherit; }
+.lp-graph-svg text { paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.lp-graph-svg .g-grid { stroke: #e3e8ee; stroke-width: 1; }
+.lp-graph-svg .g-axis { stroke: #58717d; stroke-width: 1.6; fill: none; }
+.lp-graph-svg .g-num { fill: #58717d; }
+.lp-graph-svg .g-name { fill: #3d5a66; }
+.lp-graph-svg .g-kind { fill: #8a99a6; font-weight: 600; }
+.lp-graph-svg .g-curve { fill: none; stroke: #e6a3bd; stroke-width: 2; stroke-dasharray: 5 4; }
+.lp-graph-svg .g-dot { fill: var(--c-power); stroke: #fff; stroke-width: 1.5; }
+.lp-graph-svg .g-old { fill: #b5687f; }
+.lp-graph-svg .g-ring { fill: none; stroke: var(--c-power); stroke-width: 2; }
+.lp-graph-svg .g-drop { fill: none; stroke: var(--c-power); stroke-width: 1.2; stroke-dasharray: 3 3; opacity: 0.7; }
+.lp-graph-svg .g-tag { fill: var(--c-power); font-weight: 700; }
+.lp-graph-svg .g-hint { fill: #58717d; font-style: italic; }
+
+/* the test: answers in words or numbers */
+.lp .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.lp-opt { display: block; white-space: normal; text-align: center; }
+.lp .pvc-q-text { font-size: 15px; }
+.lp .pvc-q-feedback { font-size: 13.5px; }
+
+/* phones, and short frames: tighter type; the short calm words */
+@container pvc (max-width: 420px) {
+  .lp .pvc-rule { font-size: 14px; }
+  .lp .pvc-outcome { font-size: 14px; }
+  .lp .pvc-opt { height: 40px; font-size: 13px; line-height: 1.2; }
+  .lp .pvc-q-text { font-size: 14.5px; }
+  .lp .pvc-q-feedback { font-size: 13.5px; }
+  .lp .pvc-learn { gap: 6px; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .lp .lp-lead .lp-long { display: none; }
+  .lp .lp-lead .lp-short { display: inline; }
+  .lp .pvc-outcome { font-size: 14px; line-height: 1.45; }
+  .lp .pvc-rule { font-size: 13.5px; line-height: 1.5; }
+  .lp .pvc-q-text { font-size: 13.5px; }
+  .lp .pvc-opt { font-size: 12.5px; }
+  .lp .pvc-anno { font-size: 12.5px; }
+}
+/* short and wide (a phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) {
+  .lp .lp-lead .lp-long { display: none; }
+  .lp .lp-lead .lp-short { display: inline; }
+  .lp .lp-lead { font-size: 13.5px; line-height: 1.45; }
+  .lp .lp-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 5px 10px; }
+  .lp .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
+  .lp .pvc-rule { font-size: 13px; line-height: 1.45; --pvc-rule-lines: 3; }
+  .lp .pvc-q-text { font-size: 13.5px; }
+  .lp .pvc-opt { font-size: 12.5px; height: 42px; }
+  .lp .pvc-q-feedback { font-size: 13px; }
+  .lp .pvc-anno { font-size: 12.5px; }
+  /* no room for the how-to row beside the 3D on a phone held sideways: the view's own pill and button stay */
+  .lp .pvc-howto { display: none; }
+  .lp .pvc-learn { gap: 5px; }
+}
+
+/* Under the 3D (a phone held upright, a narrow embed): the sheets have one height in every state (the intro card, every step,
+   every question and answer), so the 3D view never changes size; the how-to row stays out (the view's pill and button say it). */
+.lp:not(.lp-side) .pvc-sheets { height: var(--lp-sheet, 286px); }
+.lp:not(.lp-side) .pvc-sheets > section { min-height: 0; overflow: hidden; }
+.lp:not(.lp-side) .pvc-howto { display: none; }
+.lp:not(.lp-side) .pvc-rule { --pvc-rule-lines: 3; }
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .lp:not(.lp-side) .pvc-sheets { --lp-sheet: 244px; }
+  /* the tightest frame: the result and the rule say what the step showed; the lead-in line goes */
+  .lp:not(.lp-side) .pvc-learn:not(.lp-calm) .lp-lead { display: none; }
+  .lp:not(.lp-side) .pvc-q-text { --pvc-q-text-min: 2lh; }
+  .lp:not(.lp-side) .pvc-opt { height: 36px; }
+}
