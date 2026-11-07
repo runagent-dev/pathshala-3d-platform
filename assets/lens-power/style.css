@@ -21,14 +21,14 @@ body.bg-transparent { background: transparent; }
 .lp .lp-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
 .lp .lp-lead:empty { display: none; }
 .lp .lp-lead.pvc-note { font-size: 15px; line-height: 1.6; }
-.lp .lp-lead .lp-short { display: none; }
+.lp .lp-short { display: none; }
 /* the calm card stands in for the result, the rule and the graph (the sheets keep one height: see the end) */
 .lp .pvc-learn.lp-calm .pvc-outcome, .lp .pvc-learn.lp-calm .pvc-rule, .lp .pvc-learn.lp-calm .lp-graph { display: none; }
 
 /* the result (with the formula) and the rule */
 .lp .pvc-outcome { font-size: 15px; line-height: 1.5; }
 .lp .pvc-outcome b { font-size: 1.12em; font-weight: 600; color: var(--ink); }
-.lp .pvc-outcome .lp-read { color: var(--ink-2); font-size: 0.92em; white-space: nowrap; }
+.lp .pvc-outcome .lp-read { color: var(--ink-2); font-size: 0.92em; }
 .lp .lp-eq { display: inline-flex; align-items: center; gap: 0.3em; white-space: nowrap; }
 .lp .lp-eq b { color: var(--c-power); }
 .lp .pvc-rule { font-size: 14.5px; line-height: 1.6; }
@@ -52,7 +52,7 @@ body.bg-transparent { background: transparent; }
 .lp-graph-svg .g-old { fill: #b5687f; }
 .lp-graph-svg .g-ring { fill: none; stroke: var(--c-power); stroke-width: 2; }
 .lp-graph-svg .g-drop { fill: none; stroke: var(--c-power); stroke-width: 1.2; stroke-dasharray: 3 3; opacity: 0.7; }
-.lp-graph-svg .g-tag { fill: var(--c-power); font-weight: 700; }
+.lp-graph-svg .g-tag { fill: var(--c-power); font-weight: 700; stroke-width: 5px; }
 .lp-graph-svg .g-hint { fill: #58717d; font-style: italic; }
 
 /* the test: answers in words or numbers */
@@ -81,12 +81,12 @@ body.bg-transparent { background: transparent; }
 }
 /* short and wide (a phone held sideways): the panel is beside the scene */
 @container pvc (max-height: 460px) {
-  .lp .lp-lead .lp-long { display: none; }
-  .lp .lp-lead .lp-short { display: inline; }
+  .lp .lp-long { display: none; }
+  .lp .lp-short { display: inline; }
   .lp .lp-lead { font-size: 13.5px; line-height: 1.45; }
   .lp .lp-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 5px 10px; }
   .lp .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
-  .lp .pvc-rule { font-size: 13px; line-height: 1.45; --pvc-rule-lines: 3; }
+  .lp .pvc-rule { font-size: 13px; line-height: 1.45; --pvc-rule-lines: 2; }
   .lp .pvc-q-text { font-size: 13.5px; }
   .lp .pvc-opt { font-size: 12.5px; height: 42px; }
   .lp .pvc-q-feedback { font-size: 13px; }
@@ -94,6 +94,10 @@ body.bg-transparent { background: transparent; }
   /* no room for the how-to row beside the 3D on a phone held sideways: the view's own pill and button stay */
   .lp .pvc-howto { display: none; }
   .lp .pvc-learn { gap: 5px; }
+}
+/* beside a short 3D: the lead-in goes once a result shows, so the graph keeps at least 110 px */
+@container pvc (max-height: 520px) {
+  .lp.lp-side .pvc-learn:not(.lp-calm) .lp-lead { display: none; }
 }
 
 /* Under the 3D (a phone held upright, a narrow embed): the sheets have one height in every state (the intro card, every step,

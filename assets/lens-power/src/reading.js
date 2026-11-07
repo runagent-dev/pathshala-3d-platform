@@ -40,6 +40,8 @@ export const LENSES = {
   minus20: { kind: 'concave', f: 20 },
   plus25: { kind: 'convex', f: 25 },
   minus25: { kind: 'concave', f: 25 },
+  plus50: { kind: 'convex', f: 50 },
+  minus50: { kind: 'concave', f: 50 },
 };
 
 /** The sag of a sphere of curvature c (1/radius, signed) at height y: how far the face has left its vertex there. 0 for a plane. */
@@ -180,6 +182,9 @@ export function powerOf(id) {
 }
 /** The focal length in metres (a distance). */
 export const metres = (cm) => round(cm / 100, 3);
+/** The focal length with its sign, in metres, as P = 1/f uses it: negative for a concave lens (its F is only where the light seems to
+ * come from). */
+export const signedF = (id) => (LENSES[id].kind === 'convex' ? 1 : -1) * metres(LENSES[id].f);
 
 /** A signed number as the figure writes it: "+2.5", "−5" (U+2212), "0"; digits through num(). */
 export function signed(x, num = String, digits = 2) {
@@ -272,13 +277,14 @@ export function missOf(ray, img) {
   return Math.abs(px * ray.dir.y - py * ray.dir.x);
 }
 
-/** The graph: P against f. f from 0 to fMax m on the x axis, P from −pMax to +pMax; the curve P = ±1/f is cut where it leaves. */
+/** The graph: P = 1/f against the signed f (m), from −fMax to fMax; P from −pMax to +pMax. Convex lenses on the right branch (f > 0,
+ * P > 0), concave ones on the left (f < 0, P < 0); each branch is cut where it leaves the plot. */
 export const GRAPH = { fMax: 0.5, pMax: 12 };
 export function curve(sign, from = 1 / GRAPH.pMax, to = GRAPH.fMax, n = 48) {
   const out = [];
   for (let i = 0; i <= n; i++) {
-    const f = from + ((to - from) * i) / n;
-    out.push({ f, p: sign / f });
+    const f = sign * (from + ((to - from) * i) / n);
+    out.push({ f, p: 1 / f });
   }
   return out;
 }
@@ -306,5 +312,21 @@ export function powerChoices(id) {
     { key: 'cm', p: round(s / f, 3) },
     { key: 'f', p: s * f },
     { key: 'sign', p: -p },
+  ];
+}
+
+/**
+ * The four answers to "what is the focal length of a lens of this power?" (f = 1/P, in metres, with its sign), the right one first:
+ * P taken to be f, the right number read as centimetres, and, for a concave lens, the sign lost (for a convex one, 1/2.5 slipped to 4).
+ * { key, f, unit }.
+ */
+export function focalChoices(id) {
+  const f = signedF(id);
+  const p = powerOf(id);
+  return [
+    { key: 'right', f, unit: 'm' },
+    { key: 'p', f: p, unit: 'm' },
+    { key: 'cm', f, unit: 'cm' },
+    LENSES[id].kind === 'concave' ? { key: 'sign', f: -f, unit: 'm' } : { key: 'ten', f: round(f * 10, 3), unit: 'm' },
   ];
 }

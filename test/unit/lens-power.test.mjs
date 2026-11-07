@@ -19,6 +19,9 @@ import {
   powerChoices,
   powerOf,
   signed,
+  signedF,
+  focalChoices,
+  curve,
   thickness,
 } from '../../assets/lens-power/src/reading.js';
 
@@ -120,4 +123,33 @@ test('the answers to "what is its power?": the right one first, each mistake dif
     powerChoices('plus25').map((x) => x.p),
     [4, 0.04, 25, -4],
   );
+});
+
+test('the concave lens’s f is negative, so P = 1/f for every lens; the graph’s two branches follow P = 1/f', () => {
+  for (const id of Object.keys(LENSES)) assert.ok(near(1 / signedF(id), powerOf(id), 1e-9), id);
+  assert.equal(signedF('minus40'), -0.4);
+  for (const q of curve(1)) assert.ok(q.f > 0 && near(q.p, 1 / q.f));
+  for (const q of curve(-1)) assert.ok(q.f < 0 && near(q.p, 1 / q.f));
+});
+
+test('the answers to "what is the focal length?": the right f first, three different real mistakes', () => {
+  assert.deepEqual(
+    focalChoices('plus40').map((c) => [c.key, c.f, c.unit]),
+    [
+      ['right', 0.4, 'm'],
+      ['p', 2.5, 'm'],
+      ['cm', 0.4, 'cm'],
+      ['ten', 4, 'm'],
+    ],
+  );
+  assert.deepEqual(
+    focalChoices('minus50').map((c) => [c.key, c.f, c.unit]),
+    [
+      ['right', -0.5, 'm'],
+      ['p', -2, 'm'],
+      ['cm', -0.5, 'cm'],
+      ['sign', 0.5, 'm'],
+    ],
+  );
+  for (const id of ['plus40', 'plus50', 'minus50']) assert.equal(new Set(focalChoices(id).map((c) => `${c.f}${c.unit}`)).size, 4);
 });

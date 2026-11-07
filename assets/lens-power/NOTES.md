@@ -35,16 +35,18 @@ XY, X′. Added by the figure, not on the page: আলোর বাক্স (as
      textbook eye on the far side. F and F′ marked, আলোকীয় কেন্দ্র O named. (চিত্র ৯.২৭, the first lens.)
   3. দুই লেন্স (`compare`): the lens is lifted out of its ring holder and a more curved one (f = 20 cm) set in: the same pencil now
      2.5 times as big; the F′ of the first lens stays as a faint ring. The rule: the book's sentence (চিত্র ৯.২৭).
-  4. ক্ষমতা (`power`, then `power10`): the ray box comes back; the beams meet at 20 cm; P = 1/f = 1/(0.2 m) = +5 ডায়াপটার as a
-     formula in the panel, the label P = +৫ ডায়াপটার on the lens, and the P–f graph with the dots of +2.5 and +5. The rule names the
-     book's example (f = 0.4 m, P = 2.5). The next tap sets in f = 10 cm: +10 ("ফোকাস দূরত্ব অর্ধেক, ক্ষমতা দ্বিগুণ").
-  5. অবতল (`concave`, then `concave20`): a concave lens; the beams spread, dashed back to F 40 cm on the light's side: −2.5; then a
-     more curved one, −5 (the book's sentence on concave lenses). The graph's lower half fills.
+  4. ক্ষমতা (`power`, then `power20`, `power10`): the first lens comes back (f = 40 cm, the book's glasses): the beams meet at 40 cm;
+     P = 1/f = 1/(0.4 m) = +2.5 ডায়াপটার as a formula in the panel, the label on the lens, the P–f graph with its first dot; the rule
+     says these are the book's glasses. Then the more curved lenses, one tap each: f = 20 cm, +5; f = 10 cm, +10 ("ফোকাস দূরত্ব অর্ধেক,
+     ক্ষমতা দ্বিগুণ"), each a new dot.
+  5. অবতল (`concave`, then `concave20`): a concave lens; the beams spread, dashed back to F 40 cm on the light's side: f = −0.4 m, P = 1/(−0.4 m) = −2.5; then a
+     more curved one, −5 (the book's sentence on concave lenses). The graph's left branch (f < 0, P < 0) fills.
 - **The test** is offered after the last scene only (the kit's পরীক্ষা tab stays): five questions, each setting up its own scene:
-  read P off the scale for a new convex lens (f = 25 cm: +4); the book's নিজে করো, one of চিত্র ৯.২৯(a), ৯.২৯(b), ৯.২৮ at random
+  read P for a new convex lens (f = 25 cm, drawn and labelled, because a phone cannot read the tilted scale between its tens: the student does the 1/f step; +4); the book's নিজে করো, one of চিত্র ৯.২৯(a), ৯.২৯(b), ৯.২৮ at random
   (F and F′ marked, no rays; after the answer the rays and the image are drawn); the comparison (a lens of less power in place of
-  +5: smaller); read P for a new concave lens (−4); the book's glasses (P written on the lens; f = 0.4 m). No number in a question's
-  text: the student reads it off the 3D (the scale, the lens's label). Wrong answers are the usual mistakes (f left in cm: 0.04; P
+  +5: smaller); read P for a new concave lens (the same way; −4); the book's glasses (P written on the lens; f = 0.4 m; on a retake
+  another pair, +2.5, +2 or −2, so it cannot be answered from memory). No number in a question's text: the student reads it off the 3D
+  (the f bar, the lens's label). Wrong answers are the usual mistakes (f left in cm: 0.04; P
   taken to be f: 25; the sign; 2.5 m; 0.4 cm; 4 m; bigger / same / upside down; real or virtual, bigger or smaller), each with its note.
 - **Camera**: one guided three-quarter view per scene (from the light's side, as the sister lens figures, 22° round and 11° up; 30°
   on a tall view, which also gives up the far ends), flights of 1.7 s; 360° orbit with the kit's rotate cue and the সামনে button.
@@ -69,8 +71,9 @@ these are copies, kept the same.
   through both faces with Snell's law: the outer ones cross the axis a little nearer (39.8 cm for f = 40, 19.6 for 20, 9.1 for 10:
   spherical aberration), as real ones do. The pencil's two rays follow the book's thin-lens rules, bending once on the middle plane
   (as the book and convex-lens-image draw them); they pass exactly through X′ (unit-tested).
-- **f is a distance, the sign is the lens's.** The book gives no sign rule for f; it says the power of a convex lens is positive and of
-  a concave lens negative. So the panel writes P = 1/f for convex and P = −1/f for concave, f always the distance to F or F′.
+- **f carries the sign in P = 1/f.** The book gives no sign rule for f; it says the power of a convex lens is positive and of a concave
+  lens negative. The figure uses the usual P = 1/f with f negative for a concave lens, shown in the reading (f = −0.4 m,
+  P = 1/(−0.4 m) = −2.5), and the rule says so in one line. The f bar on the 3D shows the distance (f = 40 cm) in both cases.
 - **F and F′** follow convex-lens-image and lens-types: F on the light's side, F′ on the far side (the book's চিত্র ৯.২৪/৯.২৬; চিত্র
   ৯.২৭ itself labels them the other way round). So the convex lens's beams meet at F′; the concave lens's seem to come from F.
 - **The +10 ডায়াপটার lens is 10 cm across**, not 15: a 15 cm lens cannot have f = 10 cm (a hemisphere of glass gives about 11 cm).
@@ -80,15 +83,15 @@ these are copies, kept the same.
   draws it.
 
 ## Measurements (kit 1.9.1, Chromium software WebGL, 844 × 390, shadows on)
-- Draw calls / triangles per frame, from the guided view and three more azimuths (90° apart): power 42/20.4 k in view, 112/51.4 k when
-  the shadow map is redrawn too; compare (pencil, ghost image) 45–53 / 21.7–23.5 k, 139/59.1 k with the shadow pass; concave20 as
-  power. Budget 150 / 300 k.
+- Draw calls / triangles per frame in the guided view: power and concave20 40/19.2 k, compare 41/19.9 k; with the shadow map redrawn
+  in the same frame (the lens lift, the ray box's slide) 75–76 / 34.7–35.9 k, after the review took the carriers and the stand rods
+  out of the shadow pass (it was 139/59.1 k at the worst angle before). Budget 150 / 300 k.
 - JS per animated frame at 6× CPU throttling (a scene played again: lens swap, beams): 0.9–1.0 ms on average, 4.5 ms at most.
 - Idle: 0 draws once the orbit's damping has settled. Time to ready about 3–4 s under software rendering (shared machine).
 - GLB 556 KB, 9,230 triangles; zip 471 KB.
-- Layout (both languages, all six sizes, 19 states each: 8 scenes, 5 questions before and after the answer, the result): one canvas
+- Layout (both languages, all six sizes, 20 states each: 9 scenes, 5 questions before and after the answer, the result): one canvas
   height per size (390 × 700: 345 px, 49 %; 390 × 520: 213; the side layouts the full height), panel scroll 0, no sheet overflow,
-  no label on another label, a ray, the corner buttons, the rotate pill or the panel tab, no `{placeholder}` left.
+  the P–f graph 120–146 px on the short side layouts (340 at 1280 × 800), no label on another label, a ray, the action's badge, the corner buttons, the rotate pill or the panel tab, no `{placeholder}` left.
 
 ## Open questions for the book team
 - ডায়াপটার (page) vs ডায়অপ্টার (the batch's common terms): the figure writes the page's spelling.

@@ -183,7 +183,6 @@ function createCarrier({ black, brass, steel }, geos) {
   const H = RAIL.carrier - RAIL.top;
   const body = new THREE.Mesh(geos.carrier, black);
   body.position.y = H / 2 - 0.17;
-  body.castShadow = true;
   root.add(body);
   const screw = new THREE.Mesh(geos.screw, steel);
   screw.rotation.x = Math.PI / 2;
@@ -522,7 +521,6 @@ function createStand(mats, geos) {
   const rise = RAIL.axis - RAIL.carrier;
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, rise - 0.2, 14), mats.steel);
   rod.position.y = RAIL.carrier - RAIL.top + rise / 2 - 0.25;
-  rod.castShadow = true;
   root.add(rod);
   const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.52, 0.32, 18), mats.brass);
   cup.position.y = RAIL.axis - RAIL.top - 0.14;

@@ -12,6 +12,20 @@
 
 export const STRINGS = {
   bn: {
+    act_power20: 'বেশি বাঁকা লেন্স',
+    lead_power20: 'আরও বাঁকা একটি লেন্সে আলো কোথায় মেলে?',
+    rule_focus_short: 'আলো যেখানে মেলে সেটি ফোকাস বিন্দু F′; লেন্স থেকে তার দূরত্ব <b>ফোকাস দূরত্ব</b> f।',
+    rule_pencil_short: 'রশ্মি ছড়িয়ে যায়, পেছনে বাড়ালে মেলে: সোজা, বড় <b>অবাস্তব প্রতিবিম্ব</b>।',
+    rule_compare_short: 'ফোকাস দূরত্ব যত কম, জিনিস তত বড় দেখায়: <b>ক্ষমতা</b> তত বেশি।',
+    rule_power_short: 'f মিটারে দিলে P-এর একক <b>ডায়াপটার</b>। এটিই বইয়ের উদাহরণের চশমা।',
+    rule_power20_short: 'ফোকাস দূরত্ব অর্ধেক, ক্ষমতা দ্বিগুণ: f যত কম, <b>ক্ষমতা</b> তত বেশি।',
+    rule_power10_short: 'আবার f অর্ধেক, ক্ষমতা দ্বিগুণ। উত্তলে ক্ষমতা <b>ধনাত্মক</b> বা পজিটিভ।',
+    rule_concave_short: 'অবতল লেন্সের f ঋণাত্মক, তাই পাওয়ার <b>ঋণাত্মক</b> বা নেগেটিভ।',
+    rule_concave20_short: 'অবতলে বস্তু যত ছোট দেখায়, পাওয়ার তত বেশি, <b>ফোকাস দূরত্ব</b> তত ছোট।',
+    rule_power20: 'ফোকাস দূরত্ব অর্ধেক, ক্ষমতা দ্বিগুণ: যে লেন্সের ফোকাস দূরত্ব যত কম, তার <b>ক্ষমতা</b> তত বেশি।',
+    c_focal: '{f} {u}',
+    why_glasses_book: 'এটিই বইয়ের উদাহরণের চশমা।',
+    mis_gl_sign: 'অবতল লেন্সের ক্ষমতা ঋণাত্মক, তাই f-ও ঋণাত্মক।',
     panel_hide: 'লেখা লুকাও',
     panel_show: 'লেখা দেখাও',
     rotate_title: 'ফোনটি আড়াআড়ি ধরো',
@@ -66,28 +80,28 @@ export const STRINGS = {
     // the line before the action: what the next tap will show
     lead_focus: 'এবার আলোর বদলে একটি পেনসিল রেখে দেখি।',
     lead_pencil: 'পেনসিল একই জায়গায় থাকুক; এবার বেশি বাঁকা একটি লেন্স বসাই।',
-    lead_compare: 'ক্ষমতা কীভাবে মাপা হয়? আবার আলো ফেলে দেখি।',
-    lead_power: 'আরও বাঁকা লেন্সে আলো কোথায় মেলে?',
+    lead_compare: 'ক্ষমতা কীভাবে মাপা হয়? প্রথম লেন্সটি ফিরিয়ে আবার আলো ফেলি।',
+    lead_power: 'এবার বেশি বাঁকা লেন্সটির ক্ষমতা মাপি।',
     lead_power10: 'অবতল লেন্সের ক্ষমতা কেমন?',
     lead_concave: 'আরও বাঁকা অবতল লেন্সে কী হয়?',
     lead_concave20: 'এবার নিজে যাচাই করো।',
 
     // the result line
     out_focus: 'সমান্তরাল আলো লেন্স থেকে <b>{f}&nbsp;{u_cm}</b> দূরে এক বিন্দুতে মিলল।',
-    out_pencil: 'পেনসিলটিকে <b>{m} গুণ</b> বড় দেখায়।<br><span class="lp-read">u = {u} cm · একই পাশে {v} cm · m = {mm}</span>',
-    out_compare: '<b>{m} গুণ</b> বড় দেখায় (আগের লেন্সে {m0} গুণ)।<br><span class="lp-read">u = {u} cm · একই পাশে {v} cm · m = {mm}</span>',
+    out_pencil: 'পেনসিলটিকে <b>{m} গুণ</b> বড় দেখায়।<br><span class="lp-read">প্রতিবিম্ব {v} cm দূরে, পেনসিলের দিকেই।</span>',
+    out_compare: '<b>{m} গুণ</b> বড় দেখায় (আগের লেন্সে {m0} গুণ)।<br><span class="lp-read">প্রতিবিম্ব লেন্স থেকে {v} cm দূরে।</span>',
     out_power:
       '<span class="lp-eq"><i>P</i> = <span class="pvc-frac"><span>১</span><span><i>f</i></span></span> = <span class="pvc-frac"><span>১</span><span>{fm}&nbsp;{u_m}</span></span> = <b>{p}&nbsp;{u_d}</b></span>',
     out_concave:
-      '<span class="lp-eq"><i>P</i> = −<span class="pvc-frac"><span>১</span><span><i>f</i></span></span> = −<span class="pvc-frac"><span>১</span><span>{fm}&nbsp;{u_m}</span></span> = <b>{p}&nbsp;{u_d}</b></span>',
+      '<span class="lp-read">অবতল লেন্সে <i>f</i> = {fs}&nbsp;{u_m}</span><br><span class="lp-eq"><i>P</i> = <span class="pvc-frac"><span>১</span><span><i>f</i></span></span> = <span class="pvc-frac"><span>১</span><span>{fs}&nbsp;{u_m}</span></span> = <b>{p}&nbsp;{u_d}</b></span>',
 
     // the rule: the book's words, the book's term last and in bold
     rule_focus: 'সমান্তরাল আলো যে বিন্দুতে মেলে, সেটি ফোকাস বিন্দু F′; লেন্সের কেন্দ্র থেকে তার দূরত্ব <b>ফোকাস দূরত্ব</b> f।',
     rule_pencil: 'পেনসিল ফোকাস দূরত্বের ভেতরে: রশ্মি ছড়িয়ে যায়, পেছনে বাড়ালে মেলে। তাই সোজা, বড় <b>অবাস্তব প্রতিবিম্ব</b>।',
     rule_compare: 'যে লেন্সের ফোকাস দূরত্ব যত কম, সেই লেন্সে জিনিসটিকে তত বড় দেখায়: তার <b>ক্ষমতা</b> তত বেশি।',
-    rule_power: 'ক্ষমতা P ফোকাস দূরত্বের ব্যস্তানুপাতিক; f মিটারে দিলে P-এর একক <b>ডায়াপটার</b>। প্রথম লেন্সে P = ১/০.৪ = ২.৫: বইয়ের চশমা।',
-    rule_power10: 'ফোকাস দূরত্ব অর্ধেক, ক্ষমতা দ্বিগুণ। উত্তল লেন্সের বেলায় ক্ষমতা <b>ধনাত্মক</b> বা পজিটিভ।',
-    rule_concave: 'আলো ছড়িয়ে পড়ে, যেন F থেকে আসছে। অবতল লেন্সের বেলায় পাওয়ার <b>ঋণাত্মক</b> বা নেগেটিভ।',
+    rule_power: 'ক্ষমতা P ফোকাস দূরত্বের ব্যস্তানুপাতিক; f মিটারে দিলে P-এর একক <b>ডায়াপটার</b>। এটিই বইয়ের উদাহরণের চশমা।',
+    rule_power10: 'আবার f অর্ধেক, ক্ষমতা দ্বিগুণ। উত্তল লেন্সের বেলায় ক্ষমতা <b>ধনাত্মক</b> বা পজিটিভ।',
+    rule_concave: 'আলো যেন F থেকে আসে, তাই অবতল লেন্সের f ঋণাত্মক ধরা হয়। অবতলে পাওয়ার <b>ঋণাত্মক</b> বা নেগেটিভ।',
     rule_concave20: 'যে অবতল লেন্সে বস্তুকে যত ছোট দেখা যায়, তার পাওয়ার তত বেশি বা <b>ফোকাস দূরত্ব</b> তত ছোট।',
 
     // labels on the picture (short)
@@ -134,14 +148,14 @@ export const STRINGS = {
 
     c_power: '{p} ডায়াপটার',
 
-    q_read: 'নতুন একটি উত্তল লেন্স। আলো কোথায় মিলেছে, স্কেলে দেখো। এর ক্ষমতা কত?',
+    q_read: 'নতুন একটি উত্তল লেন্স; এর ফোকাস দূরত্ব ছবিতে দেখো। লেন্সটির ক্ষমতা কত?',
     why_read: '<b>{p} ডায়াপটার</b>: আলো মিলেছে {f} cm = {fm} m দূরে; P = ১/{fm} = {p}।',
-    q_read_neg: 'নতুন একটি অবতল লেন্স। আলো যেন কোথা থেকে ছড়াচ্ছে, স্কেলে দেখো। এর ক্ষমতা কত?',
-    why_read_neg: '<b>{p} ডায়াপটার</b>: আলো যেন আসছে {f} cm = {fm} m দূরের F থেকে; P = −১/{fm} = {p}।',
+    q_read_neg: 'নতুন একটি অবতল লেন্স; এর ফোকাস দূরত্ব ছবিতে দেখো। লেন্সটির ক্ষমতা কত?',
+    why_read_neg: '<b>{p} ডায়াপটার</b>: অবতল লেন্সে f ঋণাত্মক, f = {fs} m; P = ১/({fs}) = {p}।',
     mis_cm: 'f সেন্টিমিটারে রয়ে গেছে; আগে মিটারে নাও।',
     mis_f: 'এটি f, ক্ষমতা নয় (ক্ষমতা ১/f)।',
     mis_sign_pos: 'উত্তল লেন্সের ক্ষমতা ধনাত্মক।',
-    mis_sign_neg: 'অবতল লেন্সের ক্ষমতা ঋণাত্মক।',
+    mis_sign_neg: 'অবতল লেন্সে f ঋণাত্মক, তাই ক্ষমতাও ঋণাত্মক।',
 
     q_compare: 'পেনসিল একই জায়গায় থাকুক। এই লেন্সের বদলে কম ক্ষমতার একটি লেন্স বসালে পেনসিলটিকে কেমন দেখাবে?',
     c_cmp_small: 'আগের চেয়ে ছোট দেখাবে',
@@ -153,15 +167,11 @@ export const STRINGS = {
     mis_cmp_same: 'ক্ষমতা বদলালে দেখার আকারও বদলায়।',
     mis_cmp_flip: 'পেনসিল ফোকাস দূরত্বের ভেতরেই থাকে, তাই সোজা।',
 
-    q_glasses: 'বইয়ের উদাহরণের চশমার লেন্স; এর ক্ষমতা লেন্সের ওপরে লেখা। লেন্সটির ফোকাস দূরত্ব কত?',
-    c_gl_right: '০.৪ m',
-    c_gl_p: '২.৫ m',
-    c_gl_cm: '০.৪ cm',
-    c_gl_ten: '৪ m',
-    why_glasses: '<b>০.৪ m</b>: f = ১/P = ১/২.৫ m = ০.৪ m, মানে ৪০ cm।',
+    q_glasses: 'একটি চশমার লেন্স; এর ক্ষমতা লেন্সের ওপরে লেখা। লেন্সটির ফোকাস দূরত্ব কত?',
+    why_glasses: '<b>{f} m</b>: f = ১/P = ১/({p}) m = {f} m।',
     mis_gl_p: 'ক্ষমতা আর ফোকাস দূরত্ব এক নয়; f = ১/P।',
-    mis_gl_cm: 'P ডায়াপটারে থাকলে ১/P মিটারে আসে, সেন্টিমিটারে নয়।',
-    mis_gl_ten: '১/২.৫ = ০.৪, ৪ নয়।',
+    mis_gl_cm: 'P ডায়াপটারে থাকলে ১/P আসে মিটারে, সেন্টিমিটারে নয়।',
+    mis_gl_ten: 'দশমিকের ঘর সরে গেছে; ১/P আবার হিসাব করো।',
 
     q_diy_a: 'নিজে করো (চিত্র ৯.২৯ a): পেনসিল XY ফোকাস দূরত্বের ভেতরে। প্রতিবিম্ব কেমন হবে?',
     q_diy_b: 'নিজে করো (চিত্র ৯.২৯ b): পেনসিল XY ফোকাস দূরত্বের অনেক বাইরে। প্রতিবিম্ব কেমন হবে?',
@@ -180,6 +190,20 @@ export const STRINGS = {
     w_small: 'ছোট',
   },
   en: {
+    act_power20: 'A more curved lens',
+    lead_power20: 'Where does the light meet with an even more curved lens?',
+    rule_focus_short: 'Parallel light meets at F′; its distance from the lens is the <b>focal length</b> f.',
+    rule_pencil_short: 'The rays spread; traced back they meet: an upright, bigger <b>virtual image</b>.',
+    rule_compare_short: 'The shorter the focal length, the bigger things look: more <b>power</b>.',
+    rule_power_short: 'With f in metres, P is in <b>dioptres</b>. These are the book’s glasses.',
+    rule_power20_short: 'Half the focal length, twice the power: shorter f, more <b>power</b>.',
+    rule_power10_short: 'Half f again, twice the power. A convex lens’s power is <b>positive</b>.',
+    rule_concave_short: 'A concave lens’s f is negative, so its power is <b>negative</b>.',
+    rule_concave20_short: 'The smaller it shows a thing, the more power, the shorter the <b>focal length</b>.',
+    rule_power20: 'Half the focal length, twice the power: the shorter the focal length, the more <b>power</b>.',
+    c_focal: '{f} {u}',
+    why_glasses_book: 'These are the book’s example glasses.',
+    mis_gl_sign: 'A concave lens has a negative power, so f is negative too.',
     panel_hide: 'Hide the text',
     panel_show: 'Show the text',
     rotate_title: 'Turn your phone sideways',
@@ -229,28 +253,27 @@ export const STRINGS = {
 
     lead_focus: 'Now put a pencil in place of the light.',
     lead_pencil: 'The pencil stays put; now a more curved lens.',
-    lead_compare: 'How is power measured? Shine the light again.',
-    lead_power: 'Where does the light meet with an even more curved lens?',
+    lead_compare: 'How is power measured? Put the first lens back and shine the light.',
+    lead_power: 'Now measure the power of the more curved lens.',
     lead_power10: 'What about the power of a concave lens?',
     lead_concave: 'And a more curved concave lens?',
     lead_concave20: 'Now test yourself.',
 
     out_focus: 'Parallel light met at one point, <b>{f}&nbsp;{u_cm}</b> from the lens.',
-    out_pencil: 'The pencil looks <b>{m} times</b> as big.<br><span class="lp-read">u = {u} cm · same side {v} cm · m = {mm}</span>',
-    out_compare: '<b>{m} times</b> as big (the first lens: {m0}).<br><span class="lp-read">u = {u} cm · same side {v} cm · m = {mm}</span>',
+    out_pencil: 'The pencil looks <b>{m} times</b> as big.<br><span class="lp-read">The image: {v} cm away, on the pencil’s side.</span>',
+    out_compare: '<b>{m} times</b> as big (the first lens: {m0}).<br><span class="lp-read">The image is {v} cm from the lens.</span>',
     out_power:
       '<span class="lp-eq"><i>P</i> = <span class="pvc-frac"><span>1</span><span><i>f</i></span></span> = <span class="pvc-frac"><span>1</span><span>{fm}&nbsp;{u_m}</span></span> = <b>{p}&nbsp;{u_d}</b></span>',
     out_concave:
-      '<span class="lp-eq"><i>P</i> = −<span class="pvc-frac"><span>1</span><span><i>f</i></span></span> = −<span class="pvc-frac"><span>1</span><span>{fm}&nbsp;{u_m}</span></span> = <b>{p}&nbsp;{u_d}</b></span>',
+      '<span class="lp-read">A concave lens: <i>f</i> = {fs}&nbsp;{u_m}</span><br><span class="lp-eq"><i>P</i> = <span class="pvc-frac"><span>1</span><span><i>f</i></span></span> = <span class="pvc-frac"><span>1</span><span>{fs}&nbsp;{u_m}</span></span> = <b>{p}&nbsp;{u_d}</b></span>',
 
     rule_focus: 'The point where parallel light meets is the focal point F′; its distance from the lens’s centre is the <b>focal length</b> f.',
     rule_pencil:
       'The pencil is inside the focal length: the rays spread, and meet only when traced back. So: an upright, bigger <b>virtual image</b>.',
     rule_compare: 'The shorter a lens’s focal length, the bigger it shows a thing: the more <b>power</b> it has.',
-    rule_power:
-      'Power is inversely proportional to the focal length; with f in metres P is in <b>dioptres</b>. First lens: P = 1/0.4 = 2.5, the book’s glasses.',
-    rule_power10: 'Half the focal length, twice the power. For a convex lens the power is <b>positive</b>.',
-    rule_concave: 'The light spreads as if from F. For a concave lens the power is <b>negative</b>.',
+    rule_power: 'Power is inversely proportional to the focal length; with f in metres P is in <b>dioptres</b>. These are the book’s glasses.',
+    rule_power10: 'Half f again, twice the power. For a convex lens the power is <b>positive</b>.',
+    rule_concave: 'The light seems to come from F, so a concave lens’s f counts as negative: its power is <b>negative</b>.',
     rule_concave20: 'The smaller a concave lens shows a thing, the greater its power, or the shorter its <b>focal length</b>.',
 
     lbl_f: 'f = {f} {u_cm}',
@@ -294,14 +317,14 @@ export const STRINGS = {
 
     c_power: '{p} D',
 
-    q_read: 'A new convex lens. Find on the scale where the light meets. What is its power?',
+    q_read: 'A new convex lens; read its focal length off the picture. What is its power?',
     why_read: '<b>{p} D</b>: the light meets {f} cm = {fm} m away: P = 1/{fm} = {p}.',
-    q_read_neg: 'A new concave lens. Find on the scale where the light seems to spread from. Its power?',
-    why_read_neg: '<b>{p} D</b>: it seems to come from F, {f} cm = {fm} m away: P = −1/{fm} = {p}.',
+    q_read_neg: 'A new concave lens; read its focal length off the picture. What is its power?',
+    why_read_neg: '<b>{p} D</b>: a concave lens’s f is negative, f = {fs} m; P = 1/({fs}) = {p}.',
     mis_cm: 'f was left in cm; use metres.',
     mis_f: 'That is f, not the power (1/f).',
     mis_sign_pos: 'A convex lens has a positive power.',
-    mis_sign_neg: 'A concave lens has a negative power.',
+    mis_sign_neg: 'A concave lens’s f is negative, so its power is too.',
 
     q_compare: 'The pencil stays put. If a lens of less power replaces this one, how will the pencil look?',
     c_cmp_small: 'Smaller than now',
@@ -313,15 +336,11 @@ export const STRINGS = {
     mis_cmp_same: 'A different power shows a different size.',
     mis_cmp_flip: 'The pencil stays inside the focal length: upright.',
 
-    q_glasses: 'The glasses lens of the book’s example; its power is written above it. What is its focal length?',
-    c_gl_right: '0.4 m',
-    c_gl_p: '2.5 m',
-    c_gl_cm: '0.4 cm',
-    c_gl_ten: '4 m',
-    why_glasses: '<b>0.4 m</b>: f = 1/P = 1/2.5 m = 0.4 m, that is 40 cm.',
+    q_glasses: 'A glasses lens; its power is written above it. What is its focal length?',
+    why_glasses: '<b>{f} m</b>: f = 1/P = 1/({p}) m = {f} m.',
     mis_gl_p: 'Power and focal length are not the same; f = 1/P.',
-    mis_gl_cm: 'With P in dioptres, 1/P comes out in metres, not centimetres.',
-    mis_gl_ten: '1/2.5 = 0.4, not 4.',
+    mis_gl_cm: 'With P in dioptres, 1/P is in metres, not cm.',
+    mis_gl_ten: 'The decimal point slipped; work out 1/P again.',
 
     q_diy_a: 'Do it yourself (fig. 9.29 a): the pencil XY is inside the focal length. What is the image like?',
     q_diy_b: 'Do it yourself (fig. 9.29 b): the pencil XY is far outside the focal length. What is the image like?',

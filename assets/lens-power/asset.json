@@ -43,10 +43,11 @@
         ["focus", "the light meets at F′ (f = 40 cm)"],
         ["pencil", "a pencil seen through it"],
         ["compare", "a more curved lens: bigger"],
-        ["power", "P = 1/f (f = 20 cm)"],
-        ["power10", "f = 10 cm"],
-        ["concave", "a concave lens"],
-        ["concave20", "a more curved concave lens"]
+        ["power", "P = 1/f: the book's glasses, +2.5"],
+        ["power20", "f = 20 cm: +5"],
+        ["power10", "f = 10 cm: +10"],
+        ["concave", "a concave lens: −2.5"],
+        ["concave20", "a more curved concave lens: −5"]
       ],
       "default": "intro"
     },
@@ -80,11 +81,11 @@
   ],
   "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "scene": "power" } },
+    "poster": { "params": { "coach": "0", "scene": "compare" } },
     "glb": [{ "name": "default" }],
     "video": {
       "kind": "script",
-      "seconds": 44,
+      "seconds": 50,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
@@ -92,8 +93,9 @@
         { "at": 8, "command": "set", "payload": { "scene": "pencil" } },
         { "at": 15, "command": "set", "payload": { "scene": "compare" } },
         { "at": 22, "command": "set", "payload": { "scene": "power" } },
-        { "at": 29, "command": "set", "payload": { "scene": "power10" } },
-        { "at": 36, "command": "set", "payload": { "scene": "concave" } }
+        { "at": 29, "command": "set", "payload": { "scene": "power20" } },
+        { "at": 35, "command": "set", "payload": { "scene": "power10" } },
+        { "at": 42, "command": "set", "payload": { "scene": "concave" } }
       ]
     }
   }

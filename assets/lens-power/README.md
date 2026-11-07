@@ -27,7 +27,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `scene` | What is shown | `intro` the bench, the lens, the ray box · `focus` the light meets at F′ (f = 40 cm) · `pencil` a pencil seen through it · `compare` a more curved lens: bigger · `power` P = 1/f (f = 20 cm) · `power10` f = 10 cm · `concave` a concave lens · `concave20` a more curved concave lens | `intro` |
+| `scene` | What is shown | `intro` the bench, the lens, the ray box · `focus` the light meets at F′ (f = 40 cm) · `pencil` a pencil seen through it · `compare` a more curved lens: bigger · `power` P = 1/f: the book's glasses, +2.5 · `power20` f = 20 cm: +5 · `power10` f = 10 cm: +10 · `concave` a concave lens: −2.5 · `concave20` a more curved concave lens: −5 | `intro` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The numbered ring pulses at first | `1` · `0` | `1` |

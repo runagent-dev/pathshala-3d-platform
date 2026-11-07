@@ -30,9 +30,11 @@ import {
   LENSES,
   lensOf,
   metres,
+  signedF,
   PENCIL,
   PENCIL_U,
   pencilRays,
+  focalChoices,
   powerChoices,
   powerOf,
   REACH,
@@ -54,7 +56,7 @@ export const DEFAULTS = {
 };
 
 /** The scenes, in the order the action walks them; the step (the word in the panel) each belongs to. */
-export const SEQ = ['intro', 'focus', 'pencil', 'compare', 'power', 'power10', 'concave', 'concave20'];
+export const SEQ = ['intro', 'focus', 'pencil', 'compare', 'power', 'power20', 'power10', 'concave', 'concave20'];
 export const STEPS = ['focus', 'pencil', 'compare', 'power', 'concave'];
 const STEP_OF = {
   intro: null,
@@ -62,6 +64,7 @@ const STEP_OF = {
   pencil: 'pencil',
   compare: 'compare',
   power: 'power',
+  power20: 'power',
   power10: 'power',
   concave: 'concave',
   concave20: 'concave',
@@ -75,14 +78,17 @@ const SCENES = {
   focus: { lens: 'plus40', source: 'box', box: 'near', lamp: 1, P: false },
   pencil: { lens: 'plus40', source: 'pencil', box: 'far', P: false },
   compare: { lens: 'plus20', source: 'pencil', box: 'far', old: 'plus40', P: false },
-  power: { lens: 'plus20', source: 'box', box: 'near', lamp: 1, old: 'plus40', P: true },
+  // the power: the book's glasses first (f = 40 cm, +2.5), then the more curved lenses
+  power: { lens: 'plus40', source: 'box', box: 'near', lamp: 1, P: true },
+  power20: { lens: 'plus20', source: 'box', box: 'near', lamp: 1, old: 'plus40', P: true },
   power10: { lens: 'plus10', source: 'box', box: 'near', lamp: 1, old: 'plus20', P: true },
   concave: { lens: 'minus40', source: 'box', box: 'far', lamp: 1, P: true },
   concave20: { lens: 'minus20', source: 'box', box: 'far', lamp: 1, old: 'minus40', P: true },
 };
 /** The lenses whose power the student knows in each scene: the dots of the graph. */
 const DOTS = {
-  power: ['plus40', 'plus20'],
+  power: ['plus40'],
+  power20: ['plus40', 'plus20'],
   power10: ['plus40', 'plus20', 'plus10'],
   concave: ['plus40', 'plus20', 'plus10', 'minus40'],
   concave20: ['plus40', 'plus20', 'plus10', 'minus40', 'minus20'],
@@ -93,9 +99,10 @@ const ACTIONS = {
   focus: ['act_pencil', 2],
   pencil: ['act_compare', 3],
   compare: ['act_power', 4],
-  power: ['act_power10', 5],
-  power10: ['act_concave', 6],
-  concave: ['act_concave20', 7],
+  power: ['act_power20', 5],
+  power20: ['act_power10', 6],
+  power10: ['act_concave', 7],
+  concave: ['act_concave20', 8],
   concave20: ['act_quiz', ''],
 };
 /** Colours of the meanings: the focus (violet, as chapter 8), the power (crimson), the ink of plain labels. */
@@ -174,6 +181,7 @@ const FRAME_OF = {
   pencil: 'pencil',
   compare: 'pencil',
   power: 'beams',
+  power20: 'beams',
   power10: 'beams',
   concave: 'concave',
   concave20: 'concave',
@@ -337,7 +345,8 @@ export function createApp(root, options = {}) {
       ui.corner,
       ui.hint,
       () => rays.boxes(),
-      () => action?.box(),
+      // not the badge: the badge goes round the ring to keep off the labels, and two things giving way to each other would push
+      // the lens's label onto F
       () => action?.ringBox(),
       () => boxOf(rotateEl),
       () => boxOf(root.querySelector('.pvc-panel-toggle')),
@@ -362,7 +371,7 @@ export function createApp(root, options = {}) {
   // above the axis first, clear of the beam band: where the beams of a concave lens, or a real image, fill the space under it
   const AXIS_UP = [spot(0, -38), spot(-26, -42), spot(26, -42), spot(0, -52), spot(0, 38), spot(0, 52)];
   const IMG_ABOVE = [...ABOVE, spot(0, -58), spot(-52, -30), spot(52, -30), spot(-60, 0)];
-  const IMG_BELOW = [...BELOW, spot(0, 56), spot(-52, 30), spot(52, 30)];
+  const IMG_BELOW = [spot(26, -22), spot(0, -26), spot(44, -8), spot(30, -40), spot(0, -44), ...BELOW];
   const OLD_SPOTS = [spot(44, -26), spot(50, -10), spot(0, -40), spot(-44, -26)];
   const axisSpots = () => (LENSES[s.lens].kind === 'concave' || image()?.kind === 'real' ? AXIS_UP : AXIS_DOWN);
   const AT_BAR = [spot(0, 18), spot(26, 20), spot(-26, 20), spot(0, -18)];
@@ -385,7 +394,8 @@ export function createApp(root, options = {}) {
         s.showP && s.v.P > 0.5 ? t('lbl_P', { p: sgn(powerOf(s.lens)) }) : t(LENSES[s.lens].kind === 'convex' ? 'lbl_convex' : 'lbl_concave'),
       point: () => V(0, AX + lensOf(s.lens).h + 1.4, 0),
       color: () => (s.showP && s.v.P > 0.5 ? COLORS.power : COLORS.ink),
-      spots: ABOVE,
+      // above the lens; to a side when the action's badge sits there
+      spots: [...ABOVE, spot(-74, -10), spot(74, -10), spot(-80, 12), spot(0, -60)],
       show: () => seated() && !quizHides('lens') && !s.busy,
     },
     F: {
@@ -427,9 +437,10 @@ export function createApp(root, options = {}) {
     },
     image: {
       text: () => t(image()?.kind === 'real' ? 'lbl_real' : 'lbl_virtual'),
+      // a real image hangs below the axis where the rays cross: its label goes above the axis there, clear of the rays and the holder
       point: () => {
         const img = image();
-        return img ? V(img.x, AX + (img.kind === 'real' ? img.tip - 0.3 : img.tip + 0.3), 0) : V(0, AX, 0);
+        return img ? V(img.x, AX + (img.kind === 'real' ? 1.2 : img.tip + 0.3), 0) : V(0, AX, 0);
       },
       color: COLORS.ink,
       spots: () => (image()?.kind === 'real' ? IMG_BELOW : IMG_ABOVE),
@@ -607,14 +618,14 @@ export function createApp(root, options = {}) {
   }
   const wait = (sec, my) => tweener.animate({ key: 'wait', duration: sec }).finished.then((ok) => ok && my === s.run);
   /** Lifts the lens out of the cradle and drops `id` in. */
-  async function swapLens(id, my) {
+  async function swapLens(id, my, k = 1) {
     if (s.lens === id && s.v.lift < 1e-3) return true;
     if (s.lens !== id) {
-      if (!(await tweenTo({ lift: 1 }, T.liftOut, my, 'lens', ease.inCubic))) return false;
+      if (!(await tweenTo({ lift: 1 }, T.liftOut * k, my, 'lens', ease.inCubic))) return false;
       s.lens = id;
     }
     audio.contact?.();
-    return tweenTo({ lift: 0 }, T.liftIn, my, 'lens', ease.outCubic);
+    return tweenTo({ lift: 0 }, T.liftIn * k, my, 'lens', ease.outCubic);
   }
   /** Where every value ends in a scene (or a question's plan). */
   function targetOf(sc) {
@@ -654,42 +665,42 @@ export function createApp(root, options = {}) {
    * move together, then the light comes: the lamp, the beams to the lens and out of it (back to F for a concave lens), F and the
    * focal length; or the pencil's two rays, their backward lines and the image. Then the power.
    */
-  async function play(sc, my) {
+  async function play(sc, my, k = 1) {
     const goal = targetOf(sc);
     const clear = {};
     for (const k of RAYS_KEYS) if (s.v[k] > 0 && !(k === 'P' && goal.P && s.lens === sc.lens)) clear[k] = 0;
     if (sc.lens !== s.lens || goal.boxX !== s.v.boxX || goal.pen !== s.v.pen) clear.lamp = 0;
-    if (Object.keys(clear).length && !(await tweenTo(clear, T.hide, my))) return false;
+    if (Object.keys(clear).length && !(await tweenTo(clear, T.hide * k, my))) return false;
     s.old = sc.old ?? null;
     s.showP = Boolean(sc.P);
     if (sc.u != null && s.v.pen < 0.01) s.u = sc.u;
-    const moves = [flyCamera(T.fly), swapLens(sc.lens, my)];
-    if (goal.boxX !== s.v.boxX) moves.push(tweenTo({ boxX: goal.boxX }, T.move, my, 'move'));
+    const moves = [flyCamera(T.fly * k), swapLens(sc.lens, my, k)];
+    if (goal.boxX !== s.v.boxX) moves.push(tweenTo({ boxX: goal.boxX }, T.move * k, my, 'move'));
     if (goal.pen !== s.v.pen) {
       if (goal.pen > 0 && sc.u != null) s.u = sc.u;
-      moves.push(tweenTo({ pen: goal.pen }, T.move * 0.8, my, 'pencil', goal.pen > 0 ? ease.outCubic : ease.inCubic));
+      moves.push(tweenTo({ pen: goal.pen }, T.move * k * 0.8, my, 'pencil', goal.pen > 0 ? ease.outCubic : ease.inCubic));
     }
     const res = await Promise.all(moves);
     if (my !== s.run || res.some((r) => r === false)) return false;
     if (goal.lamp > 0) {
-      if (!(await tweenTo({ lamp: 1 }, T.lamp, my))) return false;
-      if (!(await tweenTo({ O: 1 }, 0.2, my))) return false;
-      if (!(await tweenTo({ bIn: 1 }, T.in, my, 'step', ease.linear))) return false;
-      if (!(await tweenTo({ bOut: 1 }, T.out, my, 'step', ease.linear))) return false;
-      if (goal.bExt && !(await tweenTo({ bExt: 1 }, T.ext, my, 'step', ease.linear))) return false;
-      if (!(await tweenTo({ F: 1, old: goal.old }, T.F, my))) return false;
-      if (goal.bar && !(await tweenTo({ bar: 1 }, T.bar, my))) return false;
+      if (!(await tweenTo({ lamp: 1 }, T.lamp * k, my))) return false;
+      if (!(await tweenTo({ O: 1 }, 0.2 * k, my))) return false;
+      if (!(await tweenTo({ bIn: 1 }, T.in * k, my, 'step', ease.linear))) return false;
+      if (!(await tweenTo({ bOut: 1 }, T.out * k, my, 'step', ease.linear))) return false;
+      if (goal.bExt && !(await tweenTo({ bExt: 1 }, T.ext * k, my, 'step', ease.linear))) return false;
+      if (!(await tweenTo({ F: 1, old: goal.old }, T.F * k, my))) return false;
+      if (goal.bar && !(await tweenTo({ bar: 1 }, T.bar * k, my))) return false;
     } else if (goal.pen > 0) {
-      if (!(await tweenTo({ F: 1, F2: goal.F2, O: 1, old: goal.old }, T.F, my))) return false;
+      if (!(await tweenTo({ F: 1, F2: goal.F2, O: 1, old: goal.old }, T.F * k, my))) return false;
       if (goal.pIn) {
-        if (!(await tweenTo({ pIn: 1 }, T.in, my, 'step', ease.linear))) return false;
-        if (!(await tweenTo({ pOut: 1 }, T.out, my, 'step', ease.linear))) return false;
-        if (goal.pExt && !(await tweenTo({ pExt: 1 }, T.ext, my, 'step', ease.linear))) return false;
-        if (!(await tweenTo({ img: 1, eye: goal.eye }, T.img, my))) return false;
+        if (!(await tweenTo({ pIn: 1 }, T.in * k, my, 'step', ease.linear))) return false;
+        if (!(await tweenTo({ pOut: 1 }, T.out * k, my, 'step', ease.linear))) return false;
+        if (goal.pExt && !(await tweenTo({ pExt: 1 }, T.ext * k, my, 'step', ease.linear))) return false;
+        if (!(await tweenTo({ img: 1, eye: goal.eye }, T.img * k, my))) return false;
       }
     }
-    if (goal.P && !(await tweenTo({ P: 1 }, T.P, my))) return false;
-    return wait(T.hold, my);
+    if (goal.P && !(await tweenTo({ P: 1 }, T.P * k, my))) return false;
+    return wait(T.hold * k, my);
   }
   function stopAll() {
     s.run++;
@@ -756,10 +767,9 @@ export function createApp(root, options = {}) {
     return {
       f: LENSES[lens].f,
       fm: metres(LENSES[lens].f),
+      fs: sgn(signedF(lens)),
       p: sgn(p),
       m: round(imageOf(lens, PENCIL_U).m, 1),
-      mm: round(imageOf(lens, PENCIL_U).m, 2),
-      u: PENCIL_U,
       v: round(Math.abs(imageOf(lens, PENCIL_U).x), 1),
       m0: round(imageOf('plus40', PENCIL_U).m, 1),
     };
@@ -769,7 +779,7 @@ export function createApp(root, options = {}) {
     if (scene === 'focus') return t('out_focus', v);
     if (scene === 'pencil') return t('out_pencil', v);
     if (scene === 'compare') return t('out_compare', v);
-    if (scene === 'power' || scene === 'power10') return t('out_power', v);
+    if (scene === 'power' || scene === 'power20' || scene === 'power10') return t('out_power', v);
     if (scene === 'concave' || scene === 'concave20') return t('out_concave', v);
     return '';
   }
@@ -788,7 +798,10 @@ export function createApp(root, options = {}) {
       ui.learn.classList.toggle('lp-calm', calm);
     }
     sheet.outcome(calm || s.busy ? '' : outcomeOf(s.scene));
-    sheet.rule(calm || s.busy ? '' : t(`rule_${s.scene}`, varsOf(s.scene)));
+    // two wordings: a short one for the short side panels (style.css shows one), so the graph keeps its height there
+    sheet.rule(
+      calm || s.busy ? '' : `<span class="lp-long">${t(`rule_${s.scene}`)}</span><span class="lp-short">${t(`rule_${s.scene}_short`)}</span>`,
+    );
     sheet.choose(STEP_OF[s.scene]);
     const i = SEQ.indexOf(s.scene);
     const nextStep = STEP_OF[SEQ[i + 1]] ?? null;
@@ -816,12 +829,12 @@ export function createApp(root, options = {}) {
   }
   function drawGraph() {
     const known = s.quiz ? [] : s.dots;
-    const dots = known.map((id) => ({ f: LENSES[id].f / 100, p: powerOf(id), now: id === s.lens && !s.busy }));
+    const dots = known.map((id) => ({ f: signedF(id), p: powerOf(id), now: id === s.lens && !s.busy }));
     const cur = dots.find((d) => d.now);
     graph.draw({
       dots,
       showCurve: known.length > 0,
-      aria: cur ? t('graph_aria', { f: N(cur.f), p: sgn(cur.p) }) : t('graph_aria_none'),
+      aria: cur ? t('graph_aria', { f: sgn(cur.f), p: sgn(cur.p) }) : t('graph_aria_none'),
     });
   }
 
@@ -855,7 +868,7 @@ export function createApp(root, options = {}) {
       return lensBox;
     },
     pad: 8,
-    avoid: [ui.corner, ui.hint, () => anno.boxes(), () => boxOf(rotateEl), () => rays.boxes()],
+    avoid: [ui.corner, ui.hint, () => anno.boxes(), () => boxOf(rotateEl)],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -969,6 +982,11 @@ export function createApp(root, options = {}) {
   const RIGHT_WORD = { a: 'c_im_up_big', b: 'c_im_down_small', c: 'c_im_up_small' };
   let learnSaved = 'intro';
   let diyVariant = 'a';
+  /** The glasses of the last question: the book's (+2.5) or another pair, its power written on the lens. */
+  let glassesLens = 'plus40';
+  let runs = 0;
+  /** A number with a minus sign but no plus (a length). */
+  const plain = (x) => (x < 0 ? `−${N(round(-x, 3))}` : N(round(x, 3)));
   let question = null;
   let picked = -1;
   function choicesOf(items, label, kind) {
@@ -998,13 +1016,13 @@ export function createApp(root, options = {}) {
     picked = -1;
     const kind = KINDS[i % KINDS.length];
     const lbl = (...ids) => Object.fromEntries(ids.map((id) => [id, true]));
-    if (kind === 'read') setQuestion({ kind, source: 'box', lens: 'plus25', box: 'near', lamp: 1, bar: false, labels: lbl(), frame: 'read' });
-    else if (kind === 'readNeg')
-      setQuestion({ kind, source: 'box', lens: 'minus25', box: 'far', lamp: 1, bar: false, labels: lbl(), frame: 'readNeg' });
+    // the focal length is drawn and labelled (a phone cannot read 25 cm off the tilted scale); the student does the 1/f step
+    if (kind === 'read') setQuestion({ kind, source: 'box', lens: 'plus25', box: 'near', lamp: 1, labels: lbl('f'), frame: 'read' });
+    else if (kind === 'readNeg') setQuestion({ kind, source: 'box', lens: 'minus25', box: 'far', lamp: 1, labels: lbl('f'), frame: 'readNeg' });
     else if (kind === 'compare')
       setQuestion({ kind, source: 'pencil', lens: 'plus20', box: 'far', u: PENCIL_U, P: true, labels: lbl('lens'), frame: 'pencil' });
     else if (kind === 'glasses')
-      setQuestion({ kind, source: 'box', lens: 'plus40', box: 'near', lamp: 0, P: true, labels: lbl('lens'), frame: 'glasses' });
+      setQuestion({ kind, source: 'box', lens: glassesLens, box: 'near', lamp: 0, P: true, labels: lbl('lens'), frame: 'glasses' });
     else {
       const d = DIY[diyVariant];
       setQuestion({ kind, variant: diyVariant, source: 'pencil', lens: d.lens, box: 'far', u: d.u, rays: false, labels: lbl(), frame: d.frame });
@@ -1015,7 +1033,7 @@ export function createApp(root, options = {}) {
     }
     await tweener.animate({ key: 'wait', duration: 0.3 }).finished;
     if (!alive()) return null;
-    question = { kind };
+    question = { kind, variant: kind === 'diy' ? diyVariant : kind === 'glasses' ? glassesLens : null };
     if (kind === 'read' || kind === 'readNeg') {
       const id = kind === 'read' ? 'plus25' : 'minus25';
       return { text: t(kind === 'read' ? 'q_read' : 'q_read_neg'), ...choicesOf(powerChoices(id), (x) => t('c_power', { p: sgn(x.p) }), kind) };
@@ -1030,14 +1048,7 @@ export function createApp(root, options = {}) {
         ),
       };
     if (kind === 'glasses')
-      return {
-        text: t('q_glasses'),
-        ...choicesOf(
-          ['c_gl_right', 'c_gl_p', 'c_gl_cm', 'c_gl_ten'].map((key) => ({ key })),
-          (x) => t(x.key),
-          kind,
-        ),
-      };
+      return { text: t('q_glasses'), ...choicesOf(focalChoices(glassesLens), (x) => t('c_focal', { f: plain(x.f), u: x.unit }), kind) };
     const right = RIGHT_WORD[diyVariant];
     const words = [right, ...IMG_WORDS.filter((w) => w !== right)].map((key) => ({ key }));
     return { text: t(`q_diy_${diyVariant}`), ...choicesOf(words, (x) => t(x.key), kind) };
@@ -1056,6 +1067,8 @@ export function createApp(root, options = {}) {
         s.mode = 'quiz';
         s.locked = true;
         diyVariant = shuffle(['a', 'b', 'c'])[0];
+        // the book's own glasses the first time; on a retake another pair, its power read off the lens
+        glassesLens = runs++ === 0 ? 'plus40' : shuffle(['plus40', 'plus50', 'minus50'])[0];
         hintOff();
         syncUI();
       },
@@ -1077,7 +1090,7 @@ export function createApp(root, options = {}) {
         const note = (map) => (wrongKey && map[wrongKey] ? ` ${map[wrongKey]}` : '');
         if (k === 'read' || k === 'readNeg') {
           const id = k === 'read' ? 'plus25' : 'minus25';
-          const vars = { p: sgn(powerOf(id)), f: LENSES[id].f, fm: metres(LENSES[id].f) };
+          const vars = { p: sgn(powerOf(id)), f: LENSES[id].f, fm: metres(LENSES[id].f), fs: plain(signedF(id)) };
           const sign = k === 'read' ? 'mis_sign_pos' : 'mis_sign_neg';
           return t(k === 'read' ? 'why_read' : 'why_read_neg', vars) + note({ cm: t('mis_cm'), f: t('mis_f'), sign: t(sign) });
         }
@@ -1088,7 +1101,11 @@ export function createApp(root, options = {}) {
             note({ c_cmp_big: t('mis_cmp_big'), c_cmp_same: t('mis_cmp_same'), c_cmp_flip: t('mis_cmp_flip') })
           );
         }
-        if (k === 'glasses') return t('why_glasses') + note({ c_gl_p: t('mis_gl_p'), c_gl_cm: t('mis_gl_cm'), c_gl_ten: t('mis_gl_ten') });
+        if (k === 'glasses') {
+          const vars = { f: plain(signedF(glassesLens)), p: sgn(powerOf(glassesLens)) };
+          const book = glassesLens === 'plus40' ? ` ${t('why_glasses_book')}` : '';
+          return t('why_glasses', vars) + book + note({ p: t('mis_gl_p'), cm: t('mis_gl_cm'), ten: t('mis_gl_ten'), sign: t('mis_gl_sign') });
+        }
         showAnswerScene();
         const d = DIY[diyVariant];
         const img = imageOf(d.lens, d.u);
@@ -1116,7 +1133,8 @@ export function createApp(root, options = {}) {
     stopAll();
     const my = s.run;
     if (q.kind === 'compare') {
-      play({ source: 'pencil', lens: 'plus40', box: 'far', u: PENCIL_U, P: true }, my);
+      // quick (about 3 s): the worked answer is already on the panel
+      play({ source: 'pencil', lens: 'plus40', box: 'far', u: PENCIL_U, P: true }, my, 0.42);
       return;
     }
     q.rays = true;

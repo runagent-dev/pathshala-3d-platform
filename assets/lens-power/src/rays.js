@@ -127,8 +127,9 @@ export function createRays({ stage, host }) {
     }
   }
   /** Where light only seems to come from: the same amber, dashed. */
-  function dashed(a, b, k) {
+  function dashed(a, b, k, alpha = 1) {
     if (k <= 0) return;
+    ctx.globalAlpha = alpha;
     P(a.x, a.y);
     const x0 = sx;
     const y0 = sy;
@@ -146,6 +147,7 @@ export function createRays({ stage, host }) {
     ctx.lineWidth = 1.7;
     ctx.stroke();
     ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
   }
 
   function axis(k) {
@@ -327,7 +329,8 @@ export function createRays({ stage, host }) {
     const bk = v.beamK;
     v.beams.forEach((r) => {
       const mid = r.h === 0;
-      if (r.back) dashed(r.b, r.back, bk.ext);
+      // fainter than the light itself: near F the backward lines cross the incoming beams
+      if (r.back) dashed(r.b, r.back, bk.ext, 0.55);
       ray(r.start, r.a, bk.in, mid ? -1 : 0.55, 1.9);
       ray(r.a, r.b, bk.in >= 1 ? Math.min(1, bk.out * 6) : 0, -1, 1.9);
       ray(r.b, r.end, Math.max(0, (bk.out - 1 / 6) * 1.2), mid ? -1 : 0.5, 1.9);
