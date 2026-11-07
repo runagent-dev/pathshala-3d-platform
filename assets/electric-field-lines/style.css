@@ -1,0 +1,145 @@
+/* The electric field: the panel's calm first card and lead-in line, the reading and the graph under the rule, the labels on
+   the picture (each in the colour of what it names: +q red, −q blue, q₀, the force F teal, E = 0 violet) and the test's
+   answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.efl { --c-force: #087f5b; --c-curve: #b08900; }
+.efl sub, .efl sup { font-size: 0.72em; line-height: 0; }
+
+/* the steps: six short words, one row */
+.efl .pvc-examples .pvc-ex-word { font-size: 15px; }
+.efl .pvc-examples { gap: 2px; }
+.efl .pvc-examples button { padding-left: 1px; padding-right: 1px; min-width: 34px; }
+
+/* the line before the action; on the first screen, a calm card that sets the scene */
+.efl .efl-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.5; min-height: 1.5em; }
+.efl .efl-lead.pvc-note { font-size: 15px; line-height: 1.6; min-height: 0; }
+.efl .efl-lead .efl-short { display: none; }
+.efl .pvc-learn.efl-calm .pvc-outcome,
+.efl .pvc-learn.efl-calm .pvc-rule { display: none; }
+
+/* the flat view's button keeps its word in every panel: an icon alone says nothing (the kit hides quiet words when narrow) */
+.efl .pvc-act-row .pvc-quiet[data-act='flat'] > span { display: inline; font-size: 13px; }
+.efl .pvc-act-row .pvc-quiet[data-act='flat'] { gap: 3px; padding: 0 2px; }
+
+/* the result and the rule */
+.efl .pvc-outcome { font-size: 14.5px; line-height: 1.45; }
+.efl .pvc-outcome b { font-size: 1.08em; font-weight: 600; color: var(--ink); }
+.efl .pvc-rule { font-size: 14px; line-height: 1.55; }
+.efl .pvc-rule b { color: var(--ink); }
+
+/* the reading and the graph: the graph takes the free height */
+.efl .pvc-sheets { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+.efl .pvc-learn { min-height: 0; }
+.efl .efl-box { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; gap: 1px; }
+.efl .efl-read { flex: none; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; margin: 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); white-space: nowrap; }
+.efl .efl-read b { color: var(--c-force); font-weight: 700; white-space: nowrap; }
+.efl .efl-note { color: var(--ink-3); font-size: 12px; }
+.efl .efl-note[hidden] { display: none; }
+.efl .efl-book { display: none; flex: none; margin: 0; color: var(--ink-3); font-size: 13px; line-height: 1.5; }
+.efl .efl-graph { position: relative; flex: 1 1 auto; min-height: 0; }
+.efl .efl-graph .efl-graph-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; font-family: inherit; }
+.efl-graph-svg text { paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.efl-graph-svg .g-grid { stroke: #e3e7ec; stroke-width: 1; }
+.efl-graph-svg .g-axis { stroke: #58687a; stroke-width: 1.6; fill: none; }
+.efl-graph-svg .g-num { fill: #5f6a78; }
+.efl-graph-svg .g-name { fill: #3a4553; }
+.efl-graph-svg .g-wall { fill: #eef1f5; stroke: none; }
+.efl-graph-svg .g-side { fill: #7a8794; }
+.efl-graph-svg .g-curve { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.efl-graph-svg .g-guide { stroke: #0ca678; stroke-width: 1.2; stroke-dasharray: 4 3; fill: none; }
+.efl-graph-svg .g-dot { stroke: #fff; stroke-width: 2; }
+.efl-graph-svg .g-ghost { fill: #fff; stroke-width: 2; stroke-dasharray: 3 2; }
+.efl-graph-svg .g-tag { fill: #5f6a78; font-weight: 600; }
+.efl-graph-svg .g-tag-now { fill: #087f5b; }
+.efl-graph-svg .g-zero { fill: #fff; stroke-width: 2.4; }
+.efl-graph-svg .g-zero-t { font-weight: 700; }
+.efl-graph-svg .g-zline { fill: none; stroke-width: 1.2; stroke-dasharray: 3 3; }
+
+/* labels on the picture: short words in their colour on a white chip */
+.efl .pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13.5px; font-weight: 700; line-height: 1.5; white-space: nowrap; transition: none; }
+.efl .pvc-anno-lines .k-force { display: none; }
+
+/* a narrow side panel: the reading and its note still share one line */
+@container pvc-panel (max-width: 330px) {
+  .efl .efl-read { font-size: 13px; }
+  .efl .efl-w { display: none; }
+}
+
+/* the test: answers in words or numbers */
+.efl .pvc-opt { font-size: 13.5px; line-height: 1.2; padding: 0 4px; }
+.efl-opt { display: block; white-space: normal; text-align: center; }
+.efl .pvc-q-text { font-size: 14.5px; }
+.efl .pvc-q-feedback { font-size: 13.5px; }
+
+/* narrow panels (a phone held upright, a phone's side panel): every line as low as it reads well */
+@container pvc (max-width: 560px) {
+  .efl .pvc-learn { gap: 5px; }
+  /* the action's words say what the next tap does: the lead-in line only on the first screen */
+  .efl .efl-lead:not(.pvc-note) { display: none; }
+  .efl .efl-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 6px 10px; }
+  .efl .pvc-examples .pvc-ex-word { font-size: 14px; }
+  .efl .pvc-outcome { font-size: 13.5px; }
+  .efl .pvc-rule { font-size: 13px; line-height: 1.45; }
+  .efl .pvc-opt { height: 40px; font-size: 13px; }
+  .efl .pvc-q-text { font-size: 14px; --pvc-q-text-min: 3lh; }
+  .efl .pvc-q-feedback { font-size: 13px; --pvc-q-feedback-min: 3lh; }
+}
+/* short and wide (a phone held sideways): the panel is beside the scene; the how-to row gives its line to the graph
+   (the view's own ⟲ ৩৬০° pill and the drag handle's words say the same) */
+@container pvc-panel (max-height: 460px) {
+  .efl .efl-lead .efl-long { display: none; }
+  .efl .efl-lead .efl-short { display: inline; }
+  .efl .efl-lead.pvc-note { font-size: 13.5px; line-height: 1.5; padding: 5px 10px; }
+  .efl .pvc-learn { gap: 4px; }
+  .efl .pvc-howto { display: none; }
+  .efl .pvc-outcome { font-size: 13px; line-height: 1.4; }
+  .efl .pvc-rule { font-size: 12.5px; line-height: 1.45; }
+  .efl .efl-read { font-size: 13px; }
+  .efl .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 13px; }
+  .efl .pvc-q-text { font-size: 13.5px; }
+  .efl .pvc-opt { font-size: 12.5px; height: 44px; }
+  .efl .pvc-anno-force { font-size: 12.5px; }
+}
+
+/* a phone held upright: the panel under the 3D has a fixed share of the height (the 3D about 55 %) in every state and
+   in the test, the graph taking what is left, so the 3D view never changes size; no how-to row (the view's pill and
+   the handle's words say the same) */
+@container pvc (max-aspect-ratio: 1/1) {
+  .efl.efl-stack .pvc-panel { height: 48cqh; box-sizing: border-box; overflow: hidden; gap: 4px; padding-top: 6px; padding-bottom: 6px; }
+  .efl.efl-stack .pvc-tabs button { height: 32px; }
+  .efl.efl-stack .pvc-learn { gap: 3px; }
+  .efl.efl-stack .pvc-howto { display: none; }
+  .efl.efl-stack .pvc-examples button { min-height: 32px; padding-top: 1px; padding-bottom: 2px; }
+  .efl.efl-stack .pvc-act-row { min-height: 40px; }
+  .efl.efl-stack .pvc-act { min-height: 40px; }
+  .efl.efl-stack .pvc-outcome { font-size: 12.5px; line-height: 1.42; --pvc-outcome-lines: 2; }
+  .efl.efl-stack .pvc-rule { font-size: 12px; line-height: 1.4; --pvc-rule-lines: 2; }
+  .efl.efl-stack .efl-read { font-size: 12.5px; }
+  .efl.efl-stack .efl-lead.pvc-note { font-size: 13px; line-height: 1.45; padding: 4px 9px; }
+}
+/* a short phone embed (390 × 520): the step words go too (the action and the reset still walk the steps) */
+@container pvc (max-aspect-ratio: 1/1) and (max-height: 600px) {
+  .efl.efl-stack .pvc-panel { height: 56cqh; padding-top: 4px; padding-bottom: 4px; gap: 3px; }
+  .efl.efl-stack .pvc-tabs button { height: 30px; }
+  .efl.efl-stack .pvc-q-feedback { --pvc-q-feedback-min: 2lh; font-size: 12.5px; line-height: 1.35; }
+  .efl.efl-stack .pvc-examples { display: none; }
+  .efl.efl-stack .efl-lead .efl-long { display: none; }
+  .efl.efl-stack .efl-lead .efl-short { display: inline; }
+  .efl.efl-stack .pvc-q-text { font-size: 13px; }
+  .efl.efl-stack .pvc-opt { font-size: 12px; height: 36px; }
+  .efl.efl-stack .pvc-anno-force { font-size: 12px; }
+}
+/* the lead-in line, the how-to row and the book's example in a tall side panel (a laptop, a tablet) */
+@container pvc-panel (min-height: 560px) {
+  .efl .efl-lead:not(.pvc-note) { display: block; margin-top: 4px; }
+  .efl .efl-book { display: block; }
+  .efl .efl-box { flex: 0 1 auto; }
+  .efl .efl-graph { flex: none; height: min(300px, 38cqh); }
+}
+/* no room for the flat button's icon beside its word */
+@container pvc-panel (max-width: 440px) {
+  .efl .pvc-act-row .pvc-quiet[data-act='flat'] svg { display: none; }
+}

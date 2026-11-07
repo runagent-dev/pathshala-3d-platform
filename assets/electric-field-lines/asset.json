@@ -1,0 +1,84 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "electric-field-lines",
+  "title": "Electric field (তড়িৎ ক্ষেত্র)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 283,
+  "topic": "10.5",
+  "placement": "Book page 283, topic 10.5 তড়িৎ ক্ষেত্র, চিত্র ১০.১১–১০.১৩ and the field-line rules (pp. 283–286).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "The electric field and its lines (pages 283–286, topic 10.5). A polished metal sphere on a clear acrylic stand on a plain sand bench in a calm deep-blue space, and a small test charge q₀ (the book's word on p.287) on its own stand. Field lines are traced from the real field E = kq/r² (added as vectors) in 3D: light-gold tubes with a dark outline and outlined arrowheads; the force on q₀ is an outlined teal arrow F = Eq. Six steps, one tap each, slow: (1) the sphere is charged + and its lines grow out in every direction (চিত্র ১০.১১, rule a); (2) q₀ is brought to half the distance, E four times (2,500 → 10,000 N/C, with q = 4 nC), with the E–r graph (1/r²) in the panel (rule c); (3) the charge made −: the lines draw in from all round, F reversed; (4) a second sphere −q: the lines of +q end on −q (চিত্র ১০.১২ a, rule d); (5) both +: the lines bend apart and q₀ in the middle feels no force, E = 0 (চিত্র ১০.১২ b); (6) −2q and +q: twice the lines on −2q (চিত্র ১০.১৩, rule b). q₀ can be dragged (one charge; between the like pair, to find E = 0), with a live E reading and graph. 'সমতলে দেখো' shows the book's flat cut: only the lines in one plane. A calm intro card, the kit's how-to row, a five-question test (the hidden sign, 1/r², the zero point, more lines, lines never cross). Phone-first, Bangla and English.",
+  "tags": ["electric field", "field lines", "static electricity", "coulomb", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "pos", "animate": false } },
+    { "name": "set", "payload": { "step": "near", "animate": false } },
+    { "name": "set", "payload": { "step": "neg", "animate": false } },
+    { "name": "set", "payload": { "step": "unlike", "animate": false } },
+    { "name": "set", "payload": { "step": "like", "animate": false } },
+    { "name": "set", "payload": { "step": "double", "animate": false } },
+    { "name": "set", "payload": { "flat": true, "animate": false } },
+    { "name": "set", "payload": { "r": 10 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "step": "unlike", "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "step": "unlike", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 40,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.6, "command": "set", "payload": { "step": "pos" } },
+        { "at": 6.6, "command": "set", "payload": { "step": "near" } },
+        { "at": 10.8, "command": "set", "payload": { "step": "neg" } },
+        { "at": 18, "command": "set", "payload": { "step": "unlike" } },
+        { "at": 25.5, "command": "set", "payload": { "step": "like" } },
+        { "at": 33, "command": "set", "payload": { "step": "double" } }
+      ]
+    }
+  }
+}
