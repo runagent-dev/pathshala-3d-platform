@@ -1,0 +1,81 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "total-internal-reflection",
+  "title": "Total internal reflection (পূর্ণ অভ্যন্তরীণ প্রতিফলন)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 248,
+  "topic": "9.2",
+  "placement": "Book page 248, topic 9.2 পূর্ণ অভ্যন্তরীণ প্রতিফলন, চিত্র ৯.০৬ (the three cases), ৯.০৭ (a right-angle prism as a mirror) and ৯.০৮, with the সংকট কোণ examples (pp. 248–251).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Total internal reflection (pages 248–251, topic 9.2). The school's optical disc on a plain sand table in a calm deep-blue setting: a white disc printed in degrees, a semicircular glass block at its centre with its flat face up (glass, the dense medium, below; the light medium above, as চিত্র ৯.০৬), and a ray box clamped to the rim, aimed at the centre O of the flat face, so the light enters the curved face along a radius and bends only at O. Five steps, one tap each, slow: (1) the light on at θ₂ = 30°: the refracted ray bends away from the normal (θ₁ = 48.6°), a faint reflected ray (Fresnel, about 6 %); (2) the source turns to the critical angle θc = 41.8°: θ₁ reaches 90° and the ray grazes the surface (ক্রান্তি কোণ বা সংকট কোণ, sin θc = n₁/n₂); (3) on to 60°: nothing leaves, all of it is reflected (পূর্ণ অভ্যন্তরীণ প্রতিফলন); (4) the book's question: a clear cell of water on the flat face, θc grows to 62.5°, and at 45° light now leaves into the water; (5) চিত্র ৯.০৭: a right-angle glass prism turns the light by 90° at 45° incidence, as a mirror. From step 1 the student turns the source (a handle on the rim, or the arrow keys); rays are traced exactly (Snell's law at O, radial through the curved faces), each as wide as the share of light it carries. The panel: a calm intro card, then a lead-in line, the live result, the rule in the book's words, the formula, and a live graph of θ₁ and the reflected part against θ₂ (θ₁ climbs to 90° at θc, then 'প্রতিসরণ নেই'; the reflected part jumps to 100 %). Glass is taken as n = 1.50 so θc is the book's 41.8° (NOTES.md). Test: five questions (which way the ray bends, reading θc off the disc, 70°, water at 50°, the prism). Phone-first, Bangla and English.",
+  "tags": ["light", "refraction", "total internal reflection", "critical angle", "prism", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "less", "animate": false } },
+    { "name": "set", "payload": { "step": "critical", "animate": false } },
+    { "name": "set", "payload": { "step": "more", "animate": false } },
+    { "name": "set", "payload": { "step": "water", "animate": false } },
+    { "name": "set", "payload": { "step": "prism", "animate": false } },
+    { "name": "set", "payload": { "theta": 35 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "step": "critical", "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "step": "less", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 38,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "step": "less" } },
+        { "at": 7, "command": "set", "payload": { "step": "critical" } },
+        { "at": 11.5, "command": "set", "payload": { "step": "more" } },
+        { "at": 15.5, "command": "set", "payload": { "step": "water" } },
+        { "at": 26.5, "command": "set", "payload": { "step": "prism" } }
+      ]
+    }
+  }
+}
