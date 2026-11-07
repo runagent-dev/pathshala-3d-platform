@@ -1,0 +1,89 @@
+/* Mirage: the page, the panel's calm first card and lead-in line, the ray drawing over the view, the labels on the
+   picture (each in the colour of what it names) and the test's answers. The rest of the panel is the kit's clean sheet
+   (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+/* the line before the action: what the next tap will show; on the first screen, a calm card that sets the scene */
+.mg .mg-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+.mg .mg-lead:empty { display: none; }
+.mg .mg-lead.pvc-note { font-size: 15px; line-height: 1.6; }
+.mg .mg-lead .mg-short { display: none; }
+.mg .pvc-learn.mg-calm .pvc-outcome,
+.mg .pvc-learn.mg-calm .pvc-rule { display: none; }
+
+/* the result and the rule */
+.mg .pvc-outcome { font-size: 15px; line-height: 1.5; }
+.mg .pvc-outcome b { font-size: 1.1em; font-weight: 600; color: var(--ink); }
+.mg .pvc-rule { font-size: 14.5px; line-height: 1.6; }
+.mg .pvc-rule b { color: var(--ink); font-weight: 600; }
+
+/* five step words in a narrow column: each gets its share */
+.mg .pvc-examples button { flex: 1 1 0; padding-inline: 0; }
+.mg .pvc-examples .pvc-ex-word { white-space: nowrap; }
+
+/* the ray drawing over the view */
+.mg-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* labels on the picture: a plain white tab in the colour of what it names */
+/* (the sister figures' chip: a white tab with a border in the colour of what it names) */
+.mg .pvc-anno { transition: none; font-size: 13px; font-weight: 600; line-height: 1.5; color: var(--c, #1d2733); border: 1.5px solid var(--c, #1d2733); border-radius: 5px; background: rgba(255, 255, 255, 0.96); padding: 0 6px; white-space: nowrap; }
+.mg .pvc-anno-lines line { stroke-width: 1.3; stroke: rgba(255, 255, 255, 0.92) !important; }
+.mg .pvc-anno-lines circle { fill: #fff; stroke: #1d2733; }
+
+/* the note in a corner: drawn bigger than life */
+.mg-note[hidden] { display: none; }
+.mg-note { position: absolute; left: 8px; bottom: 6px; z-index: 2; padding: 1px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.88); color: var(--ink-2); font-size: 11.5px; line-height: 1.4; pointer-events: none; white-space: nowrap; }
+.pvc[data-mode='quiz'] .mg-note { display: none; }
+
+/* the test: answers in words */
+.mg .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.mg-opt { display: block; white-space: normal; text-align: center; }
+.mg .pvc-q-text { font-size: 15px; }
+.mg .pvc-q-feedback { font-size: 13.5px; }
+
+/* phones, and short frames: tighter type; the short calm words */
+@container pvc (max-width: 420px) {
+  .mg .pvc-rule { font-size: 14px; }
+  .mg .pvc-outcome { font-size: 14px; }
+  .mg .pvc-examples .pvc-ex-word { font-size: 13.5px; }
+  .mg .pvc-opt { height: 44px; font-size: 13px; line-height: 1.2; }
+  .mg .pvc-q-text { font-size: 14.5px; --pvc-q-text-min: 2lh; }
+  .mg .pvc-q-feedback { font-size: 13.5px; --pvc-q-feedback-min: 4lh; }
+  .mg .pvc-learn { gap: 6px; }
+  .mg .pvc-anno { font-size: 12.5px; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .mg .mg-lead .mg-long { display: none; }
+  .mg .mg-lead .mg-short { display: inline; }
+  .mg .pvc-outcome { font-size: 14px; line-height: 1.45; }
+  .mg .pvc-rule { font-size: 13.5px; line-height: 1.5; --pvc-rule-lines: 4; }
+  .mg .pvc-q-text { font-size: 13.5px; --pvc-q-text-min: 2lh; }
+  .mg .pvc-opt { font-size: 12.5px; height: 40px; }
+  .mg .pvc-anno { font-size: 12.5px; }
+}
+/* short and wide (a phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .mg .mg-lead .mg-long { display: none; }
+  .mg .mg-lead .mg-short { display: inline; }
+  .mg .mg-lead { font-size: 13.5px; line-height: 1.45; }
+  .mg .mg-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 5px 10px; }
+  .mg .pvc-outcome { font-size: 13.5px; line-height: 1.45; --pvc-outcome-lines: 2; }
+  .mg .pvc-rule { font-size: 13.5px; line-height: 1.5; --pvc-rule-lines: 4; }
+  .mg .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 13.5px; }
+  .mg .pvc-q-text { font-size: 13.5px; }
+  .mg .pvc-opt { font-size: 12.5px; height: 44px; }
+}
+@container pvc-panel (max-width: 330px) {
+  .mg .pvc-rule { --pvc-rule-lines: 5; }
+}
+/* a narrow panel (a phone held upright): the how-to row on one line, the rule in three */
+@container pvc (max-width: 420px) {
+  .mg .pvc-howto { gap: 0 6px; }
+  .mg .pvc-howto-item:not(.pvc-howto-drag):not(.pvc-howto-tap) .pvc-howto-word { display: none; }
+  .mg .pvc-rule { --pvc-rule-lines: 3; }
+}
+/* the panel under the 3D (a phone held upright): the lead-in line goes (the action's verb says it), so the learn sheet is
+   no taller than the test and the 3D keeps its size */
+.mg.mg-below .mg-lead:not(.pvc-note) { display: none; }
