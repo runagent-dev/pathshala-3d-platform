@@ -714,7 +714,9 @@ export function createApp(root, options = {}) {
     ui.learn.classList.toggle('rb-calm', calm);
     const noonish = s.step === 'noon' && (!s.busy || s.dragging);
     sheet.outcome(calm || (s.busy && !noonish) ? '' : s.step === 'noon' ? noonOutcome() : t(`out_${s.step}`, vars()));
-    sheet.rule(calm || (s.busy && !noonish) ? '' : t(`rule_${s.step}`, vars()));
+    // the rule in two lengths: the short one where the side panel is short (style.css chooses)
+    const rule = `<span class="rb-long">${t(`rule_${s.step}`, vars())}</span><span class="rb-short">${t(`rule_${s.step}_short`, vars())}</span>`;
+    sheet.rule(calm || (s.busy && !noonish) ? '' : rule);
     sheet.choose(calm ? null : s.step);
     sheet.next(NEXT[s.step] ?? null);
     const [word, step, icon] = ACTIONS[ph];

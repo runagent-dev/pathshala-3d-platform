@@ -49,7 +49,11 @@ the sun, and why with the sun higher than about 42° (midday) there is no rainbo
   a 2D canvas over the view (`src/rays.js`) in the chapter's ray style (constant-width lines, dark edge, chevrons).
 - **Panel**: one height in every state at every size (the calm card and the result/rule share one grid cell; the how-to
   row keeps its place, hidden, during the test; the test's worked answers fit the reserved lines). On a phone held
-  upright with less than 600 px the how-to row is left out for the picture's sake.
+  upright with less than 600 px the how-to row is left out for the picture's sake. In a short side panel (a phone held sideways,
+  640 × 400) nothing may scroll: the how-to row is left out, the lead is one line and the rule takes its short form
+  (`rule_*_short`; the bow step's "ব্যান্ড" sentence is kept for taller panels). Measured: the panel's scrollHeight −
+  clientHeight is 0 in every step, every test question asked and answered and the result, at all six sizes, in Bangla
+  and English.
 - **Test**: 5 tap questions, each scene set up by the figure: where to look (sky, ghost bow hidden), which colour bends
   most (the drop with the band inside, the unbent line dashed), which colour reaches the eye from drop ক (two drops either
   side of the top, the angles from the point opposite the sun at the eye, all drawn white), why there is no rainbow at

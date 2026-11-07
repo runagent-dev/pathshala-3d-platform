@@ -77,6 +77,10 @@ export const STRINGS = {
       'কোণ মাপা হয় সূর্যের বিপরীত দিক থেকে: তাই লাল বাইরে, বেগুনি ভেতরে, আর রংধনু সব সময়ই <b>সূর্যের বিপরীত আকাশে</b>। অসংখ্য কণার রশ্মি দিয়েই রংধনুর ভিন্ন ভিন্ন রঙের <b>ব্যান্ড (Band)</b>।',
     rule_noon: 'সূর্য যত উপরে ওঠে, রংধনু তত নিচে নামে। সূর্য প্রায় {r}°-এর বেশি উঁচুতে থাকলে রংধনু দিগন্তের নিচে চলে যায়। তাই <b>ভরদুপুরে রংধনু দেখা যায় না</b>।',
 
+    rule_in_short: 'পানিতে ঢোকার সময় আলোর <b>প্রতিসরণ</b> হয়: বেগুনি সবচেয়ে বেশি বেঁকে যায়, লাল সবচেয়ে কম।',
+    rule_back_short: 'প্রিজমের মতোই পানির কণা সাদা আলোকে তার <b>রংগুলোতে ভাগ</b> করে দেয়।',
+    rule_bow_short: 'কোণ মাপা হয় সূর্যের বিপরীত দিক থেকে; লাল বাইরে, বেগুনি ভেতরে। রংধনু তাই সব সময় <b>সূর্যের বিপরীত আকাশে</b>।',
+    rule_noon_short: 'সূর্য প্রায় {r}°-এর বেশি উঁচুতে থাকলে রংধনু দিগন্তের নিচে। তাই <b>ভরদুপুরে রংধনু দেখা যায় না</b>।',
     // the honest note in the corner of the view
     note_drop: 'কণাটি অনেক বড় করে, রঙের ফাঁক বাড়িয়ে দেখানো',
     note_sky: 'দূরত্ব ও আকার প্রকৃত অনুপাতে নয়',
@@ -208,9 +212,9 @@ export const STRINGS = {
     intro_short: 'The sun behind, rain in front. How does white sunlight make a rainbow’s colours? Let us see.',
 
     lead_intro: 'First, a look inside one water drop.',
-    lead_in: 'Now see what the light does at the back of the drop.',
+    lead_in: 'Now see what the light does at the back.',
     lead_back: 'Now from afar: what do countless drops make?',
-    lead_bow: 'At midday the sun is high. What happens to the rainbow then?',
+    lead_bow: 'What happens to the rainbow at midday?',
     lead_noon: 'Drag the sun, then test yourself.',
 
     out_in: 'The white light bent as it went into the drop, and split into <b>colours</b>.',
@@ -223,10 +227,14 @@ export const STRINGS = {
     rule_back:
       'Like a prism, a water drop <b>splits white light into its colours</b>. Red light leaves the drop a little more steeply downward, violet a little less.',
     rule_bow:
-      'The angle is from the point opposite the sun: so red is outside, violet inside, and a rainbow is always <b>in the sky opposite the sun</b>. Countless drops make its coloured <b>bands</b>.',
+      'Measured from the point opposite the sun: red outside, violet inside, always <b>in the sky opposite the sun</b>. Countless drops make the coloured <b>bands</b>.',
     rule_noon:
       'The higher the sun, the lower the rainbow. With the sun higher than about {r}°, the whole rainbow is below the horizon. That is why <b>there is no rainbow at midday</b>.',
 
+    rule_in_short: 'Going into water, light is <b>refracted</b>: violet bends most, red least.',
+    rule_back_short: 'Like a prism, a water drop <b>splits white light into its colours</b>.',
+    rule_bow_short: 'Angles are from the point opposite the sun: red outside, violet inside, so a rainbow is always <b>opposite the sun</b>.',
+    rule_noon_short: 'With the sun above about {r}°, the rainbow is below the horizon: <b>no rainbow at midday</b>.',
     note_drop: 'The drop is drawn much bigger, the colours spread wider',
     note_sky: 'Distances and sizes not to scale',
 
@@ -265,15 +273,15 @@ export const STRINGS = {
     q_again: 'Take the test again',
     q_locked: 'The scene is locked during the test. Look at the picture and pick an answer.',
 
-    q_where: 'The sun is behind the eye, rain in front. Where in the sky must you look to see a rainbow?',
+    q_where: 'Sun behind you, rain in front: where do you look for a rainbow?',
     c_wh_right: 'Opposite the sun',
     c_wh_sun: 'Toward the sun',
     c_wh_top: 'Straight overhead',
     c_wh_any: 'In any direction',
-    why_where: '<b>Opposite the sun</b>. The drops send the coloured light back toward the sun.',
-    mis_wh_sun: 'Toward the sun, the light the drops send back does not reach the eye.',
-    mis_wh_top: 'The rainbow is about {r}° from the point opposite the sun, not overhead.',
-    mis_wh_any: 'Where the sun is decides the direction.',
+    why_where: '<b>Opposite the sun</b>: the drops send the colours back toward the sun.',
+    mis_wh_sun: 'Facing the sun, the light sent back misses you.',
+    mis_wh_top: 'It is about {r}° from the point opposite the sun.',
+    mis_wh_any: 'The sun’s place decides it.',
 
     q_bend: 'Going into a water drop, which colour of light bends the most?',
     c_be_right: 'Violet',
@@ -295,22 +303,21 @@ export const STRINGS = {
     mis_ou_green: 'Green comes from a drop between these two.',
     mis_ou_white: 'A drop splits white light into colours; in one direction only one colour comes.',
 
-    q_noon: 'Midday: the sun is very high ({a}°), rain in front. Why is there no rainbow?',
+    q_noon: 'Midday: the sun is very high ({a}°). Why is there no rainbow?',
     c_no_right: 'The rainbow is below the horizon',
     c_no_bright: 'The rainbow rises overhead',
     c_no_enter: 'The rainbow moves beside the sun',
     c_no_heat: 'It forms but fades in the sun',
-    why_noon: '<b>The rainbow is below the horizon</b>. Its top stands {r}° − {a}° above the horizon, now less than zero.',
+    why_noon: '<b>The rainbow is below the horizon</b>: its top stands {r}° − {a}° high, now below zero.',
     mis_no_bright: 'The higher the sun, the lower the rainbow, not higher.',
     mis_no_enter: 'A rainbow is always opposite the sun, never beside it.',
-    mis_no_heat: 'Stronger sun would make it brighter; the trouble is where it is.',
+    mis_no_heat: 'Strong sun would make it brighter; the trouble is where it is.',
 
-    q_height: 'In the afternoon the sun is {a}° high. About how many degrees above the horizon is the top of the rainbow?',
-    why_height:
-      '<b>About {b}°</b>. The top is about {r}° above the point opposite the sun, and that point is {a}° below the horizon: {r}° − {a}° = {b}°.',
-    mis_he_theta: '{r}° is measured from the point opposite the sun, not from the horizon.',
-    mis_he_sum: 'The point opposite the sun is below the horizon, so subtract.',
-    mis_he_sun: 'That is the sun’s height, not the rainbow’s.',
+    q_height: 'The sun is {a}° high. About how high above the horizon is the rainbow’s top?',
+    why_height: '<b>About {b}°</b>: {r}° above the point opposite the sun, which is {a}° below the horizon.',
+    mis_he_theta: '{r}° is from the point opposite the sun, not the horizon.',
+    mis_he_sum: 'That point is below the horizon: subtract.',
+    mis_he_sun: 'That is the sun’s height.',
   },
 };
 

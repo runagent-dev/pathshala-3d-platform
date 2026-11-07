@@ -30,6 +30,7 @@ body.bg-transparent { background: transparent; }
 .rb .pvc-outcome b { font-size: 1.1em; font-weight: 600; color: var(--ink); }
 .rb .pvc-rule { font-size: 14.5px; line-height: 1.6; }
 .rb .pvc-rule b { color: var(--ink); }
+.rb .pvc-rule .rb-short { display: none; }
 
 /* labels on the picture: short words in their colour on a white chip */
 .pvc-anno-chip { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
@@ -82,4 +83,13 @@ body.bg-transparent { background: transparent; }
 }
 @media (orientation: portrait) and (max-height: 600px) {
   .rb .pvc-howto, .rb.pvc[data-mode='quiz'] .pvc-howto { display: none; }
+}
+/* a short side panel (a phone held sideways, 640 × 400): nothing may scroll, so no how-to row (the view still turns and
+   the sun still drags), a one-line lead and the short form of the rule */
+@container pvc-panel (max-height: 460px) {
+  .rb .pvc-howto, .rb.pvc[data-mode='quiz'] .pvc-howto { display: none; }
+  .rb .rb-lead { min-height: 1.45em; }
+  .rb .pvc-rule .rb-long { display: none; }
+  .rb .pvc-rule .rb-short { display: inline; }
+  .rb .pvc-rule { --pvc-rule-lines: 3; }
 }
