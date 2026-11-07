@@ -87,7 +87,7 @@ function clearMaterial(name, side, { color, base, rim, rimColor = [0.36, 0.8, 0.
 /** The looks of the block: ordinary glass (green edges), diamond (cool, bright edges), the example's other medium. */
 const LOOKS = {
   glass: { color: [0.8, 0.95, 0.92], base: 0.12, rim: 0.6, rimColor: [0.36, 0.8, 0.64] },
-  diamond: { color: [0.92, 0.96, 1], base: 0.16, rim: 0.85, rimColor: [0.7, 0.84, 1], env: 2.4 },
+  diamond: { color: [0.86, 0.94, 1], base: 0.2, rim: 1.05, rimColor: [0.72, 0.9, 1], env: 3 },
   other: { color: [0.95, 0.9, 1], base: 0.14, rim: 0.6, rimColor: [0.7, 0.6, 0.92] },
 };
 
@@ -122,10 +122,10 @@ function createTank() {
   // the water: a box from the floor to its level (scaled in y as it fills), its surface a little brighter
   const waterMat = new THREE.MeshStandardMaterial({
     name: 'water',
-    color: 0x6fb6e8,
+    color: 0x3f93d8,
     roughness: 0.1,
     transparent: true,
-    opacity: 0.26,
+    opacity: 0.32,
     depthWrite: false,
     envMapIntensity: 0.8,
   });
@@ -179,7 +179,7 @@ function scaleTexture(num, box) {
     const r0 = r1 - (long ? 0.42 : mid ? 0.3 : 0.18);
     const s = Math.sin(rad(a));
     const co = Math.cos(rad(a));
-    g.lineWidth = (long ? 0.075 : 0.045) * k;
+    g.lineWidth = (long ? 0.09 : 0.055) * k;
     g.beginPath();
     g.moveTo(px(O.x - r0 * s), py(O.y + r0 * co));
     g.lineTo(px(O.x - r1 * s), py(O.y + r1 * co));
@@ -189,7 +189,7 @@ function scaleTexture(num, box) {
       g.save();
       g.translate(px(O.x - r * s), py(O.y + r * co));
       g.rotate(-rad(a));
-      g.font = `600 ${0.44 * k}px "Noto Sans Bengali", sans-serif`;
+      g.font = `700 ${0.6 * k}px "Noto Sans Bengali", sans-serif`;
       g.textAlign = 'center';
       g.textBaseline = 'middle';
       g.fillText(num(a), 0, 0);
@@ -428,7 +428,8 @@ export function createSetting({ stage, shadow, num }) {
     apparatus.add(b.root);
   }
   const slabGeo = new RoundedBoxGeometry(BLOCK.halfLength * 2 - 1, SLAB - 0.42, BLOCK.halfDepth * 2 - 0.8, 3, 0.2);
-  const slabBox = clearBox('slab', slabGeo, { ...LOOKS.glass, base: 0.2, rim: 0.85, color: [0.72, 0.95, 0.88] });
+  // the slab under the water: a clearer green than the water's blue, with strong edges, so the two read apart
+  const slabBox = clearBox('slab', slabGeo, { color: [0.62, 0.95, 0.78], base: 0.3, rim: 1.25, rimColor: [0.3, 0.85, 0.55] });
   slabBox.root.position.y = 0.41 + (SLAB - 0.42) / 2;
   slabBox.root.visible = false;
   const tank = createTank();

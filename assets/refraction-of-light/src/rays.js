@@ -66,8 +66,11 @@ export function createRays({ stage, host }) {
     phase: 0, // s of the slowed clock
     right: 0, // the right-angle mark between the plane and the surface
     rightAt: { x: -7.6, y: 7 },
+    reverse: false, // the same path the other way: from the bottom of the glass up and out into the air
+    boundary: null, // y of a boundary to mark (water over glass), drawn as a short bright line through the hit
   };
 
+  const inside = [null, { x: 0, y: 0, z: 0 }]; // the reflection inside the glass, the other way
   /** A line through projected points pts[0..n], as far as k of its whole length; then its chevron. */
   function polyline(pts, from, to, k, width, alpha, shine, at) {
     if (k <= 0 || !v.geo) return;
@@ -300,7 +303,30 @@ export function createRays({ stage, host }) {
     const pts = g.points;
     const last = pts.length - 1;
     // the normals and angles go under the rays
-    if (v.normal0 > 0 && pts.length > 3) normalAt(pts[1], v.normal0, 0.55);
+    if (v.normal0 > 0 && pts.length > 3) normalAt(pts[1], v.normal0, 0.3); // the air–water normal: faint
+    if (v.boundary != null && pts.length > 3) {
+      // the water–glass boundary: a short bright line through the point that matters
+      const p = pts[2];
+      P(p.x - 4.5, v.boundary);
+      const x0 = sx;
+      const y0 = sy;
+      P(p.x + 4.5, v.boundary);
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(sx, sy);
+      ctx.strokeStyle = 'rgba(20,60,70,0.55)';
+      ctx.lineWidth = 4.2 * unit;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(sx, sy);
+      ctx.strokeStyle = '#e6fff6';
+      ctx.lineWidth = 2 * unit;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
     const f = Math.min(v.focus, last - 1);
     const at = pts[f];
     normalAt(at, v.normal, 0.95);
@@ -313,10 +339,18 @@ export function createRays({ stage, host }) {
       if (t2 != null) arc(at, 180 - t2, 180, C.t2, v.arcs);
     }
     rightMark(v.right);
-    // the weak reflected ray: its strength from how much light reflects (more at a bigger angle, as the book says)
+    // the weak reflected ray: its strength from how much light reflects (more at a bigger angle, as the book says).
+    // The other way, it reflects inside the glass, down on the other side of the normal.
     if (v.reflK > 0) {
-      const a = 0.28 + 0.9 * Math.sqrt(g.reflect);
-      polyline([pts[1], g.reflected], 0, 1, v.reflK, 1.3 + 2.2 * Math.sqrt(g.reflect), Math.min(0.85, a), 0, 0.6);
+      const a = Math.min(0.85, 0.28 + 0.9 * Math.sqrt(g.reflect));
+      const w2 = 1.3 + 2.2 * Math.sqrt(g.reflect);
+      if (v.reverse) {
+        const t2 = (g.angles[1] * Math.PI) / 180;
+        inside[0] = pts[1];
+        inside[1].x = pts[1].x - 4.5 * Math.sin(t2);
+        inside[1].y = pts[1].y - 4.5 * Math.cos(t2);
+        polyline(inside, 0, 1, v.reflK, w2, a, 0, 0.6);
+      } else polyline([pts[1], g.reflected], 0, 1, v.reflK, w2, a, 0, 0.6);
     }
     // the rays inside: one after the other, as far as outK of their whole length
     if (v.outK > 0) {
@@ -331,11 +365,14 @@ export function createRays({ stage, host }) {
       for (let i = 1; i < last && left > 0; i++) {
         const l = lens[i - 1];
         const k = Math.min(1, left / l);
-        polyline(pts, i, i + 1, k, 3 * (1 - 0.35 * g.reflect), 1, v.shine, i === last - 1 ? 0.55 : 0.6);
+        // the other way: drawn from the bottom up, so its chevron points up toward the surface
+        if (v.reverse) polyline(pts, i + 1, i, k, 3 * (1 - 0.35 * g.reflect), 1, v.shine, 0.45);
+        else polyline(pts, i, i + 1, k, 3 * (1 - 0.35 * g.reflect), 1, v.shine, i === last - 1 ? 0.55 : 0.6);
         left -= l;
       }
     }
-    polyline(pts, 0, 1, v.inK, 3, 1, v.inK < 1 ? v.shine : 0, 0.5);
+    if (v.reverse) polyline(pts, 1, 0, v.inK, 3, 1, 0, 0.5);
+    else polyline(pts, 0, 1, v.inK, 3, 1, v.inK < 1 ? v.shine : 0, 0.5);
     fronts(v.march);
     // the point of incidence: a small white-hot mark
     if (v.inK >= 1) {

@@ -141,3 +141,58 @@ test(`${ID}: the test, right and wrong, and what it leaves behind`, async ({ pag
   expect(st).toMatchObject({ step: 'bend', medium: 'glass', angle: 50, mode: 'explore', locked: false, question: null });
   expect(log.errors).toEqual([]);
 });
+
+test(`${ID}: the other way, and back to the start`, async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 844, height: 390 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, ID, { params: { step: 'bend' } });
+  await fig.advance(600);
+  await fig.frame.locator('[data-act="rev"]').click();
+  let st = await fig.call('get');
+  expect(st).toMatchObject({ step: 'bend', reverse: true });
+  expect(st.theta1).toBeGreaterThan(st.theta2); // from the glass into the air: away from the normal
+  await expect(fig.frame.locator('.pvc-rule')).toContainText('লম্ব থেকে দূরে সরে যায়');
+  // another step leaves the other way behind
+  st = await fig.call('set', { step: 'plane', animate: false });
+  expect(st.reverse).toBe(false);
+  // a turned view, then home: the view is the guided one again
+  const box = await fig.frame.locator('.pvc-canvas').first().boundingBox();
+  await page.mouse.move(box.x + 60, box.y + 60);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 140, box.y + 60, { steps: 5 });
+  await page.mouse.up();
+  await fig.advance(400);
+  expect((await fig.call('get')).view).toBe('3d');
+  await fig.frame.locator('[data-act="home"]').click();
+  await fig.advance(400);
+  expect(await fig.call('get')).toMatchObject({ step: 'intro', view: 'front' });
+  expect(log.errors).toEqual([]);
+});
+
+for (const [w, h] of [
+  [844, 390],
+  [390, 700],
+]) {
+  test(`${ID}: nothing scrolls in any step at ${w}×${h}, and the 3D keeps its size`, async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.setViewportSize({ width: w, height: h });
+    const log = await preparePage(page);
+    const fig = await openFigure(page, ID);
+    const read = () =>
+      fig.frame.evaluate(() => {
+        const p = document.querySelector('.pvc-panel');
+        return { over: p.scrollHeight - p.clientHeight, h: Math.round(document.querySelector('canvas').getBoundingClientRect().height) };
+      });
+    const first = await read();
+    expect(first.over).toBeLessThanOrEqual(0);
+    for (const set of [{ step: 'slow' }, { step: 'bend' }, { step: 'plane' }, { step: 'law', measure: [30, 50, 70] }, { step: 'relative' }]) {
+      await fig.call('set', { ...set, animate: false });
+      await fig.advance(500);
+      const r = await read();
+      expect(r.over, set.step).toBeLessThanOrEqual(0);
+      expect(r.h, set.step).toBe(first.h);
+    }
+    expect(log.errors).toEqual([]);
+  });
+}

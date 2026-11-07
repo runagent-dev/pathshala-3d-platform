@@ -61,11 +61,24 @@ Words the figure adds: টর্চ, মাপো, সমতল (the book: "য�
   and slab, water fills (2.6 s, the ray re-traced live as the level rises), the normals and angles appear at the
   water–glass boundary, and the torch sweeps 30°, 50°, 70° leaving dots on a line of slope 1.14; the rule gives 1.14 and
   0.88.
+- **The other way (②):** a quiet "উল্টো দিকে" toggle in the bending step draws the same path the other way (the light
+  starting at the bottom of the glass, chevrons upward, the faint reflection now inside the glass, the torch dark): from
+  the denser into the lighter medium the ray bends away from the normal (চিত্র ৯.০২, right). θ₂ never reaches the
+  critical angle (at most 40.4° at θ₁ = 80°, θc = 41.1°), so it is always a true reverse path; total internal reflection
+  is the next figure.
 - **Numbers that agree:** θ₂ shown to 0.1°, sines to four significant figures, so the shown division gives the shown
   ratio at every whole angle 1°–80° and every medium (unit-tested). The speed of light in glass: the book prints
   3/1.52 as "2 × 10⁸"; the figure shows 1.97 × 10⁸ m/s (the only number it shows for it).
-- **Panel:** steps row, the lead line (beside the 3D only), the action with replay and reset, the kit's how-to row, the
-  result, the box (the medium chips in its top-right corner and the graph), the book's rule last. The calm first card
+- **Panel:** steps row, the lead line (beside the 3D, tall frames), the action with replay and reset, the kit's how-to row
+  (beside the 3D only), one result line, the box (the medium chips in its top-right corner and the graph), the book's
+  rule last, at most three lines. Nothing in the panel scrolls in any state at any of the six sizes (checked in every
+  step, the reverse toggle and every pick of every test question).
+- **The second law's graph** is drawn with equal scales on both axes (a square plot as tall as the box allows), so the
+  slope 1.52 looks steeper than 45° at every size; beside it the table the student fills (θ₁, θ₂, অনুপাত for the last
+  three measurements) and the line's slope. At 390 × 520 a compact form: the plot and one line of the three ratios.
+- **Framing:** each step's camera box holds the whole glass, the ray's end on the floor, the normal and the torch's body
+  where it is (and for the second law and the last step, both ends of its 30°–70° travel), with room above for the
+  corner buttons and below for the labels; the edge-on view keeps the bottom of the glass. The calm first card
   stands in for the result and the rule (app.js gives it exactly their height), so the 3D keeps one size in every state
   and every test question (measured at all six sizes). Under the 3D (a phone held upright) the lead line is hidden and
   the how-to row keeps words only for the drag; at 390 × 520 the graph is hidden (the result line carries the number).
@@ -75,19 +88,24 @@ Words the figure adds: টর্চ, মাপো, সমতল (the book: "য�
   1/sin 45°); water → glass relative index (1.14; 0.88, sum, difference). Each question sets its own scene.
 
 ## Decisions and open questions for the book team
+- "লম্ব" for the normal, as every chapter-9 page writes it; chapter 8's figures (and the book's chapter 8) say "অভিলম্ব".
+  The book team may want one word across the two chapters.
 - The book's `n` for glass is 1.52 (table ৯.০১); the fibre example's 1.5 is not used here.
-- Glass speed shown as 1.97 × 10⁸ m/s (the book rounds to 2).
+- Glass speed shown as 1.97 × 10⁸ m/s (বইয়ে ≈ ২ × 10⁸: the book rounds 3 ÷ 1.52 to 2).
+- The book's other relative indices (diamond/water 1.82, 0.55; diamond/glass 1.59, 0.63) are not on screen: the last
+  step's panel has no room for them without crowding at phone sizes.
 - The torch's light is drawn in the chapter's amber; real beams are not seen from the side in clean air (the drawing
   shows the path).
 - A diamond block the size of the glass block is not realistic; it is there only to show n = 2.42 bending more.
-- On a phone held upright (390 × 700) the 3D is about 37 % of the height (259 px): the panel carries the graph and the
-  book's rules; a touch phone held upright is asked to turn sideways, where the 3D is the full height beside the panel.
-- At 844 × 390 the side panel may scroll a few pixels in the first step (the action, the result and the graph stay in view).
+- On a phone held upright the 3D is 336 px of 700 (48 %) and 186 px of 520 (36 %); there the how-to row is left out
+  (the 3D keeps its ৩৬০° pill and the সামনে button) and the lead line too. A touch phone held upright is also asked to
+  turn sideways ("এভাবেই দেখো" keeps it upright).
 
 ## Performance (v0.1.0, shadows on, 844 × 390, headless Chromium with software WebGL)
-- Draw calls / triangles per frame (shadow pass included), from four azimuths 90° apart: start 60 / 23k, first law
-  (with the plane) 72 / 23k, second law 66 / 23k, last step (tank, water, slab) 78 / 32k. The same at every azimuth: these
-  are the whole scene, so no angle can draw more. Budget 150 / 300k.
+- Draw calls / triangles per frame (shadow pass included), re-measured after the review: start 24 / 9.1k, first law (with
+  the plane) 28 / 9.1k, second law 26 / 9.1k, diamond 26 / 9.1k, last step (tank, water, slab) 30 / 12.2k. Every mesh of
+  the scene is in each of these frames, so no camera angle can draw more. Budget 150 / 300k. (The first round's NOTES
+  gave 60–78 draws: that counter took in more than one frame per picture.)
 - Idle: 0 draws once the camera's damping and every step have settled (render on demand).
 - JS per animation-frame callback under 6× CPU throttling while all five steps play (568 frames): median 1.2 ms, p90
   2.3 ms, max 10.4 ms (a single frame, when a step starts and its labels are made). GL is encoded in that time but drawn

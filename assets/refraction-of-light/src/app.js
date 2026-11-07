@@ -25,6 +25,7 @@ import { createGraph } from './graph.js';
 import { createI18n } from './i18n.js';
 import { createRays } from './rays.js';
 import {
+  APERTURE,
   ARC_R,
   CHOOSABLE,
   clampAngle,
@@ -67,7 +68,7 @@ const N_WATER = MEDIA.water.n;
 const N_GLASS = MEDIA.glass.n;
 const DOUBLE_TAP = 420; // ms
 const MARCH_S = 9; // s the wavefronts march, then they rest where they are
-const MARGIN = { top: 52, bottom: 14, side: 10 };
+const MARGIN = { top: 58, bottom: 30, side: 14 }; // room for the corner buttons on top and the labels at the foot
 // how long things take (s): slow enough to follow
 const T = {
   ray: 1.1,
@@ -95,15 +96,19 @@ const TARGET = {
 };
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 const box = (a, b, c, d, e, f) => new THREE.Box3(V(a, b, c), V(d, e, f));
-/** What the camera shows: a box to fill, and the angle to see it from (azimuth from the front toward +x, elevation). */
+/**
+ * What the camera shows: a box to fill (the whole glass, the ray's end on the floor, the normal), the angle to see it
+ * from (azimuth from the front toward +x, elevation), and the torch's angles whose body must be in view too (poseOf
+ * adds them: the torch where it is now, and for the steps where it travels, both ends of its travel).
+ */
 const FRAMES = {
-  intro: { box: box(-14.5, 0, -4.5, 10.5, 22, 4.5), az: 26, el: 17 },
-  slow: { box: box(-12.5, 0.5, -3, 10, 17, 3), az: 22, el: 13 },
-  bend: { box: box(-10.5, 1, -2, 9, 16, 2), az: 22, el: 12 },
-  plane: { box: box(-12.5, 0.5, -2, 11.5, 19.5, 2), az: 42, el: 16 },
-  edge: { box: box(-1.5, 0.5, -11, 1.5, 19.5, 11), az: 90, el: 14 },
-  law: { box: box(-12, 1, -2, 9.5, 17.5, 2), az: 22, el: 12 },
-  relative: { box: box(-11, 0, -5, 10.5, 15, 5), az: 22, el: 13 },
+  intro: { box: box(-10, -0.3, -4.5, 10, 8, 4.5), az: 26, el: 17, torch: [] },
+  slow: { box: box(-10, -0.3, -4.5, 10, 8, 4.5), az: 22, el: 13, torch: [] },
+  bend: { box: box(-10, -0.3, -4.5, 10, 13.2, 4.5), az: 22, el: 12, torch: [] },
+  plane: { box: box(-12.5, -0.3, -4.5, 11.5, 19.5, 4.5), az: 42, el: 16, torch: [] },
+  edge: { box: box(-10, -0.6, -4.5, 10, 19.5, 4.5), az: 90, el: 14, torch: [] },
+  law: { box: box(-10, -0.3, -4.5, 10, 13.2, 4.5), az: 22, el: 12, torch: [30, 70] },
+  relative: { box: box(-10.5, -0.3, -5, 10.5, 13.2, 5), az: 22, el: 13, torch: [30, 70] },
 };
 const FRAME_OF = { intro: 'intro', slow: 'slow', bend: 'bend', plane: 'plane', law: 'law', relative: 'relative' };
 
@@ -147,7 +152,9 @@ export function createApp(root, options = {}) {
   boxEl.className = 'rl-box';
   boxEl.innerHTML = `<div class="rl-media" role="radiogroup" aria-label="${t('medium')}"><span class="rl-media-name">${t('medium')}:</span>${CHOOSABLE.map(
     (id) => `<button type="button" role="radio" aria-checked="false" data-medium="${id}">${t(`m_${id}`)}</button>`,
-  ).join('')}</div><div class="rl-graph"></div>`;
+  ).join(
+    '',
+  )}</div><button type="button" class="rl-rev" data-act="rev" aria-pressed="false" aria-label="${t('aria_rev')}" hidden>${t('act_rev')}</button><div class="rl-graph"></div>`;
   // the calm first card and the step's words (result, box, rule) share one place, so the panel keeps its height
   const card = document.createElement('p');
   card.className = 'rl-card pvc-note';
@@ -184,6 +191,7 @@ export function createApp(root, options = {}) {
   markSide();
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(markSide).observe(root);
   const mediaRow = /** @type {HTMLElement} */ (boxEl.querySelector('.rl-media'));
+  const revBtn = /** @type {HTMLButtonElement} */ (boxEl.querySelector('.rl-rev'));
   const graph = createGraph(/** @type {HTMLElement} */ (boxEl.querySelector('.rl-graph')), { t, N, colors: COLORS });
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   const note = document.createElement('div');
@@ -229,6 +237,8 @@ export function createApp(root, options = {}) {
     dragging: false,
     quizKind: '',
     march: 0, // s the wavefronts have marched
+    rev: false, // the bending step's other way: the light from inside the glass out into the air
+    qRevealed: false, // the test's answer is shown (the picture may then show it too)
     shine: 0,
   };
   const now = () => performance.now();
@@ -266,7 +276,7 @@ export function createApp(root, options = {}) {
     retrace();
     setting.show(look(), level());
     setting.place(s.angle);
-    setting.lamp(s.v.inK > 0);
+    setting.lamp(s.v.inK > 0 && !s.rev);
     setting.sheetOpacity(s.v.sheet);
     const end = geo.points[geo.points.length - 1];
     setting.landing(end, s.v.outK >= 0.98 ? 1 : 0);
@@ -284,6 +294,8 @@ export function createApp(root, options = {}) {
     rv.phase = s.march;
     rv.shine = s.shine;
     rv.rightAt = { x: SHEET.x1 - 3.6, y: TOP };
+    rv.reverse = s.rev;
+    rv.boundary = look() === 'relative' && s.v.fill > 0.9 ? SLAB : null;
   }
 
   // ── camera: a gentle three-quarter view per step; flights between them ──────
@@ -293,10 +305,21 @@ export function createApp(root, options = {}) {
     const e = THREE.MathUtils.degToRad(el);
     return V(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
   };
+  /** The torch's body at angle a (from its window to its tail, with its radius), added to a box. */
+  const torchPt = V(0, 0, 0);
+  function addTorch(b, a) {
+    const sa = Math.sin(rad(a));
+    const ca = Math.cos(rad(a));
+    for (const r of [APERTURE - 0.4, ARC_R, ARC_R + 3.9]) for (const z of [-2.2, 1.3]) b.expandByPoint(torchPt.set(O.x - r * sa, O.y + r * ca, z));
+    b.max.y = Math.max(b.max.y, O.y + (ARC_R + 3.9) * ca + 0.9);
+    return b;
+  }
   function poseOf(id) {
     const f = FRAMES[id];
     const dir = dirOf(f.az, f.el);
-    const p = fitPose({ box: f.box, dir, camera, width: stage.width, height: stage.height, margin: MARGIN });
+    const fit = f.box.clone();
+    for (const a of [s.angle, ...f.torch]) addTorch(fit, a);
+    const p = fitPose({ box: fit, dir, camera, width: stage.width, height: stage.height, margin: MARGIN });
     return { az: f.az, el: f.el, dist: p.position.distanceTo(p.target), target: p.target };
   }
   let frameId = 'intro';
@@ -326,6 +349,9 @@ export function createApp(root, options = {}) {
     if (s.userMovedCamera) {
       s.userMovedCamera = false;
       rotate.home();
+      s.view = 'front';
+      syncUI();
+      emit('view', { view: s.view });
     }
     const to = poseOf(id);
     if (!duration) {
@@ -461,19 +487,21 @@ export function createApp(root, options = {}) {
   const DOWN = [spot(0, 22), spot(22, 22), spot(-22, 22), spot(0, 40)];
   const rad = (d) => (d * Math.PI) / 180;
   const at = (k, a, b) => V(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k, 0);
-  const late = () => s.step !== 'intro';
   const inQuiz = (k) => s.mode === 'quiz' && s.quizKind === k;
   const mName = () => t(`m_${s.medium}`);
+  /** The book's names of the angles on the labels where they are first met (the bending step). */
+  const fullNames = () => s.step === 'bend' && s.mode === 'explore';
   const LABELS = {
     torch: {
       text: () => t('lbl_torch'),
-      point: () => setting.rig.torch.root.position.clone(),
+      // at the torch's tail, away from the action's ring round its window
+      point: () => V(O.x - (ARC_R + 3.4) * Math.sin(rad(s.angle)), O.y + (ARC_R + 3.4) * Math.cos(rad(s.angle)), 0.6),
       color: COLORS.ink,
-      spots: [...UP, ...LEFT],
+      spots: [spot(0, -40), spot(-30, -34), spot(-40, 0), ...LEFT],
       show: () => s.step === 'intro' && s.mode === 'explore',
     },
     air: {
-      text: () => (late() ? t('lbl_air_n', { n: 1 }) : t('lbl_air')),
+      text: () => (s.step === 'intro' || s.step === 'slow' ? t('lbl_air_1') : t('lbl_air_n', { n: 1 })),
       point: () => V(-8.6, TOP + 0.3, -4.2),
       color: COLORS.ink,
       spots: [...LEFT, spot(-18, 26), ...UP],
@@ -482,13 +510,15 @@ export function createApp(root, options = {}) {
     },
     medium: {
       text: () => {
-        if (inQuiz('ex_b')) return t('lbl_med_q', { m: mName() });
-        return late() || s.mode === 'quiz' ? t('lbl_med_n', { m: mName(), n: nx(n2()) }) : t('lbl_med', { m: mName() });
+        if (inQuiz('ex_b')) return s.qRevealed ? t('lbl_n2_ans', { m: mName(), n: fx(n2()) }) : t('lbl_med_q', { m: mName() });
+        if (s.mode !== 'quiz' && (s.step === 'intro' || s.step === 'slow')) return t('lbl_med_2', { m: mName() });
+        return t('lbl_med_n', { m: mName(), n: nx(n2()) });
       },
       point: () => V(8.8, 1.2, 4.5),
       color: COLORS.ink,
       spots: [...DOWN, ...RIGHT],
-      show: () => look() !== 'relative' && !inQuiz('plane'),
+      optional: true, // on the smallest view it gives way to θ₂
+      show: () => look() !== 'relative' && !inQuiz('plane') && !(s.step === 'law' && s.mode === 'explore'),
     },
     water: {
       text: () => t('lbl_water_n1', { n: nx(N_WATER) }),
@@ -527,7 +557,7 @@ export function createApp(root, options = {}) {
       show: () => s.step === 'slow' && s.v.refl > 0.99 && s.mode === 'explore',
     },
     normal: {
-      text: () => t('lbl_normal'),
+      text: () => t(s.step === 'bend' ? 'lbl_normal_at' : 'lbl_normal'),
       point: () => {
         const p = geo.points[focus().i];
         return V(p.x, p.y + rays.NORMAL_UP * 0.96, 0);
@@ -537,7 +567,7 @@ export function createApp(root, options = {}) {
       show: () => s.v.normal > 0.98 && (s.step === 'bend' || s.step === 'plane') && s.mode === 'explore',
     },
     t1: {
-      text: () => t('lbl_t1', { a: focus().i === 2 ? deg1(focus().t1) : N(Math.round(focus().t1)) }),
+      text: () => t(fullNames() ? 'lbl_t1_full' : 'lbl_t1', { a: focus().i === 2 ? deg1(focus().t1) : N(Math.round(focus().t1)) }),
       point: () => {
         const f = focus();
         const p = geo.points[f.i];
@@ -549,7 +579,7 @@ export function createApp(root, options = {}) {
       show: () => s.v.arcs > 0.9 && s.step !== 'plane' && !inQuiz('plane') && !inQuiz('speed'),
     },
     t2: {
-      text: () => (inQuiz('ex_a') ? t('lbl_t2q') : t('lbl_t2', { a: deg1(focus().t2) })),
+      text: () => (inQuiz('ex_a') && !s.qRevealed ? t('lbl_t2q') : t(fullNames() ? 'lbl_t2_full' : 'lbl_t2', { a: deg1(focus().t2) })),
       point: () => {
         const f = focus();
         const p = geo.points[f.i];
@@ -565,7 +595,7 @@ export function createApp(root, options = {}) {
       point: () => V(SHEET.x1 - 1.2, SHEET.y1 - 1.5, 0),
       color: COLORS.ink,
       spots: [...RIGHT, ...UP],
-      show: () => s.v.sheet > 0.9,
+      show: () => s.v.sheet > 0.9 && frameId !== 'edge' && !(s.step === 'plane' && s.busy),
     },
     right: {
       text: () => t('lbl_right', { a: 90 }),
@@ -705,6 +735,7 @@ export function createApp(root, options = {}) {
     const prevIndex = ORDER.indexOf(from);
     const index = ORDER.indexOf(step);
     s.step = step;
+    if (step !== 'bend') s.rev = false;
     if (step !== 'law') s.dragged = false;
     if (step === 'relative' && from !== 'relative') s.relMeasured = [];
     if (step !== 'relative' && s.v.fill > 0) s.v.fill = 0;
@@ -822,7 +853,8 @@ export function createApp(root, options = {}) {
     if (s.step === 'slow') return t('out_slow', { m: t(`in_${s.medium}`), v: sci(speedMantissa(n2())) });
     if (s.step === 'bend' || s.step === 'plane') {
       if (s.step === 'plane' && s.v.sheet > 0.9 && !s.busy) return t('out_plane');
-      return f.t1 < 0.5 ? t('out_bend0', { t1: N(0) }) : t('out_bend', { t1: N(Math.round(f.t1)), t2: deg1(f.t2) });
+      if (f.t1 < 0.5) return t('out_bend0', { t1: N(0) });
+      return t(s.rev ? 'out_rev' : 'out_bend', { t1: N(Math.round(f.t1)), t2: deg1(f.t2) });
     }
     if (s.step === 'law') {
       if (lawDone()) return t('out_law_done', { k: s.measured.length, r: fx(n2()) });
@@ -835,8 +867,8 @@ export function createApp(root, options = {}) {
   }
   function ruleHtml() {
     if (s.step === 'intro') return '';
-    if (s.step === 'slow') return t('rule_slow', { n: nx(n2()) });
-    if (s.step === 'bend') return t('rule_bend');
+    if (s.step === 'slow') return t('rule_slow', { m: t(`in_${s.medium}`), n: nx(n2()) });
+    if (s.step === 'bend') return t(s.rev ? 'rule_rev' : 'rule_bend');
     if (s.step === 'plane') return s.v.sheet > 0.9 ? t('rule_plane', { right: 90 }) : t('rule_bend');
     if (s.step === 'law') return lawDone() ? t('rule_law_done', { one: 1 }) : t('rule_law');
     return t('rule_rel', { n2: nx(N_GLASS), n1: nx(N_WATER), r: fx(N_GLASS / N_WATER), inv: fx(N_WATER / N_GLASS), one: 1 });
@@ -859,7 +891,7 @@ export function createApp(root, options = {}) {
       const m = measure(s.angle, 1, n2());
       graph.draw({
         kind: 'sine',
-        dots: s.measured.map((d) => ({ s1: d.s1, s2: d.s2 })),
+        dots: s.measured,
         live: s.busy ? null : { s1: m.s1, s2: m.s2 },
         slope: lawDone() ? round(n2(), 2) : null,
         past: s.past.filter((p) => p.id !== s.medium),
@@ -872,7 +904,8 @@ export function createApp(root, options = {}) {
     const live = s.v.fill > 0.99 ? measure(f.t1, f.n1, f.n2) : null;
     graph.draw({
       kind: 'sine',
-      dots: s.relMeasured.map((d) => ({ s1: d.s1, s2: d.s2 })),
+      dots: s.relMeasured,
+      chips: false,
       live: s.busy || !live ? null : { s1: live.s1, s2: live.s2 },
       slope: s.relMeasured.length >= 3 ? round(N_GLASS / N_WATER, 2) : null,
       past: [],
@@ -922,6 +955,9 @@ export function createApp(root, options = {}) {
       /** @type {HTMLButtonElement} */ (b).tabIndex = on ? 0 : -1;
     }
     note.classList.toggle('show', s.step === 'slow' && s.march < MARCH_S && s.v.march > 0 && s.mode === 'explore');
+    revBtn.hidden = s.step !== 'bend';
+    revBtn.disabled = s.busy;
+    revBtn.setAttribute('aria-pressed', String(s.rev));
     drawGraph();
     syncLabels();
     stage.invalidate();
@@ -1080,6 +1116,7 @@ export function createApp(root, options = {}) {
       relative: s.relMeasured.map((m) => ({ ...m })),
       level: round(level(), 3),
       look: look(),
+      reverse: s.rev,
       busy: s.busy,
       view: s.view,
       mode: s.mode,
@@ -1116,6 +1153,8 @@ export function createApp(root, options = {}) {
     s.medium = q.medium;
     s.angle = q.angle;
     s.step = q.step;
+    s.rev = false;
+    s.qRevealed = false;
     Object.assign(s.v, TARGET[q.step]);
     s.march = MARCH_S;
     s.v.march = 0;
@@ -1182,14 +1221,20 @@ export function createApp(root, options = {}) {
     const items = [
       { key: 'right', v: round(N_GLASS / N_WATER, 2) },
       { key: 'flip', v: round(N_WATER / N_GLASS, 2) },
-      { key: 'sum', v: round(N_GLASS + N_WATER, 2) },
-      { key: 'diff', v: round(N_GLASS - N_WATER, 2) },
+      { key: 'prod', v: round(N_GLASS * N_WATER, 2) },
+      { key: 'own', v: N_GLASS },
     ].map((x) => ({ ...x, label: fx(x.v) }));
     return { text: t('q_rel'), ...choicesOf(items, kind) };
   }
   /** The worked answer, leading with the answer, and a note on the mistake picked. */
   function why(q, correct) {
     const k = question?.kind;
+    // the picture shows the answer now: θ₂ of উদাহরণ (a), n₂ of (b), the plane of the first law
+    s.qRevealed = true;
+    if (k === 'plane') s.v.sheet = 0.75;
+    syncScene();
+    syncLabels();
+    stage.invalidate();
     const wrong = correct ? null : q.list?.[picked]?.key;
     const note = (map) => (wrong && map[wrong] ? ` ${map[wrong]}` : '');
     if (k === 'speed') {
@@ -1213,7 +1258,7 @@ export function createApp(root, options = {}) {
     }
     return (
       t('why_rel', { r: fx(N_GLASS / N_WATER), n2: nx(N_GLASS), n1: nx(N_WATER) }) +
-      note({ flip: t('mis_rel_flip'), sum: t('mis_rel_sum'), diff: t('mis_rel_diff') })
+      note({ flip: t('mis_rel_flip'), prod: t('mis_rel_prod'), own: t('mis_rel_own', { n: nx(N_GLASS) }) })
     );
   }
   const quiz = createQuiz({
@@ -1319,7 +1364,11 @@ export function createApp(root, options = {}) {
     }
     if (b.dataset.act === 'home') goHome();
     else if (b.dataset.act === 'replay') replay();
-    else if (b.dataset.act === 'q-next') quiz.next();
+    else if (b.dataset.act === 'rev' && s.step === 'bend' && !s.busy && s.mode === 'explore') {
+      s.rev = !s.rev;
+      refresh();
+      emitChange();
+    } else if (b.dataset.act === 'q-next') quiz.next();
     else if (b.dataset.act === 'q-again') quiz.start();
     else if (b.dataset.act === 'fullscreen') {
       if (document.fullscreenElement) document.exitFullscreen?.();
