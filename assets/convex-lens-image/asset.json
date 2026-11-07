@@ -1,0 +1,103 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "convex-lens-image",
+  "title": "Images in a convex lens (উত্তল লেন্সে প্রতিবিম্ব)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 259,
+  "topic": "9.4.2",
+  "placement": "Book page 259, topic 9.4.2 উত্তল লেন্স: the ray rules and চিত্র ৯.২১–৯.২৬, the cases of the object's position, the উদাহরণ and the নিজে করো (pp. 259–264).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the images in a convex lens, book pages 259–264, topic 9.4.2, next to চিত্র ৯.২১–৯.২৬. A glass biconvex lens (f = 15 cm) stands in its ring on an optical bench with a printed cm scale, the book's pencil XY on its left and a paper screen on its right. Parallel light from far away gathers at the focus F′ on a screen (the book's নিজে করো) and light from a point at F leaves parallel; the book's three rays from the pencil's tip meet at X′, where a screen catches a sharp, real, inverted image. The student moves the pencil through the book's cases (inside F: virtual, upright, bigger, seen by an eye through the lens; between F and 2F; at 2F; beyond 2F), sees the book's উদাহরণ (object and image change places), a live graph of image distance against object distance and a summary table, then takes a five-question test.",
+  "tags": [
+    "light",
+    "refraction",
+    "lens",
+    "convex lens",
+    "real image",
+    "virtual image",
+    "ray diagram",
+    "focal length",
+    "optical bench",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "stage",
+      "label": "What is shown",
+      "type": "select",
+      "options": [
+        ["start", "the pencil, the lens, the image"],
+        ["parallel", "parallel rays to F′ (চিত্র ৯.২১)"],
+        ["point", "a point of light at F (চিত্র ৯.২২)"],
+        ["ray1", "the parallel ray"],
+        ["ray2", "the ray through O"],
+        ["ray3", "the ray through F"],
+        ["screen", "the screen"],
+        ["cases", "the book's cases"],
+        ["swap", "the উদাহরণ: object and image swap"],
+        ["graph", "the graph of v against u"],
+        ["table", "the summary table"]
+      ],
+      "default": "start"
+    },
+    { "name": "u", "label": "Pencil's distance from the lens (cm)", "type": "number", "default": "30" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered ring and the words on the handles", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "stage": "cases", "u": 22.5, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "stage": "cases", "u": "22.5" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 20,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.2, "command": "set", "payload": { "stage": "cases", "u": 30, "animate": false } },
+        { "at": 2, "command": "set", "payload": { "u": 9 } },
+        { "at": 7, "command": "set", "payload": { "u": 22.5 } },
+        { "at": 11, "command": "set", "payload": { "u": 30 } },
+        { "at": 15, "command": "set", "payload": { "u": 45 } }
+      ]
+    }
+  }
+}
