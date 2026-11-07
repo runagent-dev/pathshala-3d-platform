@@ -1,0 +1,106 @@
+/* Displaced water with a model ship: the page, the panel's calm first card and lead-in line, the colours of the
+   quantities (the ship's mass violet, the water blue, buoyancy orange), the two bars of step ④, the labels (short words
+   on a white chip in the colour of what they name) and the test's answers. The rest of the panel is the kit's clean
+   sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.dw sub, .dw sup { font-size: 0.72em; line-height: 0; }
+
+/* the line before the action: what the next tap will show; on the first screen, a calm card that sets the scene */
+.dw .dw-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+.dw .dw-lead:empty { display: none; }
+.dw .dw-lead.pvc-note { font-size: 15px; line-height: 1.6; box-sizing: border-box; }
+.dw .dw-lead .dw-short { display: none; }
+.dw .pvc-learn.dw-calm .pvc-outcome,
+.dw .pvc-learn.dw-calm .pvc-rule { position: absolute; visibility: hidden; pointer-events: none; }
+/* a stand-in for a step's lead-in line: its height is measured, so the calm card takes exactly the room of the steps'
+   lead, result and rule, and the 3D keeps its size from the first screen on */
+.dw .dw-probe { position: absolute; visibility: hidden; pointer-events: none; left: 0; right: 0; }
+/* in the test the how-to row keeps its room (unseen), so the panel and the 3D keep their size */
+.pvc.dw[data-mode='quiz'] .pvc-howto { display: flex; visibility: hidden; }
+
+.dw .pvc-examples .pvc-ex-word { font-size: 15px; }
+
+/* the result and the rule */
+.dw .pvc-outcome { font-size: 15px; line-height: 1.5; }
+.dw .pvc-outcome b { font-size: 1.06em; font-weight: 600; color: var(--ink); }
+.dw b.dw-m { color: #5f3dc4; }
+.dw b.dw-w { color: #1864ab; }
+.dw b.dw-f { color: #c2410c; }
+.dw .pvc-rule { font-size: 14.5px; line-height: 1.6; }
+.dw .pvc-rule b { color: var(--ink); }
+.dw .dw-law { display: block; margin: 1px 0 0; white-space: nowrap; font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* step ④: two bars, ship + cargo and the water pushed aside, always the same length */
+.dw .dw-bars { display: grid; gap: 4px; margin: 1px 0; }
+.dw .dw-bar { display: grid; grid-template-columns: 7.2em 1fr 4.2em; align-items: center; gap: 8px; font-size: 13.5px; line-height: 1.35; }
+.dw .dw-bl { color: var(--ink-2); white-space: nowrap; }
+.dw .dw-bar b { text-align: right; white-space: nowrap; }
+.dw .dw-track { display: flex; height: 13px; border-radius: 3px; background: #edf0f3; box-shadow: inset 0 0 0 1px #d5dbe1; overflow: hidden; }
+.dw .dw-seg { display: block; height: 100%; box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.85); transition: width 0.4s; }
+.dw .dw-seg-ship { background: #1f3768; }
+.dw .dw-seg-box0 { background: #1971c2; }
+.dw .dw-seg-box1 { background: #f2b705; }
+.dw .dw-seg-box2 { background: #c92a2a; }
+.dw .dw-seg-box3 { background: #2b8a3e; }
+.dw .dw-seg-box4 { background: #0b7285; }
+.dw .dw-seg-box5 { background: #adb5bd; }
+.dw .dw-seg-water { background: #4a9fe0; }
+
+/* labels on the picture: short words in their colour on a white chip */
+.pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-lines .k-force { display: none; }
+
+/* the test: answers in words or numbers */
+.dw .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.dw-opt { display: block; white-space: normal; text-align: center; }
+.dw .pvc-q-text { font-size: 15px; }
+.dw .pvc-q-feedback { font-size: 13.5px; }
+
+/* phones, and short frames: tighter type; the short calm words */
+@container pvc (max-width: 560px) {
+  .pvc-howto { gap: 0 4px; }
+  .pvc-howto-item:not(.pvc-howto-drag):not(.pvc-howto-tap) .pvc-howto-word { display: none; }
+  .dw .dw-lead:not(.pvc-note) { min-height: 1.55em; }
+}
+@container pvc (max-width: 420px) {
+  .dw .pvc-rule { font-size: 14px; }
+  .dw .pvc-outcome { font-size: 14px; }
+  .dw .dw-law { font-size: 13px; }
+  .dw .pvc-opt { height: 40px; font-size: 13px; line-height: 1.2; }
+  .dw .pvc-q-text { font-size: 14px; --pvc-q-text-min: 2lh; }
+  .dw .pvc-q-feedback { font-size: 13.5px; --pvc-q-feedback-min: 3lh; }
+  .dw .pvc-learn { gap: 6px; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .dw .dw-lead .dw-long { display: none; }
+  .dw .dw-lead .dw-short { display: inline; }
+  .dw .pvc-outcome { font-size: 14px; line-height: 1.45; }
+  .dw .pvc-rule { font-size: 13.5px; line-height: 1.5; --pvc-rule-lines: 3; }
+  .dw .pvc-q-text { font-size: 13.5px; }
+  .dw .pvc-opt { font-size: 12.5px; }
+  .pvc-anno-force { font-size: 12.5px; }
+}
+/* short and wide (a phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .dw .dw-lead .dw-long { display: none; }
+  .dw .dw-lead .dw-short { display: inline; }
+  .dw .dw-lead { font-size: 13.5px; line-height: 1.45; }
+  .dw .dw-lead:not(.pvc-note) { min-height: 1.45em; }
+  .dw .dw-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 5px 10px; }
+  .dw .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
+  .dw .pvc-rule { font-size: 13.5px; line-height: 1.45; --pvc-rule-lines: 4; }
+  .dw .dw-law { font-size: 12.5px; }
+  .dw .pvc-examples button { min-height: 36px; }
+  .dw .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
+  .dw .pvc-q-text { font-size: 13.5px; }
+  .dw .pvc-opt { font-size: 12.5px; height: 44px; }
+  .dw .pvc-q-feedback { font-size: 13.5px; }
+  .pvc-anno-force { font-size: 12.5px; }
+}
+/* the tightest upright frame (390 × 520): the action says what comes next, so the lead-in line steps aside for the 3D */
+@media (max-aspect-ratio: 1/1) and (max-height: 600px) {
+  .dw .dw-lead:not(.pvc-note) { display: none; }
+}
