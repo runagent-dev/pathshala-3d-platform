@@ -1,0 +1,97 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "gold-leaf-electroscope",
+  "title": "Electroscope (তড়িৎবীক্ষণ যন্ত্র)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 278,
+  "topic": "10.3.1",
+  "placement": "Book page 278, topic 10.3.1 তড়িৎবীক্ষণ যন্ত্র, চিত্র ১০.০৮ (pp. 278–279).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "mm",
+  "description": "Interactive 3D figure for the electroscope (তড়িৎবীক্ষণ যন্ত্র), book pages 278–279, topic 10.3.1, next to চিত্র ১০.০৮. A gold-leaf electroscope in a clear glass bottle stands on a table: a metal disc, a conducting rod through an insulating stopper, and two gold leaves on a small plate. Its charges are drawn as \"+ over −\" pairs, so it has no charge. A glass rod rubbed with silk comes near without touching: electrons, and only electrons, slide up to the disc, bare + stay on the leaves and they spread (চার্জের আবেশ); the student can drag the rod nearer and farther. It then touches the disc: some electrons go into the glass, the rod is taken away and the leaves stay apart (চার্জ আহিতকরণ). Then the book's test of the kind of a charge, with its missing first step made plain: with a known positive charge on the instrument, a comb rubbed with flannel makes the gap smaller (negative) and the glass rubbed again makes it wider (positive). Five test questions on the picture, one with an unknown rod. Offline, Bangla and English.",
+  "tags": [
+    "static electricity",
+    "electroscope",
+    "gold leaf",
+    "charging by induction",
+    "charging by contact",
+    "charge",
+    "electron",
+    "glass rod",
+    "comb",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Start at",
+      "type": "select",
+      "options": [
+        ["intro", "the bottle on the table"],
+        ["parts", "the parts"],
+        ["near", "the rod near (চিত্র ১০.০৮)"],
+        ["touch", "after the rod touched"],
+        ["testNeg", "the comb near a charged instrument"],
+        ["testPos", "the glass rod near a charged instrument"]
+      ],
+      "default": "intro"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered ring and the words on the handle", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "near", "d": 30, "view": "front", "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "step": "near" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 52,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "step": "parts" } },
+        { "at": 7, "command": "set", "payload": { "step": "near" } },
+        { "at": 17, "command": "set", "payload": { "step": "touch" } },
+        { "at": 28, "command": "set", "payload": { "step": "testNeg" } },
+        { "at": 39, "command": "set", "payload": { "step": "testPos" } }
+      ]
+    }
+  }
+}
