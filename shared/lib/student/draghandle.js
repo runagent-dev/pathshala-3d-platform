@@ -4,7 +4,7 @@
 //
 //   const paperHandle = createDragHandle(stage, {
 //     point: () => paperFoot,                     // a Vector3, or a function returning one (it may be reused)
-//     axis: 'x',                                  // 'x' | 'y' arrows along `direction`; 'turn' a curved arrow
+//     axis: 'x',                                  // 'x' | 'y' arrows along `direction`; 'turn' a curved arrow round a dot
 //     direction: RAIL,                            // the 3D direction (or () => Vector3); default: along the track
 //     track: { from: () => railNear, to: () => railFar },   // the range, drawn faintly; optional (`via`: a curved one)
 //     label: t('drag_me'),                        // the word shown until the first drag; optional
@@ -21,6 +21,9 @@
 //
 // Keyboard: the handle is a button in the tab order. With `onKey(dir, event)` it answers the arrows itself (dir is
 // +1 for → and ↑, -1 for ← and ↓); without it the key goes on to the figure's own keydown listener.
+//
+// 'turn': the arc's middle runs along `direction` and the dot lies to its right on the screen, so a clockwise
+// direction puts the dot on the side of the pivot; with a curved track (`via`) the dot goes to the inside of the curve.
 //
 // The handle hides during the test (`.pvc[data-mode="quiz"]`) unless `quiz: true`, and while its point is behind
 // the camera. Placed after every drawn frame (it works with render on demand); `update()` places it at once.
@@ -48,7 +51,12 @@ const MOVED = 4; // px: less than this is a tap, not a drag
 
 const ARROWS = {
   line: svg('<path d="M4 12h16M8.2 7.8 4 12l4.2 4.2M15.8 7.8 20 12l-4.2 4.2"/>'),
-  turn: svg('<path d="M3.5 15.5A10.5 10.5 0 0 1 20.5 15.5M3 10.8 3.5 15.5l4.3-1.1M21 10.8 20.5 15.5l-4.3-1.1"/>'),
+  // "turns about this point": a 240° arc with a bold filled head at each end round a pivot dot. Not a plain circular
+  // arrow (that is reset; the rotate pill always has its ৩৬০°), and filled heads, as thin hooks at both ends of a flat
+  // arch read as a telephone handset at 1× (kit 1.9.1)
+  turn: svg(
+    '<path d="M4.6 12.2A7.5 7.5 0 0 1 19.4 12.2"/><path class="fill" d="M18.5 17.5 15.8 11.4l7.1 1.1zM5.5 17.5 1.1 12.5l7.1-1.1z"/><circle class="fill" cx="12" cy="13.6" r="2"/>',
+  ),
 };
 
 /**
@@ -60,7 +68,8 @@ const ARROWS = {
 export function dragDisc(axis = 'x') {
   const glyph = axis === 'turn' ? ARROWS.turn : ARROWS.line;
   const up = axis === 'y' ? ' style="transform: rotate(90deg)"' : '';
-  return `<span class="pvc-dh-disc">${up ? glyph.replace('<svg', `<svg${up}`) : glyph}</span>`;
+  const cls = axis === 'turn' ? 'pvc-dh-disc pvc-dh-disc-turn' : 'pvc-dh-disc';
+  return `<span class="${cls}">${up ? glyph.replace('<svg', `<svg${up}`) : glyph}</span>`;
 }
 const OTHER = { below: 'above', above: 'below', right: 'left', left: 'right' };
 const KEYS = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
@@ -139,7 +148,8 @@ export function createDragHandle(
   let used = false;
   let px = NaN;
   let py = NaN;
-  let drawnAngle = NaN;
+  let drawnGlyph = '';
+  let inside = 0; // 'turn' with a curved track: +1 the curve bends to the right of the direction, -1 to the left
   let side = '';
   let trackOn = false;
   let drawnTrack = '';
@@ -234,13 +244,15 @@ export function createDragHandle(
       py = y;
       el.style.transform = `translate(${x - HIT / 2}px, ${y - HIT / 2}px)`;
     }
+    if (track) placeTrack();
     const angle = Math.round((Math.atan2(unit.y, unit.x) * 180) / Math.PI);
-    if (angle !== drawnAngle) {
-      drawnAngle = angle;
-      glyph.style.transform = `rotate(${angle}deg)`;
+    // the turn glyph's dot on the inside of the track's curve (the side of the pivot): mirrored when it bends left
+    const g = inside < 0 ? `rotate(${angle}deg) scaleY(-1)` : `rotate(${angle}deg)`;
+    if (g !== drawnGlyph) {
+      drawnGlyph = g;
+      glyph.style.transform = g;
     }
     placeWord();
-    if (track) placeTrack();
   }
 
   function placeTrack() {
@@ -255,7 +267,15 @@ export function createDragHandle(
       em.y = (e0.y + e1.y) / 2;
     }
     setTrack(ok);
+    inside = 0;
     if (!trackOn) return;
+    if (axis === 'turn' && track.via) {
+      // the curve's bulge (its middle off the chord) points away from the pivot; the right of the direction is (-uy, ux)
+      const bx = em.x - (e0.x + e1.x) / 2;
+      const by = em.y - (e0.y + e1.y) / 2;
+      const side = -bx * unit.y + by * unit.x;
+      if (Math.hypot(bx, by) > 2) inside = side > 0 ? -1 : 1;
+    }
     // through the middle point: the curve's control point lies twice as far from the chord
     em.x = 2 * em.x - (e0.x + e1.x) / 2;
     em.y = 2 * em.y - (e0.y + e1.y) / 2;

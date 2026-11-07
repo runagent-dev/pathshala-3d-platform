@@ -1406,3 +1406,51 @@ for (const viewport of [
     expect(errors).toEqual([]);
   });
 }
+
+test('drag handle, turn: an arc with two filled heads round a pivot dot, not a reset arrow; the dot on the pivot side', async ({ page }) => {
+  const errors = await openKit(page, { width: 844, height: 390 });
+  await shellWithStage(page, { layout: 'side', learn: '<div class="pvc-act-row"><button class="pvc-quiet">x</button></div>' });
+  const r = await page.evaluate(() => {
+    const { createDragHandle, createHowTo, ICONS } = /** @type {any} */ (window).kit;
+    const { THREE, ui, t, stage } = /** @type {any} */ (window).t;
+    const V = (x, y) => new THREE.Vector3(x, y, 0);
+    // a bowl round the origin: the pivot is above the handle on the screen
+    const track = { from: V(-2, 0), via: V(0, -2), to: V(2, 0) };
+    /** The glyph's transform, and whether its dot is above the glyph's middle (towards the pivot). */
+    const look = (direction, withTrack = true) => {
+      const handle = createDragHandle(stage, { point: V(0, -2), axis: 'turn', direction, track: withTrack ? track : null });
+      stage.render();
+      const svg = handle.el.querySelector('svg');
+      const s = svg.getBoundingClientRect();
+      const d = svg.querySelector('circle.fill').getBoundingClientRect();
+      const out = {
+        transform: svg.style.transform,
+        dotUp: d.top + d.height / 2 < s.top + s.height / 2 - 1,
+        heads: [...svg.querySelectorAll('path.fill')].reduce((n, p) => n + (p.getAttribute('d').match(/z/gi) || []).length, 0),
+        html: svg.outerHTML,
+      };
+      handle.dispose();
+      return out;
+    };
+    const clockwise = look(V(-1, 0)); // along the bottom of the bowl, to the left: clockwise on the screen
+    const anti = look(V(1, 0));
+    const free = look(V(1, 0), false); // no track: the dot to the right of the direction (below, here)
+    const howto = createHowTo(ui, t, [{ kind: 'drag', axis: 'turn', text: 'turn it' }]);
+    const mini = howto.el.querySelector('.pvc-dh-disc svg').outerHTML;
+    howto.dispose();
+    return {
+      clockwise,
+      anti,
+      free,
+      same: mini === free.html.replace(/ style="[^"]*"/, ''),
+      reset: free.html.includes(ICONS.reset.slice(ICONS.reset.indexOf('<path'))),
+      orbit: free.html.includes(ICONS.orbit.slice(ICONS.orbit.indexOf('<path'))),
+    };
+  });
+  expect(r.clockwise).toMatchObject({ transform: 'rotate(180deg)', dotUp: true, heads: 2 });
+  expect(r.anti).toMatchObject({ transform: 'rotate(0deg) scaleY(-1)', dotUp: true, heads: 2 });
+  expect(r.free).toMatchObject({ transform: 'rotate(0deg)', dotUp: false });
+  expect(r.same).toBe(true); // one source for the handle and its miniature in the panel
+  expect([r.reset, r.orbit]).toEqual([false, false]);
+  expect(errors).toEqual([]);
+});

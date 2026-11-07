@@ -285,8 +285,10 @@ with arrows along the way the part goes, inside a 46 px target; a faint dashed t
 gentle pulse until the first drag; then it stays, smaller and calm.
 - `point`: a Vector3 or `() => Vector3`, where the disc sits: on the part, at a spot that stays clear of it (the foot of a
   carrier, not the middle of the paper).
-- `axis`: `'x'` or `'y'` (straight arrows) or `'turn'` (a curved arrow). `direction`: the 3D direction (Vector3 or
-  function), so the arrows follow it on the screen; default: along the track, or the axis.
+- `axis`: `'x'` or `'y'` (straight arrows) or `'turn'` (a 240° arc with a filled head at each end round a pivot dot, kit
+  1.9.1). `direction`: the 3D direction (Vector3 or function), so the arrows follow it on the screen; default: along the
+  track, or the axis. A turn glyph's dot lies to the right of `direction` on the screen, so give the clockwise way; with a
+  curved track (`via`) the dot goes to the inside of the curve by itself.
 - `track: { from, to, via }`: the two ends of the range (Vector3s or functions); `via`, a point half way along a curved
   range, bends it (an arc).
 - `label`: the first-time word from the figure's i18n (`drag_me: 'টেনে সরাও'`). `labelAt`: `'below' | 'above' | 'left' |
