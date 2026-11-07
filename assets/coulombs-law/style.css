@@ -1,0 +1,144 @@
+/* Coulomb's law: the page, the panel's calm first card and lead-in line, the graph box (the values, the charges'
+   steppers in the law's step, the graph), the labels on the picture (each in the colour of what it names: a charge in
+   its own colour, a force in teal, distances in ink) and the test's answers. The rest of the panel is the kit's clean
+   sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.cl { --c-force: #087f5b; --c-pos: #c92a2a; --c-neg: #1864ab; }
+.cl sub, .cl sup { font-size: 0.72em; line-height: 0; }
+.cl .cl-sci { white-space: nowrap; }
+
+/* the step words: each at least 40 px wide */
+.cl .pvc-examples button { min-width: 42px; }
+/* the line before the action: what the next tap will show; on the first screen, a calm card that sets the scene */
+.cl .cl-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.5; min-height: 1.5em; }
+.cl .cl-lead.pvc-note { font-size: 15px; line-height: 1.6; min-height: 0; }
+.cl .cl-lead .cl-short { display: none; }
+.cl .pvc-learn.cl-calm .pvc-outcome,
+.cl .pvc-learn.cl-calm .pvc-rule { display: none; }
+
+/* the result and the rule */
+.cl .pvc-outcome { font-size: 14.5px; line-height: 1.45; }
+.cl .pvc-outcome .cl-ask { color: var(--ink-2); font-style: italic; }
+.cl .pvc-outcome b { font-size: 1.1em; font-weight: 600; color: var(--c-force); }
+.cl .pvc-outcome .pvc-frac { font-size: 0.92em; line-height: 1.25; }
+.cl .pvc-rule { font-size: 14px; line-height: 1.55; }
+.cl .pvc-rule b { color: var(--ink); }
+
+/* the graph box: the graph takes the free height; in the law's step the charges' steppers sit in its top right corner */
+.cl .cl-graphbox { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+/* the law's steppers sit over the graph's top row (the graph keeps that row free for them) */
+.cl .cl-steppers { position: absolute; top: 0; left: 0; right: 0; z-index: 1; display: flex; justify-content: space-between; gap: 6px; }
+.cl .cl-steppers[hidden] { display: none; }
+.cl .cl-q { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; font-size: 13.5px; color: var(--ink-2); }
+.cl .cl-q-name { font-style: italic; margin-right: 2px; }
+.cl .cl-q-val { min-width: 2.7em; text-align: center; font-weight: 600; font-size: 13.5px; color: var(--ink); }
+.cl .cl-step { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--line-2); border-radius: 6px; background: var(--panel); color: var(--ink); cursor: pointer; }
+.cl .cl-step svg { width: 16px; height: 16px; }
+.cl .cl-step:disabled { opacity: 0.35; cursor: default; }
+.cl .cl-graph { position: relative; flex: 1 1 auto; min-height: 0; }
+.cl .pvc-sheets { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+.cl .pvc-learn { min-height: 0; }
+.cl .cl-graph .cl-graph-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; font-family: inherit; }
+.cl-graph-svg text { paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.cl-graph-svg .grid { stroke: #e3e8ee; stroke-width: 1; }
+.cl-graph-svg .g-axis { stroke: #5c6b78; stroke-width: 1.6; fill: none; }
+.cl-graph-svg .g-zero { stroke: #5c6b78; stroke-width: 1.2; }
+.cl-graph-svg .g-num { fill: #5c6b78; }
+.cl-graph-svg .g-name { fill: #33424f; }
+.cl-graph-svg .g-side { fill: #7a8794; font-style: italic; }
+.cl-graph-svg .g-hint { fill: #6c7a86; font-style: italic; }
+.cl-graph-svg .g-curve { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cl-graph-svg .g-guide { fill: none; stroke: #6c7a86; stroke-width: 1.2; stroke-dasharray: 4 3; }
+.cl-graph-svg .g-was { fill: #fff; stroke-width: 2.5; }
+.cl-graph-svg .g-dot { stroke: #fff; stroke-width: 2; }
+.cl-graph-svg .g-tag { font-weight: 600; }
+.cl-graph-svg .g-row { fill: #e3f5ee; }
+.cl-graph-svg .g-cell { fill: #4a5966; }
+.cl-graph-svg .g-cell.g-on { fill: var(--c-force); font-weight: 600; }
+
+/* labels on the picture: short words in their colour on a white chip */
+.cl .pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.cl .pvc-anno-lines .k-force { display: none; }
+
+/* the note on the view: the arrows are drawn to scale */
+.cl-note { position: absolute; left: 8px; bottom: 8px; z-index: 3; max-width: calc(100% - 70px); padding: 2px 8px; border-radius: 5px; background: rgba(10, 30, 60, 0.62); color: #e9f1fb; font-size: 12px; line-height: 1.4; pointer-events: none; }
+.cl-note[hidden] { display: none; }
+
+/* the test: answers in words or numbers */
+.cl .pvc-opt { font-size: 13.5px; line-height: 1.2; padding: 0 4px; }
+.cl-opt { display: block; white-space: normal; text-align: center; }
+.cl .pvc-q-text { font-size: 14.5px; }
+.cl .pvc-q-feedback { font-size: 13.5px; }
+
+/* narrow panels (a phone held upright, a phone's side panel): every line as low as it reads well */
+@container pvc (max-width: 560px) {
+  .cl .pvc-learn { gap: 5px; }
+  /* the action's words say what the next tap does: the lead-in line only on the first screen */
+  .cl .cl-lead:not(.pvc-note) { display: none; }
+  .cl .cl-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 6px 10px; }
+  .cl .pvc-examples .pvc-ex-word { font-size: 14px; }
+  .cl .pvc-outcome { font-size: 13.5px; }
+  .cl .pvc-rule { font-size: 13px; line-height: 1.45; }
+  .cl .cl-q { font-size: 13px; }
+  .cl .pvc-opt { height: 40px; font-size: 13px; }
+  .cl .pvc-q-text { font-size: 14px; --pvc-q-text-min: 3lh; }
+  .cl .pvc-q-feedback { font-size: 13px; --pvc-q-feedback-min: 3lh; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .cl .cl-lead .cl-long { display: none; }
+  .cl .cl-lead .cl-short { display: inline; }
+  .cl .cl-lead { font-size: 12.5px; min-height: 0; }
+  .cl .pvc-outcome { font-size: 12.5px; line-height: 1.4; }
+  .cl .pvc-rule { font-size: 12px; line-height: 1.4; }
+  .cl .pvc-q-text { font-size: 13px; }
+  .cl .pvc-opt { font-size: 12px; height: 36px; }
+  .cl .pvc-anno-force { font-size: 12px; }
+}
+/* short and wide (a phone held sideways): the panel is beside the scene; the how-to row gives its line to the graph
+   (the view's own ⟲ ৩৬০° pill and the drag handles' words say the same) */
+@container pvc-panel (max-height: 460px) {
+  .cl .cl-lead .cl-long { display: none; }
+  .cl .cl-lead .cl-short { display: inline; }
+  .cl .cl-lead.pvc-note { font-size: 13.5px; line-height: 1.5; padding: 5px 10px; }
+  .cl .pvc-learn { gap: 5px; }
+  .cl .pvc-howto { display: none; }
+  .cl .pvc-outcome { font-size: 13px; line-height: 1.4; }
+  .cl .pvc-rule { font-size: 12.5px; line-height: 1.45; }
+  .cl .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 13px; }
+  .cl .pvc-q-text { font-size: 13.5px; }
+  .cl .pvc-opt { font-size: 12.5px; height: 44px; }
+  .cl .pvc-anno-force { font-size: 12.5px; }
+}
+
+/* a phone held upright: the panel under the 3D has a fixed share of the height (the 3D about 55 %) in every state and
+   in the test, the graph taking what is left, so the 3D view never changes size; every line as low as it reads well,
+   and no how-to row (the view's pill and the handles' words say the same) */
+@container pvc (max-aspect-ratio: 1/1) {
+  .cl.cl-stack .pvc-panel { height: 47cqh; box-sizing: border-box; overflow: hidden; gap: 4px; padding-top: 6px; padding-bottom: 6px; }
+  .cl.cl-stack .pvc-tabs button { height: 32px; }
+  .cl.cl-stack .cl-note .cl-long { display: none; }
+  .cl.cl-stack .pvc-learn { gap: 3px; }
+  .cl.cl-stack .pvc-howto { display: none; }
+  .cl.cl-stack .pvc-examples button { min-height: 32px; padding-top: 1px; padding-bottom: 2px; }
+  .cl.cl-stack .pvc-act-row { min-height: 40px; }
+  .cl.cl-stack .pvc-outcome { --pvc-outcome-lines: 2; }
+  .cl.cl-stack .pvc-act { min-height: 40px; }
+  .cl.cl-stack .pvc-outcome { font-size: 12.5px; line-height: 1.42; }
+  .cl.cl-stack .pvc-rule { font-size: 12px; line-height: 1.4; --pvc-rule-lines: 2; }
+  .cl.cl-stack .cl-lead.pvc-note { font-size: 13px; line-height: 1.45; padding: 4px 9px; }
+  .cl.cl-stack .cl-steppers { padding: 0; }
+}
+/* a short phone embed (390 × 520): the step words go too (the action and the reset still walk the steps) */
+@container pvc (max-aspect-ratio: 1/1) and (max-height: 600px) {
+  .cl.cl-stack .pvc-panel { height: 56cqh; }
+  .cl.cl-stack .pvc-examples { display: none; }
+}
+/* the lead-in line in a tall side panel (a laptop, a tablet), where there is room for it */
+@container pvc-panel (min-height: 560px) {
+  .cl .cl-lead:not(.pvc-note) { display: block; margin-top: 4px; }
+  .cl .cl-graphbox { flex: 0 1 auto; }
+  .cl .cl-graph { flex: none; height: 300px; }
+}

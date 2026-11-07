@@ -1,0 +1,82 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "coulombs-law",
+  "title": "Coulomb's law (কুলম্বের সূত্র)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 279,
+  "topic": "10.4",
+  "placement": "Book page 279, topic 10.4 বৈদ্যুতিক বল: কুলম্বের সূত্র, চিত্র ১০.০৯ and the উদাহরণ with চিত্র ১০.১০ (a) and (b) (pp. 279–283).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Coulomb's law (book pages 279–283, topic 10.4, চিত্র ১০.০৯ and ১০.১০). Two small polished metal spheres (point charges) on clear acrylic (insulating) stands over a wooden metre rule printed in cm, on a plain sand bench in a calm deep-blue setting. A sphere's charge is its colour (positive red, negative blue) and always its white sign. Every force arrow (teal, outlined) lies on the line of the charges and starts on its own sphere: toward the other for a pull, away for a push; a scale note on the view gives the arrows' scale (1 cm = … N). Five steps, one tap each: (1) the book's example (a), +1 C and −1 C at 10 cm, two equal and opposite pulls (আকর্ষণ), with the book's sign rule as a small table in the panel; (2) the right sphere turns positive and the arrows turn round (বিকর্ষণ); (3) twice the distance: the right sphere slides to 20 cm, its arrows drop to a quarter beside a faint copy of the old one (labelled 'at 10 cm'), and the panel's F–r graph shows the 1/r² curve with both points; (4) the law F = kq₁q₂/r², k = 9 × 10⁹ Nm²/C², worked live with the student's numbers (back at the book's −9 × 10¹¹ N), steppers for q₁ and q₂ (−2 … +2 C) and the sphere dragged from 10 to 30 cm; (5) the book's example (b): +9 C and +16 C 1 m apart (bigger spheres) and a third charge +q between them, pushed right by F₁ and left by F₂ (⟵ ● ⟶); the student drags +q (or the action slides it) until they balance at x = 0.43 m, 1 − x = 0.57 m, F₁ = F₂ = 4.4 × 10¹¹ N, where the graph of the net force on +q (taken as +1 C) crosses zero. A calm intro card; per step the result and the rule in the book's words; the kit's drag handles, rotate cue and how-to row (wide panels). Test tab: five questions read off the picture (which way for a random pair of signs, twice as far, three times the charge, what a negative F means, the no-force point between +4 C and +1 C), each wrong choice with its own note. Phone-first, Bangla and English.",
+  "tags": ["electric force", "coulomb's law", "static electricity", "inverse square", "charge", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "attract", "animate": false } },
+    { "name": "set", "payload": { "step": "repel", "animate": false } },
+    { "name": "set", "payload": { "step": "distance", "animate": false } },
+    { "name": "set", "payload": { "step": "law", "q1": 2, "q2": -1, "r": 0.2, "animate": false } },
+    { "name": "set", "payload": { "step": "balance", "x": 0.43, "animate": false } },
+    { "name": "set", "payload": { "find": true } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "step": "distance", "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [] }],
+    "video": {
+      "kind": "script",
+      "seconds": 26,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "step": "attract" } },
+        { "at": 4.4, "command": "set", "payload": { "step": "repel" } },
+        { "at": 8.4, "command": "set", "payload": { "step": "distance" } },
+        { "at": 13.2, "command": "set", "payload": { "step": "law" } },
+        { "at": 17.4, "command": "set", "payload": { "step": "balance" } },
+        { "at": 23.2, "command": "set", "payload": { "find": true } }
+      ]
+    }
+  }
+}
