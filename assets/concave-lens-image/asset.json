@@ -1,0 +1,103 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "concave-lens-image",
+  "title": "Image in a concave lens (অবতল লেন্সে প্রতিবিম্ব)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 257,
+  "topic": "9.4.1",
+  "placement": "Book page 257, topic 9.4.1 অবতল লেন্স: next to চিত্র ৯.১৮ (parallel rays spread as if from F), চিত্র ৯.১৯ (rays aimed at the focus leave parallel) and চিত্র ৯.২০ (the pencil XY and its smaller image X′Y′), pp. 257–259.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the image in a concave lens, book pages 257–259, topic 9.4.1, next to চিত্র ৯.১৮–৯.২০. A glass biconcave lens (f = −15 cm, thin in the middle and thick at the edge) stands in a black ring on an optical bench with a printed cm scale, the book's pencil XY on its left. From the far side the glass shows the pencil small and upright, computed exactly with the thin-lens map. Then the book's figures one tap at a time: parallel rays spread as if from F (the focal length), rays aimed at F′ leave parallel, and the three special rays from the pencil's tip, each named on itself; their lines meet at X′, where the virtual image X′Y′ grows (virtual, upright, smaller, between the lens and F). Seen from the eye's side, the glass shows exactly that X′Y′. The pencil then goes to 10, 15, 30 and 60 cm with live readouts, a graph of the image's distance and height, and a table: the image never passes F. Five test questions on the picture. Offline, Bangla and English.",
+  "tags": [
+    "light",
+    "refraction",
+    "lens",
+    "concave lens",
+    "virtual image",
+    "ray diagram",
+    "focal length",
+    "optical bench",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "stage",
+      "label": "What is shown",
+      "type": "select",
+      "options": [
+        ["see", "the pencil seen through the lens"],
+        ["par", "parallel rays spread (চিত্র ৯.১৮)"],
+        ["focus", "extended back to F; the focal length"],
+        ["conv", "rays aimed at F′ leave parallel (চিত্র ৯.১৯)"],
+        ["r2", "rule (ii): the parallel ray"],
+        ["r1", "rule (i): the ray toward the centre"],
+        ["r3", "rule (iii): the ray toward F′"],
+        ["image", "the image X′Y′ (চিত্র ৯.২০)"],
+        ["eye", "the image seen from the eye's side"],
+        ["cases", "the pencil at the row's distances"],
+        ["graph", "the graph of the image's distance and height"],
+        ["table", "the table"]
+      ],
+      "default": "see"
+    },
+    { "name": "u", "label": "Pencil's distance from the lens (cm)", "type": "number", "default": "30" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered ring and the words on the handle", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "stage": "cases", "u": 30, "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "stage": "image" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 24,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "stage": "par" } },
+        { "at": 5, "command": "set", "payload": { "stage": "focus", "animate": false } },
+        { "at": 7, "command": "set", "payload": { "stage": "image", "u": 30 } },
+        { "at": 15, "command": "set", "payload": { "stage": "eye" } },
+        { "at": 20, "command": "set", "payload": { "stage": "cases", "u": 60, "animate": false } }
+      ]
+    }
+  }
+}
