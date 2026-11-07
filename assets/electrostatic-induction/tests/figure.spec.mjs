@@ -51,6 +51,45 @@ test(`${ID}: two spheres: electrons cross where they touch, and the charges stay
   expect(log.errors).toEqual([]);
 });
 
+test(`${ID}: a landing on any step puts the electrons on the right sphere`, async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize({ width: 600, height: 300 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, ID);
+  const neutral = { sphere1: 0, sphere2: 0 };
+  const split = { sphere1: -8, sphere2: 8 };
+  await fig.call('set', { step: 'apart', animate: false }); // straight from the first screen, nothing played
+  expect(await fig.call('get')).toMatchObject({ step: 'apart', charge: split, moved: 8 });
+  await fig.call('set', { step: 'comb', animate: false });
+  expect((await fig.call('get')).charge).toEqual(split);
+  await fig.call('set', { step: 'near', animate: false }); // back: sphere 2 gets its electrons back
+  expect(await fig.call('get')).toMatchObject({ step: 'near', charge: neutral, moved: 8 });
+  await fig.call('set', { step: 'pair', animate: false });
+  expect((await fig.call('get')).charge).toEqual(split);
+  await fig.call('set', { step: 'near', animate: false });
+  expect((await fig.call('get')).charge).toEqual(neutral);
+  await fig.call('set', { step: 'intro', animate: false });
+  expect(await fig.call('get')).toMatchObject({ moved: 0, charge: neutral });
+  // the test's scenes, then back to learning from the step the student left
+  await fig.call('practice');
+  await fig.advance(900);
+  await fig.frame.locator('[data-mode="explore"]').first().click();
+  await fig.advance(600);
+  await fig.call('set', { step: 'near', animate: false });
+  expect((await fig.call('get')).charge).toEqual(neutral);
+  expect(log.errors).toEqual([]);
+});
+
+for (const step of ['apart', 'comb']) {
+  test(`${ID}: opened at ?step=${step} the spheres are charged, opposite`, async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 300 });
+    const log = await preparePage(page);
+    const fig = await openFigure(page, ID, { params: { step } });
+    expect(await fig.call('get')).toMatchObject({ step, charge: { sphere1: -8, sphere2: 8 }, busy: false });
+    expect(log.errors).toEqual([]);
+  });
+}
+
 test(`${ID}: the comb plays to the end and leads to the test; nothing runs ahead of the student`, async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 600, height: 300 });
@@ -70,7 +109,7 @@ test(`${ID}: the comb plays to the end and leads to the test; nothing runs ahead
   expect(log.errors).toEqual([]);
 });
 
-test(`${ID}: a drag of the rod changes how many electrons move; arrows do too`, async ({ page }) => {
+test(`${ID}: a drag of the rod changes how many electrons move; the arrow keys do too`, async ({ page }) => {
   test.setTimeout(60_000);
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
@@ -99,7 +138,7 @@ test(`${ID}: the test, every answer right, and the score says so`, async ({ page
   await page.setViewportSize({ width: 800, height: 500 });
   const log = await preparePage(page);
   const fig = await openFigure(page, ID);
-  const right = { sign: 'নেগেটিভ চার্জ', moves: 'ইলেকট্রন (নেগেটিভ)', apart: 'পজিটিভ চার্জ', paper: 'পজিটিভ চার্জ', fly: 'নেগেটিভ চার্জে ভরে বিকর্ষিত হয়' };
+  const right = { sign: 'নেগেটিভ চার্জ', moves: 'ইলেকট্রন (নেগেটিভ)', apart: 'পজিটিভ চার্জ', paper: 'পজিটিভ চার্জ', fly: 'চিরুনি থেকে নেগেটিভ চার্জ পেয়ে' };
   const events = [];
   await fig.call('practice');
   await fig.advance(900);

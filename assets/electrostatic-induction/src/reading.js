@@ -84,7 +84,7 @@ export function spreadPoints(candidates, count, avoid = [], inside = () => true)
  * and NMAX places spread evenly over the whole sphere for extra electrons with no rod near. `turn` turns the sites'
  * pattern, so two spheres don't look stamped from one mould.
  */
-export function layout(toward = [-1, 0, 0], { capDeg = 62, turn = 0.35 } = {}) {
+export function layout(toward = [-1, 0, 0], { capDeg = 72, turn = 0.35 } = {}) {
   const sites = fibonacci(SITES, turn);
   const t = norm(toward);
   const dense = fibonacci(420, 0.1);

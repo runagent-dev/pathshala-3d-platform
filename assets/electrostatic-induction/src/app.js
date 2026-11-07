@@ -65,7 +65,7 @@ const PREV = { near: 'intro', pair: 'near', apart: 'pair', comb: 'apart' };
 const INK = '#1d2733';
 const PULL = '#0ca678'; // a force arrow: teal (the chapter's shared colour)
 const ARROW_R = 0.0011;
-const CHIP = { sphere: 0.0125, rod: 0.0105, comb: 0.0095, paper: 0.0085 };
+const CHIP = { sphere: 0.0118, rod: 0.0105, comb: 0.0095, paper: 0.0085 };
 const DOUBLE_TAP = 420; // ms
 const MARGIN = { top: 50, bottom: 14, side: 10 };
 // how long things take (s): slow enough to follow
@@ -283,12 +283,13 @@ export function createApp(root, options = {}) {
   }
   let electronKey = '';
   const front = V(0, 0, 0);
-  function syncElectrons({ stagger = 0, force = false } = {}) {
+  function syncElectrons({ stagger = 0, force = false, cross = false } = {}) {
     const key = `${s.phase}|${moved()}`;
     if (key === electronKey && !force) return;
     electronKey = key;
     front.copy(camera.position).sub(cA).normalize();
-    const touching = s.phase === 'pair' && Math.abs(s.bx - B_X.touch) < 1e-4;
+    // `cross`: a landing, no trip is played, so electrons may change sphere even with the spheres apart
+    const touching = cross || (s.phase === 'pair' && Math.abs(s.bx - B_X.touch) < 1e-4);
     electrons.setTargets(targetsFor(), { touching, stagger, front });
     charges.touch();
     stage.invalidate();
@@ -401,6 +402,9 @@ export function createApp(root, options = {}) {
     rod.root.visible = s.gap < 0.3;
     cB.set(s.bx, SPHERE_Y, 0);
     B.root.position.x = s.bx;
+    // sphere 2 waits out of the story until step 2: nothing of it at the edge of the view, from any angle
+    const secondIn = s.bx < B_X.park - 1e-4;
+    B.root.visible = secondIn;
     for (let k = 0; k < 6; k++) charges.plus.chips[PLUS.rod + k].anchor.copy(tip).addScaledVector(ROD_AXIS, 0.022 + k * 0.024);
     for (let k = 0; k < 6; k++) charges.plus.chips[PLUS.rod + k].scale = rod.root.visible ? 1 : 0;
     HOME.forEach((h, i) => {
@@ -409,10 +413,10 @@ export function createApp(root, options = {}) {
         .set(...h.dir)
         .multiplyScalar(R)
         .add(h.sp ? cB : cA);
-      c.scale = h.sp === 0 && s.hide.a ? 0 : 1;
+      c.scale = (h.sp === 0 && s.hide.a) || (h.sp === 1 && !secondIn) ? 0 : 1;
     });
     electrons.write();
-    for (const e of electrons.list) charges.minus.chips[e.i].scale = e.sp === 0 && s.hide.a ? 0 : 1;
+    for (const e of electrons.list) charges.minus.chips[e.i].scale = (e.sp === 0 && s.hide.a) || (e.sp === 1 && !secondIn) ? 0 : 1;
     syncComb();
     // the pull on the sphere, while the rod is near one sphere
     const n = induced(s.gap);
@@ -453,6 +457,15 @@ export function createApp(root, options = {}) {
   noteEl.className = 'ei-note';
   noteEl.textContent = t('note_few');
   ui.stage.append(noteEl);
+  // after step 3 nothing in the view can be tapped: a small word at the edge says where the story goes
+  const nextBtn = document.createElement('button');
+  nextBtn.type = 'button';
+  nextBtn.className = 'ei-next';
+  nextBtn.dataset.act = 'next';
+  nextBtn.textContent = t('next_comb');
+  nextBtn.setAttribute('aria-label', t('act_comb'));
+  nextBtn.hidden = true;
+  ui.stage.append(nextBtn);
   function boxOf(el) {
     if (!el) return null;
     const r = el.getBoundingClientRect();
@@ -467,9 +480,12 @@ export function createApp(root, options = {}) {
       ui.hint,
       arrowBox,
       () => action?.box(),
-      () => action?.ringBox(),
+      () => (s.step === 'intro' ? action?.ringBox() : null), // later the ring goes round a sphere: labels may cross its line
       () => boxOf(rotateEl),
       () => boxOf(noteEl),
+      () => boxOf(nextBtn),
+      () => boxOf(root.querySelector('.pvc-panel-toggle')),
+      () => boxOf(root.querySelector('.pvc-dh-word')),
       () => rodHandle?.box(),
     ],
   });
@@ -500,7 +516,8 @@ export function createApp(root, options = {}) {
           .addScaledVector(ROD_AXIS, 0.05 + 0.055 * (1 - s.gap / G_FAR))
           .clone(),
       color: COLORS.plus,
-      spots: [spot(30, -34), spot(46, -26), spot(14, -44), spot(-34, 36), spot(-48, 28)],
+      spots: [spot(-34, 36), spot(-48, 28), spot(30, -34), spot(46, -26), spot(14, -44)],
+      optional: true, // the tightest frame's first screen has no free room: the card names the rod
       show: () => s.frame !== 'comb' && s.gap < 0.2 && (s.step === 'intro' || s.step === 'near' || s.quizKind === 'sign'),
     },
     stand: {
@@ -521,7 +538,7 @@ export function createApp(root, options = {}) {
       text: () => t('lbl_pos'),
       point: () => onA(farSide.x, farSide.y, farSide.z)(),
       color: COLORS.plus,
-      spots: [...RIGHT_OF, ...BELOW],
+      spots: [...RIGHT_OF, ...BELOW, spot(-14, 54), spot(-34, 48)],
       show: () => learning() && s.phase === 'single' && s.step === 'near' && induced(s.gap) >= 2,
     },
     pull: {
@@ -543,7 +560,7 @@ export function createApp(root, options = {}) {
       text: () => (learning() ? t('lbl_s2_pos') : t('lbl_s2')),
       point: onB(0.3, 1, 0.3),
       color: () => (learning() ? COLORS.plus : INK),
-      spots: [...ABOVE, ...RIGHT_OF],
+      spots: [...ABOVE, ...RIGHT_OF, spot(-44, -26), spot(-64, -34)],
       show: () =>
         (s.frame === 'pair' || s.frame === 'apart') && !s.busy && moved() > 0 && (s.step === 'pair' || s.step === 'apart' || s.quizKind === 'apart'),
     },
@@ -571,7 +588,7 @@ export function createApp(root, options = {}) {
       const key = `${text}|${color}`;
       if (want && anno.has(id) && shown.get(id) !== key) anno.remove(id);
       if (want && !anno.has(id)) {
-        anno.add(id, { text, point: L.point, kind: 'force', color, spots: L.spots });
+        anno.add(id, { text, point: L.point, kind: 'force', color, spots: L.spots, optional: L.optional });
         shown.set(id, key);
       } else if (!want && anno.has(id)) anno.remove(id);
     }
@@ -727,7 +744,7 @@ export function createApp(root, options = {}) {
     s.comb = e.comb;
     s.combT = e.combT;
     syncScene();
-    syncElectrons({ force: true });
+    syncElectrons({ force: true, cross: true });
     electrons.snap();
     charges.touch();
   }
@@ -875,6 +892,7 @@ export function createApp(root, options = {}) {
       action.set({ worldRadius: s.step === 'intro' ? 0 : R * 1.08 });
     }
     noteEl.textContent = t(s.step === 'comb' ? 'note_slow' : 'note_few');
+    nextBtn.hidden = !(s.step === 'apart' && !s.busy && s.mode === 'explore' && o.coach);
     homeBtn.hidden = s.step === 'intro';
     homeBtn.disabled = s.busy;
     replayBtn.hidden = s.step === 'intro';
@@ -1251,6 +1269,7 @@ export function createApp(root, options = {}) {
       quiz.choose(picked);
     }
     if (b.dataset.act === 'home') goHome();
+    else if (b.dataset.act === 'next') doAction();
     else if (b.dataset.act === 'replay') replay();
     else if (b.dataset.act === 'q-next') quiz.next();
     else if (b.dataset.act === 'q-again') quiz.start();
@@ -1294,7 +1313,11 @@ export function createApp(root, options = {}) {
   applyCamera();
   refresh();
   // the parts of later steps exist from the start, hidden: compile them now so the first tap freezes nothing
-  stage.warmUp({ show: [combGroup, pull.root] });
+  // (the arrow's meshes stay hidden until it has a length)
+  pull.set(PULL_FROM, PULL_DIR, 0.03);
+  // and one more frame with the shadow maps: three links the shadow pass again once the lights are known (the second
+  // shadow render), and that should happen here, not on the first tap
+  Promise.resolve(stage.warmUp({ show: [combGroup, pull.root] })).then(() => stage.invalidate());
   const ready = (async () => {
     if (o.step !== 'intro' && o.step in END) await go(o.step, { animate: false });
     if (o.mode === 'quiz') quiz.start();

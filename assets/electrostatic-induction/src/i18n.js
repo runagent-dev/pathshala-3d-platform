@@ -51,7 +51,7 @@ export const STRINGS = {
 
     // the action and the quiet buttons
     act_near: 'দণ্ডটি কাছে আনো',
-    act_pair: 'গোলক দুটি ছোঁয়াও',
+    act_pair: 'গোলক দুটি ছুঁইয়ে দাও',
     act_apart: 'গোলক আলাদা করো',
     act_comb: 'চিরুনি কাছে আনো',
     act_quiz: 'পরীক্ষা দাও',
@@ -79,7 +79,7 @@ export const STRINGS = {
 
     // the rule: the book's words, the book's term last and in bold
     rule_near:
-      'কাচ দণ্ড পজিটিভ চার্জযুক্ত, তাই গোলকের নেগেটিভ চার্জ আকর্ষিত হয়ে কাছে চলে আসে, পেছন দিকে পজিটিভ চার্জ থাকে। সরে শুধু ইলেকট্রন। একে বলে <b>বৈদ্যুতিক আবেশ</b>।',
+      'অপরিবাহী স্ট্যান্ডের ওপর গোলকের চার্জ বেরিয়ে যেতে পারে না। কাচ দণ্ড পজিটিভ চার্জযুক্ত, তাই নেগেটিভ চার্জ আকর্ষিত হয়ে কাছে চলে আসে, পেছন দিকে পজিটিভ চার্জ থাকে। সরে শুধু ইলেকট্রন। একে বলে <b>বৈদ্যুতিক আবেশ</b>।',
     rule_near_none: 'দণ্ড সরিয়ে নিলে ইলেকট্রনগুলো আবার জোড়ায় ফিরে যায়, গোলক আগের মতোই <b>চার্জহীন</b>।',
     rule_pair: 'ছুঁয়ে থাকা দুটি গোলক মিলে একটাই ধাতব বস্তু: কাছের গোলকে নেগেটিভ, দূরের গোলকে পজিটিভ চার্জ <b>আবেশিত</b> হয়।',
     rule_apart: 'দণ্ড থাকতেই আলাদা করায় ইলেকট্রন আর ফিরতে পারেনি। দুটি ধাতব গোলককে একসাথে রেখে তাদের ভেতরে <b>ভিন্ন চার্জ আবেশিত</b> করা সম্ভব।',
@@ -101,7 +101,8 @@ export const STRINGS = {
     lbl_paper: 'কাগজের টুকরো',
 
     note_few: 'কয়েকটি চার্জ আঁকা, আসলে অসংখ্য',
-    note_slow: 'সময় ধীর করে দেখানো',
+    note_slow: 'সময় ধীর; চার্জ বাড়িয়ে আঁকা',
+    next_comb: 'চিরুনি ›',
 
     hint_wait: 'একটু দাঁড়াও, দেখো কী হয়।',
     hint_drag_later: 'এই ধাপে দণ্ড নিজে নিজে সরে।',
@@ -139,7 +140,7 @@ export const STRINGS = {
     why_moves: '<b>ইলেকট্রন</b>। ধাতুর ইলেকট্রন সরতে পারে, প্রোটন নিউক্লিয়াসে আটকে থাকে।',
     mis_mv_proton: 'প্রোটন নিউক্লিয়াসে আটকে থাকে, সরে না।',
     mis_mv_both: 'একটি পজিটিভ চার্জও সরেনি; সরেছে কেবল ইলেকট্রন।',
-    mis_mv_rod: 'দণ্ড গোলক ছোঁয়নি, তাই কোনো চার্জ দণ্ড থেকে আসেনি।',
+    mis_mv_rod: 'দণ্ড গোলককে ছুঁয়ে যায়নি, তাই কোনো চার্জ দণ্ড থেকে আসেনি।',
 
     q_apart: 'দণ্ড রেখেই গোলক দুটি আলাদা করা হলো, তারপর দণ্ড সরানো হলো। গোলক {s2}-এ কী থাকবে?',
     c_ap_right: 'পজিটিভ চার্জ',
@@ -162,11 +163,11 @@ export const STRINGS = {
     mis_pp_both: 'মোট চার্জ শূন্য, কিন্তু কাছের অংশে পজিটিভ বেশি।',
 
     q_fly: 'কাগজের টুকরো চিরুনির গায়ে লেগে গেছে। একটু পরেই ছিটকে নিচে পড়ে কেন?',
-    c_fl_right: 'নেগেটিভ চার্জে ভরে বিকর্ষিত হয়',
-    c_fl_heavy: 'কাগজের ওজন আকর্ষণের চেয়ে বেশি',
-    c_fl_plus: 'কাগজ পজিটিভ হয়ে যায়',
-    c_fl_air: 'বাতাসে উড়ে যায়',
-    why_fly: '<b>নেগেটিভ চার্জে ভরে বিকর্ষিত হয়</b>। চিরুনির নেগেটিভ চার্জ কাগজে চলে আসে; একই চার্জ বিকর্ষণ করে।',
+    c_fl_right: 'চিরুনি থেকে নেগেটিভ চার্জ পেয়ে',
+    c_fl_heavy: 'ওজন আকর্ষণের চেয়ে বেশি হয়ে',
+    c_fl_plus: 'চিরুনি থেকে পজিটিভ চার্জ পেয়ে',
+    c_fl_air: 'চিরুনির বাতাসের ধাক্কা পেয়ে',
+    why_fly: '<b>চিরুনি থেকে নেগেটিভ চার্জ পেয়ে</b>। কাগজ নেগেটিভ চার্জে ভরে যায়; একই চার্জ বিকর্ষণ করে।',
     mis_fl_heavy: 'ওজন বেশি হলে কাগজ শুরুতেই লাফিয়ে উঠত না।',
     mis_fl_plus: 'চিরুনি থেকে কাগজ পায় নেগেটিভ চার্জ, পজিটিভ নয়।',
     mis_fl_air: 'বাতাস নয়, চার্জের বিকর্ষণে কাগজ ছিটকে পড়ে।',
@@ -233,7 +234,7 @@ export const STRINGS = {
     out_comb: 'The bits of paper jumped up to the comb, then turned <b>negative</b> and flew off.',
 
     rule_near:
-      'The glass rod is positive, so the sphere’s negative charges are pulled to the near side; positive charge stays at the back. Only electrons move. This is <b>electrical induction</b>.',
+      'On its insulating stand the sphere keeps its charge. The positive rod pulls negative charge near; positive stays at the back. Only electrons move. This is <b>electrical induction</b>.',
     rule_near_none: 'Take the rod away and the electrons go back to their pairs: the sphere has <b>no charge</b> again.',
     rule_pair: 'Two touching spheres are one metal body: negative charge is <b>induced</b> on the near sphere, positive on the far one.',
     rule_apart:
@@ -244,18 +245,19 @@ export const STRINGS = {
     lbl_sphere: 'Metal sphere',
     lbl_rod: 'Glass rod (+)',
     lbl_stand: 'Insulating stand',
-    lbl_neg: 'Negative charge',
-    lbl_pos: 'Positive charge',
+    lbl_neg: 'Negative (−)',
+    lbl_pos: 'Positive (+)',
     lbl_pull: 'Attraction',
     lbl_s1: 'Sphere {s1}',
     lbl_s2: 'Sphere {s2}',
-    lbl_s1_neg: 'Sphere {s1}: negative',
-    lbl_s2_pos: 'Sphere {s2}: positive',
+    lbl_s1_neg: 'Sphere {s1} (−)',
+    lbl_s2_pos: 'Sphere {s2} (+)',
     lbl_comb: 'Comb (−)',
     lbl_paper: 'Bits of paper',
 
     note_few: 'A few charges drawn; really a huge number',
-    note_slow: 'Time slowed down',
+    note_slow: 'Time slowed; charges drawn large',
+    next_comb: 'Comb ›',
 
     hint_wait: 'Wait a moment and watch.',
     hint_drag_later: 'In this step the rod moves by itself.',
@@ -315,11 +317,11 @@ export const STRINGS = {
     mis_pp_both: 'The total is zero, but the near part has more positive.',
 
     q_fly: 'A bit of paper has stuck to the comb. Why does it soon fly off and fall?',
-    c_fl_right: 'It fills with negative charge and is repelled',
-    c_fl_heavy: 'Its weight beats the pull',
-    c_fl_plus: 'The paper turns positive',
-    c_fl_air: 'The air blows it away',
-    why_fly: '<b>It fills with negative charge and is repelled</b>: like charges repel.',
+    c_fl_right: 'It gets negative charge from the comb',
+    c_fl_heavy: 'It gets heavier than the pull',
+    c_fl_plus: 'It gets positive charge from the comb',
+    c_fl_air: 'It gets a puff of air from the comb',
+    why_fly: '<b>It gets negative charge from the comb</b>: like charges repel.',
     mis_fl_heavy: 'If it were too heavy it would not have jumped up at all.',
     mis_fl_plus: 'From the comb the paper gets negative charge, not positive.',
     mis_fl_air: 'Not the air: the repulsion of like charges throws it off.',

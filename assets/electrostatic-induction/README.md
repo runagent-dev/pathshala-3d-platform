@@ -4,6 +4,8 @@
 
 Interactive 3D figure for the Pathshala book.
 
+The GLB holds the two spheres on their stands, the glass rod, the comb and the paper. It has no charge signs: the "+" and "−" exist only in the live figure.
+
 ## Embed
 
 ```html

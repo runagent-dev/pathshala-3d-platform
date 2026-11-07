@@ -59,7 +59,7 @@ test('the near cap lies toward the rod, clear of the fixed charges, nearest plac
   assert.equal(L.cap.length, NMAX * 2);
   assert.equal(L.spread.length, NMAX);
   for (const p of L.cap) {
-    assert.ok(angle(p, toward) < (62 * Math.PI) / 180 + 1e-9);
+    assert.ok(angle(p, toward) < (72 * Math.PI) / 180 + 1e-9);
     for (const q of L.sites) assert.ok(angle(p, q) > 0.05);
   }
   for (let i = 1; i < L.cap.length; i++) assert.ok(angle(L.cap[i], toward) >= angle(L.cap[i - 1], toward) - 1e-9);

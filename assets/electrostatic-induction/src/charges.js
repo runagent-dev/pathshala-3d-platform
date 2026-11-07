@@ -61,10 +61,10 @@ function chipSet(sign, count) {
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   mesh.frustumCulled = false;
   mesh.userData.noExport = true;
-  mesh.renderOrder = 6;
+  mesh.renderOrder = sign === '+' ? 7 : 6; // the fixed "+" over any "−" that crowds it
   const chips = [];
   for (let i = 0; i < count; i++) chips.push({ anchor: new THREE.Vector3(), size: 0.01, scale: 0, centre: null, push: 0.002, shift: 0 });
-  return { mesh, chips };
+  return { mesh, chips, lift: sign === '+' ? 0.0008 : 0 };
 }
 
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
@@ -72,6 +72,7 @@ const camPos = new THREE.Vector3();
 const fwd = new THREE.Vector3();
 const camUp = new THREE.Vector3();
 const toCam = new THREE.Vector3();
+const edgeward = new THREE.Vector3();
 const dir = new THREE.Vector3();
 const p = new THREE.Vector3();
 const sc = new THREE.Vector3();
@@ -91,20 +92,26 @@ export function createCharges({ plus = 64, minus = 64 } = {}) {
         continue;
       }
       let fade = 1;
+      let rim = 1;
       p.copy(c.anchor);
       let depth;
       if (c.centre) {
         dir.copy(c.anchor).sub(c.centre).normalize();
         toCam.copy(camPos).sub(c.centre).normalize();
         const f = dir.dot(toCam);
-        fade = THREE.MathUtils.smoothstep(f, -0.24, 0.02);
+        fade = THREE.MathUtils.smoothstep(f, -0.04, 0.1);
         if (fade <= 0) {
           mesh.setMatrixAt(i, ZERO);
           continue;
         }
-        if (c.shift) p.addScaledVector(camUp, c.shift * 0.5 * c.size);
+        // on the limb a chip is smaller and drawn a little inward, so it never hangs over the sphere's outline
+        const face = THREE.MathUtils.smoothstep(f, 0, 0.5);
+        rim = 0.74 + 0.26 * face;
+        edgeward.copy(dir).addScaledVector(toCam, -f);
+        p.addScaledVector(edgeward, -0.55 * c.size * (1 - face));
+        if (c.shift) p.addScaledVector(camUp, c.shift * 0.5 * c.size * rim);
         // in front of the whole sphere, on the same line of sight (so it is drawn where it is, never cut by the sphere)
-        depth = toCam.copy(c.centre).sub(camPos).dot(fwd) - R - 0.002;
+        depth = toCam.copy(c.centre).sub(camPos).dot(fwd) - R - 0.002 - set.lift;
       } else {
         if (c.shift) p.addScaledVector(camUp, c.shift * 0.5 * c.size);
         depth = toCam.copy(p).sub(camPos).dot(fwd) - c.push;
@@ -112,7 +119,7 @@ export function createCharges({ plus = 64, minus = 64 } = {}) {
       const d0 = toCam.copy(p).sub(camPos).dot(fwd);
       const k = d0 > 1e-4 ? Math.min(1, Math.max(0.05, depth / d0)) : 1;
       p.sub(camPos).multiplyScalar(k).add(camPos);
-      const s = c.size * c.scale * fade * k;
+      const s = c.size * c.scale * fade * rim * k;
       m.compose(p, set.quaternion, sc.set(s, s, s));
       mesh.setMatrixAt(i, m);
     }

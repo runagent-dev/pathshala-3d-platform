@@ -141,7 +141,7 @@ export function createMaterials() {
       clearcoat: 0.6,
       clearcoatRoughness: 0.3,
     }),
-    paper: new THREE.MeshStandardMaterial({ name: 'Paper', color: 0xf7f5ee, roughness: 0.92, metalness: 0, side: THREE.DoubleSide }),
+    paper: new THREE.MeshStandardMaterial({ name: 'Paper', vertexColors: true, roughness: 0.92, metalness: 0, side: THREE.DoubleSide }),
     hit: new THREE.MeshBasicMaterial({ visible: false }),
   };
 }
@@ -257,9 +257,11 @@ export function createComb(mats) {
   return { root, mesh, length: L };
 }
 
-/** Bits of paper: one irregular shape, instanced, lying on the table. */
+/**
+ * Bits of paper: one irregular shape, instanced, lying on the table. A cool grey rim (vertex colours, no extra draw)
+ * keeps the white bits apart from the light sand.
+ */
 export function createPaper(mats, count) {
-  const s = new THREE.Shape();
   const pts = [
     [-0.5, -0.38],
     [0.18, -0.5],
@@ -268,10 +270,30 @@ export function createPaper(mats, count) {
     [-0.12, 0.5],
     [-0.48, 0.12],
   ];
-  s.moveTo(pts[0][0], pts[0][1]);
-  for (const [x, y] of pts.slice(1)) s.lineTo(x, y);
-  s.closePath();
-  const geo = new THREE.ShapeGeometry(s).rotateX(-Math.PI / 2);
+  const n = pts.length;
+  const pos = [];
+  const col = [];
+  const put = (x, y, c) => {
+    pos.push(x, y, 0);
+    col.push(...c);
+  };
+  const rim = new THREE.Color(0x7f93ad).toArray();
+  const face = new THREE.Color(0xfbfcff).toArray();
+  for (const [x, y] of pts) put(x, y, rim); // 0…n−1, the outline
+  for (const [x, y] of pts) put(x * 0.88, y * 0.88, rim); // n…2n−1, the rim's inner edge
+  for (const [x, y] of pts) put(x * 0.88, y * 0.88, face); // 2n…3n−1, the white face
+  put(0, 0, face);
+  const index = [];
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    index.push(i, j, n + j, i, n + j, n + i, 3 * n, 2 * n + i, 2 * n + j);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.setIndex(index);
+  geo.computeVertexNormals();
+  geo.rotateX(-Math.PI / 2);
   const mesh = new THREE.InstancedMesh(geo, mats.paper, count);
   mesh.name = 'PaperBits';
   mesh.castShadow = true;

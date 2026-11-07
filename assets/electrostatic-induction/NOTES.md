@@ -27,7 +27,7 @@ charge near, like charge far); split the conductor while the rod is near and it 
 - **Test**: five questions; the signs are hidden where they would give the answer and come back with the worked answer.
 
 ## Stylisation (honest notes on the view)
-- "কয়েকটি চার্জ আঁকা, আসলে অসংখ্য" shows in the corner; in the comb scene it reads "সময় ধীর করে দেখানো".
+- "কয়েকটি চার্জ আঁকা, আসলে অসংখ্য" shows in the corner; in the comb scene it reads "সময় ধীর; চার্জ বাড়িয়ে আঁকা".
 - The "−" stand for free electrons. The book says the charges "সরে যায়" and that positive goes to the back; 10.1/10.2 say electrons
   are what move, and common.md asks for that: every "+" stays put, the "+" that appear at the back are left bare.
 - The rod's law is drawn qualitatively (the book gives no formula here). The panel's numbers are counts of drawn electrons, not
@@ -35,14 +35,17 @@ charge near, like charge far); split the conductor while the rod is near and it 
 - Paper is an insulator, so in reality its charges shift inside each molecule; the book treats it as "near part +, far part −" and
   so does the figure.
 - Earthing is not in 10.3, so it is not in this figure.
+- The clear acrylic post stands for the book's "বিদ্যুৎ অপরিবাহী স্ট্যান্ড" (the book draws wood; the review agreed), and keeps its label.
+- Sphere ২ is not in the scene until step ২. The GLB has no charge signs.
 
 ## Terms (as in the book)
 বৈদ্যুতিক আবেশ, আবেশিত, চার্জহীন / চার্জবিহীন বস্তু, ধাতব গোলক, বিদ্যুৎ অপরিবাহী স্ট্যান্ড, কাচ দণ্ড, সিল্ক, পজিটিভ / নেগেটিভ চার্জ,
 ইলেকট্রন, প্রোটন, আকর্ষণ, বিকর্ষণ, চিরুনি, কাগজের টুকরো. The page's spellings: ওপর, পেছন, দণ্ড.
 
-## Performance (measured, shadows on, 844×390)
-Near 24 draws / 20.6k triangles, pair 22 / 26.1k, apart 18 / 23.9k, comb 14 / 13.8k. All "+" are one instanced mesh, all "−"
-another. Renders on demand: idle is 0 draws. Later parts exist at load and are warmed.
+## Performance
+The independent review measured, across the whole figure: at most 70 draws and 55k triangles, idle 0 draws, and p95 about
+1.5 ms of JS per frame under 6× CPU throttling. All "+" are one instanced mesh, all "−" another. Later parts exist at load and
+are warmed, the arrow included.
 
 ## Open questions
-- The book draws wooden stands; the figure uses a clear acrylic post on a turned wooden base so the sphere reads as insulated. Fine?
+None for the book team.
