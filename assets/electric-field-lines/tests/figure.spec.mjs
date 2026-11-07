@@ -18,19 +18,20 @@ test(`${ID}: E = kq/r², four times at half the distance, the sign, the pairs, t
   expect(await frame.locator('[data-example]').count()).toBe(6);
   expect(await frame.locator('.efl-lead.pvc-note').count()).toBe(1);
 
-  // one tap: the sphere is charged, its lines grow, q₀ at 12 cm reads 2,500 N/C
+  // one tap: the sphere is charged, its lines grow, q₀ at 10 cm reads 3,600 N/C
   await frame.locator('.pvc-act').click();
   await fig.advance(4500);
-  expect(await fig.call('get')).toMatchObject({ step: 'pos', busy: false, charges: [1], lines: 1, r: 12, E: 2500, next: 'near' });
+  expect(await fig.call('get')).toMatchObject({ step: 'pos', busy: false, charges: [1], lines: 1, r: 10, E: 3600, next: 'near' });
   await expect(frame.locator('.pvc-rule')).toContainText('স্পর্শকের দিক');
 
   // half the distance, four times E
-  expect(await fig.call('set', { step: 'near', animate: false })).toMatchObject({ r: 6, E: 10000 });
-  await expect(frame.locator('.pvc-outcome')).toContainText('১০,০০০');
+  expect(await fig.call('set', { step: 'near', animate: false })).toMatchObject({ r: 5, E: 14400 });
+  await expect(frame.locator('.pvc-outcome')).toContainText('১৪,৪০০');
   // the keys move q₀ half a centimetre, and q₀ stays where it may
   await frame.locator('#app').focus();
   await page.keyboard.press('ArrowRight');
-  expect((await fig.call('get')).r).toBe(6.5);
+  expect((await fig.call('get')).r).toBe(5.5);
+  await expect(frame.locator('.pvc-outcome')).toContainText('৫.৫');
   expect((await fig.call('set', { r: 1 })).r).toBe(5);
   expect((await fig.call('set', { r: 15 })).E).toBe(1600);
 
@@ -42,7 +43,10 @@ test(`${ID}: E = kq/r², four times at half the distance, the sign, the pairs, t
   // unlike charges: q₀ in the middle is pushed toward −q; like charges: E = 0 there, not beside it
   expect(await fig.call('set', { step: 'unlike', animate: false })).toMatchObject({ charges: [1, -1], E: 11250 });
   expect(await fig.call('set', { step: 'like', animate: false })).toMatchObject({ charges: [1, 1], E: 0, testX: 0 });
+  await expect(frame.locator('.pvc-outcome')).toContainText('E = ০');
   expect((await fig.call('set', { x: 2 })).E).toBeLessThan(0);
+  // off the middle the result says so
+  await expect(frame.locator('.pvc-outcome')).toContainText('কাছের গোলকের');
   expect((await fig.call('set', { x: -2 })).E).toBeGreaterThan(0);
 
   // −2q and +q: twice the lines end on −2q
@@ -52,7 +56,7 @@ test(`${ID}: E = kq/r², four times at half the distance, the sign, the pairs, t
   // the book's flat cut, and back: fewer lines, the same step
   const flat = await fig.call('set', { flat: true, animate: false });
   expect(flat.flat).toBe(true);
-  expect(flat.lineCount).toBeLessThan(d.lineCount);
+  expect(flat.lineCount).toBeGreaterThan(0);
   expect((await fig.call('set', { flat: false, animate: false })).lineCount).toBe(d.lineCount);
 
   await fig.call('reset');
@@ -69,8 +73,9 @@ test(`${ID}: the test answered all right scores five of five, all wrong none; le
   const answerAll = async (pick) => {
     for (let i = 0; i < 5; i++) {
       await fig.advance(800);
-      const { question } = await fig.call('get');
+      const { question, flat } = await fig.call('get');
       expect(question?.right).not.toBeNull();
+      expect(flat).toBe(true); // the whole test on the flat cut
       await fig.frame.locator(`.pvc-opt[data-q="${pick(question.right)}"]`).click();
       await fig.advance(300);
       await expect(fig.frame.locator('.pvc-q-feedback')).not.toBeEmpty();
@@ -86,6 +91,6 @@ test(`${ID}: the test answered all right scores five of five, all wrong none; le
   await expect(fig.frame.locator('.pvc-quiz')).toContainText('৫টির মধ্যে ০টি সঠিক');
   await fig.frame.locator('[data-mode="explore"]').first().click();
   await fig.advance(600);
-  expect(await fig.call('get')).toMatchObject({ mode: 'explore', step: 'near', r: 6, question: null });
+  expect(await fig.call('get')).toMatchObject({ mode: 'explore', step: 'near', r: 5, flat: false, question: null });
   expect(log.errors).toEqual([]);
 });

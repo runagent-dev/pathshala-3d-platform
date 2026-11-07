@@ -21,10 +21,10 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { backdrop, CHARGE_COLORS, createApparatus, createSetting, createSheet, R_TEST } from './apparatus.js';
+import { backdrop, CHARGE_COLORS, createApparatus, createMark, createSetting, createSheet } from './apparatus.js';
 import { boldArrow } from './arrows.js';
 import { fitPose } from './camera.js';
-import { CONFIGS, fieldOfOne, fieldOnAxis, GAP, groupDigits, H, R, RANGE, roundField, XA, XB } from './field.js';
+import { CONFIGS, fieldOfOne, fieldOnAxis, forceMicro, GAP, groupDigits, H, R, RANGE, roundField, XA, XB } from './field.js';
 import { createGraph } from './graph.js';
 import { createI18n } from './i18n.js';
 import { createFieldLines, headMaterial } from './lines.js';
@@ -43,7 +43,7 @@ export const DEFAULTS = {
 export const STEPS = ['pos', 'near', 'neg', 'unlike', 'like', 'double'];
 const COLORS = { force: '#0ca678', forceText: '#087f5b', ink: '#1d2733', zero: '#7048e8', curve: '#b08900', ghost: '#c92a2a' };
 const ARROW_R = 0.0011; // m: the force arrow's shaft, thickened to a few pixels by thick()
-const PER_E = 0.004 / 1000; // m of arrow per N/C
+const PER_E = 0.0035 / 1000; // m of arrow per N/C: the largest in a pair (11,250 N/C) still clears −q
 const DOUBLE_TAP = 420; // ms
 const SNAP = 0.005; // m: q₀ stops every half centimetre
 const MARGIN = { top: 52, bottom: 12, side: 30 }; // the side room keeps the lines' ends clear of the panel's tab
@@ -101,15 +101,14 @@ export function createApp(root, options = {}) {
   // the reading and the graph, between the result and the rule (as coulombs-law); the book's worked example only in a tall panel
   const box = document.createElement('div');
   box.className = 'efl-box';
-  box.innerHTML = '<p class="efl-read"><span class="efl-val"></span><span class="efl-note"></span></p><div class="efl-graph"></div>';
+  box.innerHTML = '<p class="efl-read"><span class="efl-val"></span><span class="efl-f"></span></p><div class="efl-graph"></div>';
   $('.pvc-outcome').after(box);
   const bookEl = document.createElement('p');
   bookEl.className = 'efl-book';
   bookEl.innerHTML = t('book_example', { q: 5, r: 10, e: '4.5 × 10', p: 8 });
   ui.learn.append(bookEl);
   const readEl = /** @type {HTMLElement} */ (box.querySelector('.efl-val'));
-  const noteEl = /** @type {HTMLElement} */ (box.querySelector('.efl-note'));
-  noteEl.innerHTML = t('read_note', { q: 4, ten: 10, p: 9 });
+  const forceEl = /** @type {HTMLElement} */ (box.querySelector('.efl-f'));
   const graph = createGraph(/** @type {HTMLElement} */ (box.querySelector('.efl-graph')), {
     t,
     N,
@@ -152,12 +151,7 @@ export function createApp(root, options = {}) {
   app.b.root.position.x = B_AWAY;
   app.b.root.visible = false;
   // the faint mark of a question ("moved here"), a ring of the test charge's size
-  const ghost = new THREE.Mesh(
-    new THREE.SphereGeometry(R_TEST, 20, 14),
-    new THREE.MeshBasicMaterial({ name: 'Ghost', color: CHARGE_COLORS.pos, transparent: true, opacity: 0.55, depthWrite: false }),
-  );
-  ghost.visible = false;
-  ghost.userData.noExport = true;
+  const ghost = createMark();
   scene.add(ghost);
 
   // the field lines of every configuration, made at load (hidden), so no step builds or compiles anything new
@@ -222,6 +216,8 @@ export function createApp(root, options = {}) {
   const single = () => s.cfg === 'single';
 
   // ── the scene from the state ────────────────────────────────────────────────
+  /** A 3D view under 260 px tall: fewer words on it, and the tight framing. */
+  const low = () => stage.height < 260;
   function perPixel() {
     return (2 * camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / Math.max(1, stage.height);
   }
@@ -254,12 +250,16 @@ export function createApp(root, options = {}) {
     force.root.visible = v.testOn > 0.99 && len > 0.002;
     if (force.root.visible) {
       DIR.set(Math.sign(e), 0, 0);
-      P0.set(v.testX + Math.sign(e) * (R_TEST + 0.002), H, 0);
+      P0.set(v.testX + Math.sign(e) * (app.test.r + 0.002), H, 0);
       force.set(P0, DIR, len);
       force.scale(thick());
     }
     ghost.visible = s.quiz.ghostX != null;
-    if (ghost.visible) ghost.position.set(s.quiz.ghostX, H, 0);
+    if (ghost.visible) {
+      ghost.position.set(s.quiz.ghostX, H, 0);
+      ghost.quaternion.copy(camera.quaternion);
+      ghost.scale.setScalar(app.test.r * 1.3);
+    }
   }
 
   // ── labels on the picture: short ─────────────────────────────────────────────
@@ -302,6 +302,7 @@ export function createApp(root, options = {}) {
       () => action?.box(),
       () => action?.ringBox(),
       () => boxOf(rotateEl),
+      () => boxOf($('.pvc-panel-toggle')),
       () => handle?.box(),
     ],
   });
@@ -312,9 +313,9 @@ export function createApp(root, options = {}) {
     return r.width ? { left: r.left - c.left, top: r.top - c.top, right: r.right - c.left, bottom: r.bottom - c.top } : null;
   }
   const spot = (dx, dy) => ({ dx, dy });
-  const ABOVE = [spot(0, -30), spot(-26, -30), spot(26, -30), spot(0, -44)];
-  const ABOVE_LEFT = [spot(-30, -26), spot(-34, -8), spot(0, -34), spot(-30, -44)];
-  const ABOVE_RIGHT = [spot(30, -26), spot(34, -8), spot(0, -34), spot(30, -44)];
+  const ABOVE = [spot(0, -30), spot(-26, -30), spot(26, -30), spot(0, -44), spot(-46, -34), spot(46, -34), spot(0, -60), spot(-52, 6), spot(52, 6)];
+  const ABOVE_LEFT = [spot(-30, -26), spot(-34, -8), spot(0, -34), spot(-30, -44), spot(-58, -26), spot(-54, 12), spot(0, -62), spot(30, -46)];
+  const ABOVE_RIGHT = [spot(30, -26), spot(34, -8), spot(0, -34), spot(30, -44), spot(-30, -44), spot(58, -26), spot(0, -62), spot(50, 24)];
   const BELOW = [spot(0, 24), spot(-20, 26), spot(20, 26)];
   const chargeText = (q) => (q === -2 ? t('lbl_neg2') : q > 0 ? t('lbl_pos') : t('lbl_neg'));
   const top = (st) => {
@@ -327,7 +328,7 @@ export function createApp(root, options = {}) {
       point: top(app.a),
       color: () => (s.quiz.hideA ? COLORS.ink : s.aQ > 0 ? CHARGE_COLORS.pos : CHARGE_COLORS.neg),
       spots: ABOVE_LEFT,
-      show: () => (s.aQ !== 0 || s.quiz.hideA) && !s.quiz.hideLabels,
+      show: () => (s.aQ !== 0 || s.quiz.hideA) && !s.quiz.hideLabels && !s.quiz.q0Text, // the long label of the 1/r² question needs the room
     },
     b: {
       text: () => chargeText(s.bQ),
@@ -340,11 +341,11 @@ export function createApp(root, options = {}) {
       text: () => s.quiz.q0Text || t('lbl_q0'),
       point: top(app.test),
       color: () => CHARGE_COLORS.pos,
-      spots: [...ABOVE, ...BELOW],
+      spots: [spot(-28, -36), ...ABOVE, ...BELOW], // up and to the left first: the ring's badge likes the right
       show: () => s.v.testOn > 0.99 && !(zeroHere() && s.v.force > 0.5),
     },
     F: {
-      text: () => t('lbl_F'),
+      text: () => t(s.step === 'pos' && !low() ? 'lbl_F_eq' : 'lbl_F'),
       point: () => forceMid.lerpVectors(force.root.position, force.tip, 0.5),
       color: () => COLORS.forceText,
       spots: [spot(0, 24), spot(16, 26), spot(-16, 26), spot(0, -24), spot(-16, -26), spot(16, -26)],
@@ -352,7 +353,7 @@ export function createApp(root, options = {}) {
     },
     ghost: {
       text: () => s.quiz.ghostText,
-      point: () => forceMid.set(s.quiz.ghostX ?? 0, H + R_TEST, 0),
+      point: () => forceMid.set(s.quiz.ghostX ?? 0, H + app.test.r * 1.3, 0),
       color: () => COLORS.ink,
       spots: [...BELOW, ...ABOVE],
       show: () => s.quiz.ghostX != null && Boolean(s.quiz.ghostText),
@@ -392,14 +393,19 @@ export function createApp(root, options = {}) {
 
   // ── camera: a gentle three-quarter view; it widens for the pair ──────────────
   const boxes = {
+    // a short phone embed: only the working region, or q₀ is a speck
+    low: {
+      single: new THREE.Box3(V(XA - 0.05, 0.1, -0.02), V(XA + 0.165, H + 0.07, 0.02)),
+      pair: new THREE.Box3(V(-0.115, 0.1, -0.02), V(0.115, H + 0.07, 0.02)),
+    },
     wide: {
       single: new THREE.Box3(V(XA - 0.135, 0.035, -0.05), V(XA + 0.165, H + 0.115, 0.05)),
       pair: new THREE.Box3(V(-0.21, 0.035, -0.05), V(0.21, H + 0.11, 0.05)),
     },
     // a phone held upright: the spheres and q₀ as big as they go; the lines may run off the edges
     tall: {
-      single: new THREE.Box3(V(XA - 0.07, 0.05, -0.03), V(XA + 0.165, H + 0.09, 0.03)),
-      pair: new THREE.Box3(V(-0.125, 0.05, -0.03), V(0.125, H + 0.09, 0.03)),
+      single: new THREE.Box3(V(XA - 0.07, 0.03, -0.03), V(XA + 0.165, H + 0.09, 0.03)),
+      pair: new THREE.Box3(V(-0.125, 0.03, -0.03), V(0.125, H + 0.09, 0.03)),
     },
   };
   const DIRS = { round: V(0.42, 0.34, 1).normalize(), flat: V(0.2, 0.14, 1).normalize() };
@@ -408,10 +414,11 @@ export function createApp(root, options = {}) {
     const d = (s.flat ? DIRS.flat : DIRS.round).clone();
     if (s.view === '3d' && !s.userMovedCamera) d.add(V(0.6, 0.15, 0)).normalize();
     const tall = root.classList.contains('efl-stack');
+    app.test.setSize(tall ? 1.3 : 1); // upright, q₀ is drawn larger: a speck can't carry the idea
     const margin = tall ? { ...MARGIN, side: 8 } : MARGIN;
     const args = { dir: d, camera, width: stage.width, height: stage.height, margin };
     for (const k of ['single', 'pair']) {
-      const p = fitPose({ box: boxes[tall ? 'tall' : 'wide'][k], ...args });
+      const p = fitPose({ box: boxes[tall ? (low() ? 'low' : 'tall') : 'wide'][k], ...args });
       poses[k] = { target: p.target, dist: p.position.distanceTo(p.target), dir: d };
     }
   }
@@ -522,6 +529,7 @@ export function createApp(root, options = {}) {
   function syncLayout() {
     const stack = panelEl.getBoundingClientRect().top > root.getBoundingClientRect().top + 20;
     root.classList.toggle('efl-stack', stack);
+    root.classList.toggle('efl-low', low());
   }
   stage.onResize(() => {
     syncLayout();
@@ -694,7 +702,8 @@ export function createApp(root, options = {}) {
   const NEXT = { intro: 'pos', pos: 'near', near: 'neg', neg: 'unlike', unlike: 'like', like: 'double' };
   const homeBtn = /** @type {HTMLButtonElement} */ ($('[data-act="home"]'));
   const flatBtn = /** @type {HTMLButtonElement} */ ($('[data-act="flat"]'));
-  const steady = { lead: '', act: '', flat: null, read: '' };
+  const steady = { lead: '', act: '', flat: null, read: '', force: '' };
+  let flatUsed = false;
   function nearVars() {
     const r1 = RANGE.start * 100;
     const r2 = RANGE.near * 100;
@@ -708,16 +717,22 @@ export function createApp(root, options = {}) {
       html = t('read_single', { r: Math.round(testR() * 1000) / 10, e: G(Math.abs(fieldAtTest())) });
     } else if (s.v.testOn > 0.99) {
       const e = fieldAtTest();
-      const dir = e === 0 ? '' : `, ${t(e > 0 ? 'dir_right' : 'dir_left')}`;
-      html = t('read_pair', { e: G(Math.abs(e)) }) + dir;
+      html = t('read_pair', { e: G(Math.abs(e)) });
     } else html = t('read_pair_none');
     if (steady.read !== html) {
       steady.read = html;
       readEl.innerHTML = html;
-      noteEl.hidden = !charges().length;
+    }
+    // F = q₀E, from the E just shown
+    const f = charges().length && s.v.testOn > 0.99 ? forceMicro(fieldAtTest()) : null;
+    const fHtml = f == null ? '' : f ? t('read_f', { f, ten: 10, p: 6 }) : t('read_f0', { z: 0 });
+    if (steady.force !== fHtml) {
+      steady.force = fHtml;
+      forceEl.innerHTML = fHtml;
     }
     drawGraph();
   }
+  const noteText = t('graph_note', { q: 4, q0: 1, ten: 10, p: 9 });
   function drawGraph() {
     const busy = s.busy;
     const testOn = s.v.testOn > 0.99;
@@ -726,6 +741,7 @@ export function createApp(root, options = {}) {
       const charged = s.aQ !== 0;
       graph.draw({
         id: charged ? 'single' : 'none',
+        note: charged ? noteText : '',
         curve: charged,
         f: (x) => fieldOfOne(x / 100),
         x0: 0,
@@ -754,6 +770,7 @@ export function createApp(root, options = {}) {
     const span = (XB - XA) * 100;
     graph.draw({
       id: s.cfg,
+      note: noteText,
       curve: true,
       tag: 'above',
       f: (x) => Math.abs(fieldOnAxis(ch, XA + x / 100)),
@@ -778,6 +795,12 @@ export function createApp(root, options = {}) {
       aria: t('graph_aria'),
     });
   }
+  /** The result, always true of where q₀ stands now. */
+  function outcomeText(vars) {
+    if (s.step === 'near' && s.moved) return t('out_near_moved', { r: Math.round(testR() * 1000) / 10, e: G(Math.abs(fieldAtTest())) });
+    if (s.step === 'like' && fieldAtTest() !== 0) return t('out_like_off', { e: G(Math.abs(fieldAtTest())), z: 0 });
+    return t(`out_${s.step}`, vars);
+  }
   function refresh() {
     if (s.mode === 'quiz') return;
     const calm = s.step === 'intro';
@@ -794,7 +817,7 @@ export function createApp(root, options = {}) {
       ui.learn.classList.toggle('efl-calm', calm);
     }
     const vars = { ...nearVars(), z: 0 };
-    sheet.outcome(calm || s.busy ? '' : t(`out_${s.step}`, vars));
+    sheet.outcome(calm || s.busy ? '' : outcomeText(vars));
     sheet.rule(calm || s.busy ? '' : t(`rule_${s.step}`, vars));
     sheet.choose(calm ? null : s.step);
     sheet.next(NEXT[s.step] ?? null);
@@ -820,6 +843,7 @@ export function createApp(root, options = {}) {
       flatBtn.setAttribute('aria-pressed', String(s.flat));
     }
     flatBtn.disabled = s.busy || calm;
+    flatBtn.classList.toggle('efl-hey', Boolean(o.coach) && !flatUsed && !s.busy && !calm);
     syncLabels();
     refreshReading();
     stage.invalidate();
@@ -854,8 +878,8 @@ export function createApp(root, options = {}) {
     label: 'act_pos',
     icon: ICONS.hand,
     target: () => actTarget(),
-    radius: 30,
-    avoid: [ui.corner, ui.hint, () => anno.boxes(), () => boxOf(rotateEl)],
+    radius: 26,
+    avoid: [ui.corner, ui.hint, () => anno.boxes(), () => boxOf(rotateEl), arrowBox, ballBox(app.test)],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -864,15 +888,15 @@ export function createApp(root, options = {}) {
   });
 
   // q₀'s handle: a white disc on its stand, along the line through the charges
-  const HANDLE_Y = 0.085;
+  const handleY = () => (low() ? 0.118 : 0.085);
   const handlePoint = V(0, 0, 0);
   handle = createDragHandle(stage, {
-    point: () => handlePoint.set(s.v.testX, HANDLE_Y, 0.01),
+    point: () => handlePoint.set(s.v.testX, handleY(), 0.01),
     axis: 'x',
     direction: V(1, 0, 0),
     track: {
-      from: () => V((testRange() ?? { min: s.v.testX }).min, HANDLE_Y, 0.01),
-      to: () => V((testRange() ?? { max: s.v.testX }).max, HANDLE_Y, 0.01),
+      from: () => V((testRange() ?? { min: s.v.testX }).min, handleY(), 0.01),
+      to: () => V((testRange() ?? { max: s.v.testX }).max, handleY(), 0.01),
     },
     label: o.coach ? t('drag_me') : '',
     aria: t('aria_drag'),
@@ -1049,11 +1073,12 @@ export function createApp(root, options = {}) {
     s.quiz.q0Text = '';
   }
   let learnSaved = null;
+  let flatSaved = false;
   let question = null;
   let picked = -1;
   /** The five questions: the hidden sign, 1/r², the zero between like charges, more lines, lines never cross. */
   const KINDS = ['sign', 'ratio', 'zero', 'more', 'cross'];
-  const RATIO = { r1: 0.05, r2: 0.1 };
+  const RATIO = { r1: 0.06, r2: 0.12 };
   const words = (keys) => keys.map((key) => ({ key }));
 
   const quiz = createQuiz({
@@ -1067,6 +1092,7 @@ export function createApp(root, options = {}) {
     hooks: {
       enter() {
         learnSaved = s.step;
+        flatSaved = s.flat;
         stopAll();
         s.mode = 'quiz';
         s.locked = true;
@@ -1080,12 +1106,14 @@ export function createApp(root, options = {}) {
         s.locked = false;
         clearQuizMarks();
         syncUI();
+        setFlat(flatSaved, { animate: false });
         go(learnSaved || 'intro', { animate: false });
       },
       async prepare(i, alive) {
         picked = -1;
         const kind = KINDS[i % KINDS.length];
-        if (s.flat) await setFlat(false, { animate: false });
+        // the whole test on the flat cut: lines that can be read, and counted
+        await setFlat(true, { animate: false });
         const scene = { sign: 'neg', ratio: 'pos', zero: 'like', more: 'double', cross: 'unlike' }[kind];
         await go(scene, { animate: false });
         clearQuizMarks();
@@ -1127,7 +1155,7 @@ export function createApp(root, options = {}) {
           return { text: t('q_zero'), ...choicesOf(words(['c_zero_mid', 'c_zero_ball', 'c_zero_quarter', 'c_zero_none']), (x) => t(x.key)) };
         if (kind === 'more')
           return { text: t('q_more'), ...choicesOf(words(['c_more_left', 'c_more_right', 'c_more_same', 'c_more_cant']), (x) => t(x.key)) };
-        return { text: t('q_cross'), ...choicesOf(words(['c_cross_no', 'c_cross_mid', 'c_cross_big', 'c_cross_like']), (x) => t(x.key)) };
+        return { text: t('q_cross'), ...choicesOf(words(['c_cross_no', 'c_cross_mid', 'c_cross_near', 'c_cross_loop']), (x) => t(x.key)) };
       },
       reveal(q, correct) {
         const k = question.kind;
@@ -1161,7 +1189,7 @@ export function createApp(root, options = {}) {
           stage.invalidate();
           return t('why_more') + note({ c_more_right: 'mis_more_right', c_more_same: 'mis_more_same', c_more_cant: 'mis_more_cant' });
         }
-        return t('why_cross') + note({ c_cross_mid: 'mis_cross_mid', c_cross_big: 'mis_cross_big', c_cross_like: 'mis_cross_like' });
+        return t('why_cross') + note({ c_cross_mid: 'mis_cross_mid', c_cross_near: 'mis_cross_near', c_cross_loop: 'mis_cross_loop' });
       },
       done() {
         s.locked = false;
@@ -1209,6 +1237,7 @@ export function createApp(root, options = {}) {
     else if (b.dataset.act === 'flat') {
       if (s.busy || s.step === 'intro') return;
       const flat = !s.flat;
+      flatUsed = true;
       setFlat(flat);
       showHint(t(flat ? 'hint_flat' : 'hint_round'), { duration: 3200 });
     } else if (b.dataset.act === 'q-next') quiz.next();
@@ -1239,7 +1268,10 @@ export function createApp(root, options = {}) {
       else if (dir < 0) go(ORDER[Math.max(1, ORDER.indexOf(s.step) - 1)]);
     } else if (k === 'r' || k === 'R' || k === 'Home') goHome();
     else if (k === 'p' || k === 'P') {
-      if (!s.busy && s.step !== 'intro') setFlat(!s.flat);
+      if (!s.busy && s.step !== 'intro') {
+        flatUsed = true;
+        setFlat(!s.flat);
+      }
     } else if (k === 'f' || k === 'F') setView('front');
     else if (k === 'Escape') hintOff();
     else return;

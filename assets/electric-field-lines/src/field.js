@@ -1,11 +1,12 @@
 // The physics, pure (unit-tested in test/unit/electric-field-lines.test.mjs): point charges on one line (the x axis,
 // at the spheres' height), the field E = kq/r² of each, added as vectors, and field lines traced along E with RK4.
 // The book's k = 9 × 10⁹ N m²/C². The spheres carry a lab-sized charge, q = 4 × 10⁻⁹ C (4 nC), so kq = 36 N m²/C and
-// the numbers come out round: at r = 6 cm, E = 10,000 N/C; at 12 cm, 2,500 N/C.
+// the numbers come out round: at r = 10 cm, E = 3,600 N/C; at 5 cm, 14,400 N/C.
 // All lengths in metres. Every configuration is symmetric about the x axis.
 
 export const K = 9e9;
 export const Q = 4e-9; // C: one "q"
+export const Q0 = 1e-9; // C: the test charge
 export const KQ = K * Q; // 36 N m²/C
 /** Where things are (m): the spheres' centres at height H on the line z = 0; the two charges of a pair at ±D. */
 export const H = 0.16;
@@ -14,7 +15,7 @@ export const D = 0.08;
 export const XA = -D; // the left sphere (the single charge too)
 export const XB = D;
 /** The test charge q₀ in the single-charge steps: r (m) from the left sphere's centre, within this range. */
-export const RANGE = { min: 0.05, minNeg: 0.07, max: 0.15, start: 0.12, near: 0.06, neg: 0.1 };
+export const RANGE = { min: 0.05, minNeg: 0.07, max: 0.15, start: 0.1, near: 0.05, neg: 0.1 };
 /** …and between the pair (x, m): clear of both spheres' bases. */
 export const GAP = { min: -0.035, max: 0.035 };
 
@@ -23,7 +24,7 @@ export const GAP = { min: -0.035, max: 0.035 };
  * far from the charges' plane (a long loop would otherwise swing out past the camera).
  */
 export const CONFIGS = {
-  single: { charges: [{ x: XA, q: 1 }], centre: XA, bound: 0.17 },
+  single: { charges: [{ x: XA, q: 1 }], centre: XA, bound: 0.26 },
   unlike: {
     charges: [
       { x: XA, q: 1 },
@@ -53,6 +54,7 @@ export const CONFIGS = {
   },
 };
 const FLOOR = 0.003; // lines stop at the table top (y = 0) and a hair above it
+const DOWN = -0.55; // the round view seeds no line steeper than this (y of the unit direction)
 
 /**
  * The field at (x, y, z) from charges on the axis (y = H, z = 0), in N/C, written into `out` ([x, y, z]).
@@ -238,7 +240,7 @@ export function resample(points, step) {
  * from a negative charge's seed that would end on a positive charge is already drawn from that side, and is dropped.
  * `flat`: only the book's plane z = 0. `sign`: −1 turns every charge round (the single charge made negative).
  */
-export function traceConfig(name, { flat = false, perQ = flat ? 16 : 24, sign = 1 } = {}) {
+export function traceConfig(name, { flat = false, perQ = flat ? 16 : 20, sign = 1 } = {}) {
   const cfg = CONFIGS[name];
   const charges = cfg.charges.map((c) => ({ ...c, q: c.q * sign }));
   const signed = { ...cfg, charges };
@@ -249,6 +251,7 @@ export function traceConfig(name, { flat = false, perQ = flat ? 16 : 24, sign = 
     const n = Math.round(perQ * Math.abs(c.q));
     const dirs = flat ? planeDirections(n, offset) : sphereDirections(n);
     for (const d of dirs) {
+      if (!flat && d[1] < DOWN) continue; // down the stand, into the bench: lines nobody sees end
       const start = [c.x + d[0] * R, H + d[1] * R, d[2] * R];
       if (start[1] < FLOOR) continue;
       const out = c.q > 0;
@@ -272,6 +275,9 @@ export function groupDigits(n, lang = 'bn') {
   const rest = s.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
   return `${neg}${rest},${last}`;
 }
+
+/** The force on q₀ in units of 10⁻⁶ N (F = q₀E), from the E shown, as it is written: at most two decimals. */
+export const forceMicro = (e) => Number(((Math.abs(e) * Q0) / 1e-6).toFixed(2));
 
 /** A field value rounded as it is shown: to the nearest 10 N/C. */
 export const roundField = (e) => Math.round(e / 10) * 10 || 0;

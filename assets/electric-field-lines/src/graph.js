@@ -18,6 +18,11 @@ export function createGraph(el, { t, N, colors }) {
   let lastKey = '';
   /** @type {any} */
   let last = null;
+  /** @type {any} */
+  let dotParts = null;
+  /** @type {any} */
+  let geo = null;
+  let lastDot = '';
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => last && draw(last)).observe(el);
 
   /**
@@ -29,8 +34,11 @@ export function createGraph(el, { t, N, colors }) {
     last = spec;
     const W = Math.max(120, el.clientWidth);
     const H = Math.max(60, el.clientHeight);
-    const key = JSON.stringify([W, H, spec.id, spec.dot, spec.ghost, spec.zero, spec.aria, spec.yMax]);
-    if (key === lastKey) return;
+    const key = JSON.stringify([W, H, spec.id, spec.ghost, spec.zero, spec.aria, spec.yMax, spec.note]);
+    if (key === lastKey) {
+      place(spec);
+      return;
+    }
     lastKey = key;
     const f = Math.min(15, Math.max(12.5, H / 9));
     const lw = Math.min(3.6, Math.max(2.4, H / 50));
@@ -68,6 +76,8 @@ export function createGraph(el, { t, N, colors }) {
     const [xa, xb] = xTicks.slice(-2);
     out += `<text class="g-name" x="${X((xa + xb) / 2)}" y="${y0 + f * 1.15}" text-anchor="middle" font-size="${f}">${esc(spec.xName)}</text>`;
     out += `<text class="g-name" x="${x0 + f * 0.3}" y="${f * 0.95}" font-size="${f}">${esc(spec.yName)}</text>`;
+    // the charges these numbers are for: the top row's right end (spec.note is the figure's own tspans)
+    if (spec.note) out += `<text class="g-note" x="${W}" y="${f * 0.95}" text-anchor="end" font-size="12">${spec.note}</text>`;
     // the curve, clipped to the plot (none before anything is charged: the axes wait for it)
     const n = spec.curve ? 90 : -1;
     let d = '';
@@ -96,24 +106,53 @@ export function createGraph(el, { t, N, colors }) {
       out += `<circle class="g-ghost" cx="${gx}" cy="${gy}" r="${f * 0.32}" stroke="${colors.ghost}"/>`;
       out += `<text class="g-tag" x="${gx + f * 0.5}" y="${gy - f * 0.5}" font-size="${f}">${esc(spec.ghost.label)}</text>`;
     }
-    if (spec.dot != null) {
-      const e = spec.f(spec.dot);
-      const dx = X(spec.dot);
-      const dy = Y(e);
-      out += `<path class="g-guide" d="M${dx} ${y0}V${dy}H${x0}"/>`;
-      out += `<circle class="g-dot" cx="${dx}" cy="${dy}" r="${f * 0.4}" fill="${colors.dot}"/>`;
-      if (spec.dotLabel && spec.dot !== spec.zero) {
-        // clear of the curve: over the dot inside a U; to the upper right of a falling curve (upper left, higher, near its end)
-        const u = spec.tag === 'above';
-        const end = !u && dx > x0 + 0.7 * (x1 - x0);
-        const tx = u ? dx : dx + (end ? -f * 0.2 : f * 0.6);
-        const ty = Math.max(y1 + f * 0.9, dy - f * (end ? 1.2 : 0.7));
-        out += `<text class="g-tag g-tag-now" x="${tx}" y="${ty}" text-anchor="${u ? 'middle' : end ? 'end' : 'start'}" font-size="${f}">${esc(spec.dotLabel)}</text>`;
-      }
-    }
+    // what moves with q₀: three parts, kept and moved by their attributes (place), never rebuilt while the curve stands
+    out += `<path class="g-guide"/><circle class="g-dot" r="${f * 0.4}" fill="${colors.dot}"/><text class="g-tag g-tag-now" font-size="${f}"></text>`;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     svg.setAttribute('aria-label', spec.aria || '');
     svg.innerHTML = out;
+    dotParts = { guide: svg.querySelector('.g-guide'), dot: svg.querySelector('.g-dot'), tag: svg.querySelector('.g-tag-now') };
+    geo = { X, Y, x0, x1, y0, y1, f };
+    lastDot = '';
+    place(spec);
+  }
+
+  /** The dot on the curve at spec.dot, its guide lines and its value. */
+  function place(spec) {
+    const key = `${spec.dot}|${spec.dotLabel}`;
+    if (key === lastDot) return;
+    lastDot = key;
+    const { guide, dot, tag } = dotParts;
+    const on = spec.dot != null;
+    guide.style.display = dot.style.display = on ? '' : 'none';
+    tag.style.display = on && spec.dotLabel && spec.zero == null ? '' : 'none'; // like charges: the reading says it, E = 0 stands there
+    if (!on) return;
+    const { X, Y, x0, x1, y0, y1, f } = geo;
+    const dx = X(spec.dot);
+    const dy = Y(spec.f(spec.dot));
+    guide.setAttribute('d', `M${dx} ${y0}V${dy}H${x0}`);
+    dot.setAttribute('cx', dx);
+    dot.setAttribute('cy', dy);
+    tag.textContent = spec.dotLabel;
+    // clear of the curve, and of the spheres' shaded ends: inside a U, on the side of its middle; to the upper right of a
+    // falling curve (upper left, higher, near its end)
+    let anchor = 'start';
+    let tx = dx + f * 0.6;
+    let ty = dy - f * 0.7;
+    if (spec.tag === 'above') {
+      const mid = (x0 + x1) / 2;
+      const off = Math.abs(dx - mid) < f * 0.8;
+      anchor = off ? 'middle' : dx < mid ? 'start' : 'end';
+      tx = off ? dx : dx + (dx < mid ? f * 0.7 : -f * 0.7);
+      ty = off ? dy - f * 0.7 : dy - f * 0.2;
+    } else if (dx > x0 + 0.7 * (x1 - x0)) {
+      anchor = 'end';
+      tx = dx - f * 0.2;
+      ty = dy - f * 1.2;
+    }
+    tag.setAttribute('x', tx);
+    tag.setAttribute('y', Math.max(y1 + f * 0.9, ty));
+    tag.setAttribute('text-anchor', anchor);
   }
   return { draw, reset: () => (lastKey = '') };
 }

@@ -2,7 +2,7 @@
 // inverted hull, the same mesh), all merged into ONE geometry and one draw; their arrowheads are one instanced mesh
 // (a gold cone in a dark hull). Lines grow along the field's direction from where they start (a shader discards what
 // lies beyond `grow` metres along each line), so the field can be shown spreading out, or flowing in, without
-// rebuilding anything. A loose end (not on a sphere) thins out over its last few centimetres.
+// rebuilding anything. A loose end (not on a sphere) is blunt.
 import * as THREE from 'three';
 import { lengthOf, resample, traceConfig } from './field.js';
 
@@ -13,8 +13,8 @@ const HULL = 0.0007; // m: the outline's width
 const SIDES = 5;
 const HULL_SIDES = 4;
 const STEP = 0.006; // m between rings
-const TAPER = 0.035; // m: a loose end thins over this
-const HEAD = { len: 0.012, r: 0.0042, hull: 0.0011 };
+const BLUNT = 0.005; // m: a loose end rounds off over this, no needle points
+const HEAD = { len: 0.017, r: 0.0058, hull: 0.0013 };
 const HEAD_GAP = 0.085; // m between arrowheads on one line
 
 const gold = new THREE.Color(LINE_COLOR);
@@ -67,8 +67,8 @@ function addTube(pts, loose, out) {
   }
   const radiusAt = (i, base) => {
     let k = 1;
-    if (loose.end) k = Math.min(k, 0.3 + (0.7 * (L - s[i])) / TAPER);
-    if (loose.start) k = Math.min(k, 0.3 + (0.7 * s[i]) / TAPER);
+    if (loose.end) k = Math.min(k, 0.55 + (0.45 * (L - s[i])) / BLUNT);
+    if (loose.start) k = Math.min(k, 0.55 + (0.45 * s[i]) / BLUNT);
     return base * Math.min(1, k);
   };
   const B = new THREE.Vector3();

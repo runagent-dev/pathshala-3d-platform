@@ -5,12 +5,13 @@
 // bead with its own "+" on a thin acrylic stand. All in metres; the bench top is y = 0.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { H, R } from './field.js';
 
 export const BG = ['#0b2a5b', '#123d7a'];
 export const CHARGE_COLORS = { pos: '#e03131', neg: '#1971c2' };
 export const BENCH = { x0: -0.42, x1: 0.42, z0: -0.2, z1: 0.2, thick: 0.035 };
-export const R_TEST = 0.0085;
+export const R_TEST = 0.011;
 const BASE_R = 0.03;
 const BASE_H = 0.018;
 const ROD_R = 0.005;
@@ -98,6 +99,31 @@ export function createSheet() {
   };
 }
 
+/** The mark of a question ("moved here"): a dashed white ring of radius 1, turned to the camera by the figure. */
+export function createMark() {
+  const parts = [];
+  const N = 10;
+  for (let i = 0; i < N; i++) parts.push(new THREE.RingGeometry(0.86, 1.04, 6, 1, (i * 2 * Math.PI) / N, Math.PI / N));
+  const mesh = new THREE.Mesh(
+    mergeGeometries(parts),
+    new THREE.MeshBasicMaterial({
+      name: 'Mark',
+      color: '#ffffff',
+      depthTest: false,
+      depthWrite: false,
+      transparent: true,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    }),
+  );
+  for (const g of parts) g.dispose();
+  mesh.name = 'Mark';
+  mesh.renderOrder = 20;
+  mesh.visible = false;
+  mesh.userData.noExport = true;
+  return mesh;
+}
+
 export function createApparatus() {
   const mats = {
     steel: new THREE.MeshStandardMaterial({ name: 'SphereSteel', color: '#d5dbe2', metalness: 1, roughness: 0.2 }),
@@ -154,6 +180,8 @@ export function createApparatus() {
     hit.position.y = H;
     hit.userData.noExport = true;
     root.add(b, rod, collar, ball, sign, hit);
+    const r0 = r;
+    let size = 1;
     let q = 0;
     const toCam = new THREE.Vector3();
     const centre = new THREE.Vector3();
@@ -161,7 +189,15 @@ export function createApparatus() {
       root,
       ball,
       hit,
-      r,
+      get r() {
+        return r0 * size;
+      },
+      /** The ball drawn k times bigger on its stand (the phone's upright framing). */
+      setSize(k) {
+        size = k;
+        ball.scale.setScalar(k);
+        sign.scale.setScalar(r0 * k * 1.1);
+      },
       get q() {
         return q;
       },
@@ -177,7 +213,7 @@ export function createApparatus() {
         if (!sign.visible) return;
         ball.getWorldPosition(centre);
         toCam.copy(camera.position).sub(centre).normalize();
-        sign.position.set(0, H, 0).addScaledVector(toCam, r * 1.3); // proud of the ball: the lines' roots pass behind it
+        sign.position.set(0, H, 0).addScaledVector(toCam, r0 * size * 1.3); // proud of the ball: the lines' roots pass behind it
         sign.quaternion.copy(camera.quaternion);
       },
     };
@@ -185,7 +221,7 @@ export function createApparatus() {
 
   const a = makeStand('ChargeA', { r: R, geo: sphereGeo, base: baseGeo, baseH: BASE_H, rodR: ROD_R, hitR: R * 1.6 });
   const b = makeStand('ChargeB', { r: R, geo: sphereGeo, base: baseGeo, baseH: BASE_H, rodR: ROD_R, hitR: R * 1.6 });
-  const test = makeStand('TestCharge', { r: R_TEST, geo: beadGeo, base: smallBaseGeo, baseH: 0.01, rodR: 0.0022, hitR: 0.022 });
+  const test = makeStand('TestCharge', { r: R_TEST, geo: beadGeo, base: smallBaseGeo, baseH: 0.01, rodR: 0.0022, hitR: 0.026 });
   test.setCharge(1);
   return { a, b, test, mats };
 }
