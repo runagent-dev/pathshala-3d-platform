@@ -9,12 +9,12 @@ across all figures before merging a kit change (`npm run test:visual`).
 
 The drag handle's `'turn'` glyph (`createDragHandle({ axis: 'turn' })` and its miniature in the how-to row, both from
 `dragDisc`), after a reviewer of total-internal-reflection saw a ☎ telephone handset in it on a phone: at 1× a flat arch
-with two thin hooks at its ends looks like a handset. Now a 240° arc with a bold filled arrowhead at each end round a
+with two thin hooks at its ends looks like a handset. Now a 270° arc with a bold filled arrowhead at each end round a
 small pivot dot: "this turns about here". It is unlike the kit's other circular arrows (reset, a plain arrow with one open
-head; the rotate pill, always with its ৩৬০°). The dot lies on the right of the handle's `direction` on the screen, the
-pivot's side for a clockwise direction; with a curved track (`track.via`) the glyph is mirrored when needed, so the dot is
-always on the inside of the curve. In the how-to row the turn miniature is drawn a little larger (17 px, in its 22 px
-disc), as its heads were too small to read at 15 px. Only figures with a turn handle change: kaleidoscope, reflection-laws,
+head; the rotate pill, always with its ৩৬০°). The arc's open side faces right of the handle's `direction` on the screen,
+the pivot's side for a clockwise direction; with a curved track (`track.via`) the glyph is mirrored when needed, so it
+always opens to the inside of the curve. In the how-to row the turn miniature is drawn a little larger (17 px, in its
+22 px disc) and tilted by −45°, like a handle on the view: upright, at that size, it read as a little face. Only figures with a turn handle change: kaleidoscope, reflection-laws,
 refraction-of-light and total-internal-reflection.
 
 ## 1.9.0

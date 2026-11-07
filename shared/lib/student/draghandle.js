@@ -22,8 +22,8 @@
 // Keyboard: the handle is a button in the tab order. With `onKey(dir, event)` it answers the arrows itself (dir is
 // +1 for → and ↑, -1 for ← and ↓); without it the key goes on to the figure's own keydown listener.
 //
-// 'turn': the arc's middle runs along `direction` and the dot lies to its right on the screen, so a clockwise
-// direction puts the dot on the side of the pivot; with a curved track (`via`) the dot goes to the inside of the curve.
+// 'turn': the arc's middle runs along `direction` and its open side faces right of it on the screen, so a clockwise
+// direction opens it towards the pivot; with a curved track (`via`) it opens to the inside of the curve.
 //
 // The handle hides during the test (`.pvc[data-mode="quiz"]`) unless `quiz: true`, and while its point is behind
 // the camera. Placed after every drawn frame (it works with render on demand); `update()` places it at once.
@@ -51,11 +51,11 @@ const MOVED = 4; // px: less than this is a tap, not a drag
 
 const ARROWS = {
   line: svg('<path d="M4 12h16M8.2 7.8 4 12l4.2 4.2M15.8 7.8 20 12l-4.2 4.2"/>'),
-  // "turns about this point": a 240° arc with a bold filled head at each end round a pivot dot. Not a plain circular
-  // arrow (that is reset; the rotate pill always has its ৩৬০°), and filled heads, as thin hooks at both ends of a flat
-  // arch read as a telephone handset at 1× (kit 1.9.1)
+  // "turns about this point": a 270° arc with a bold filled head at each end round a pivot dot, open at the bottom. Not a
+  // plain circular arrow (that is reset; the rotate pill always has its ৩৬০°), and filled heads, as thin hooks at both
+  // ends of a flat arch read as a telephone handset at 1× (kit 1.9.1)
   turn: svg(
-    '<path d="M4.6 12.2A7.5 7.5 0 0 1 19.4 12.2"/><path class="fill" d="M18.5 17.5 15.8 11.4l7.1 1.1zM5.5 17.5 1.1 12.5l7.1-1.1z"/><circle class="fill" cx="12" cy="13.6" r="2"/>',
+    '<path d="M5 12.2A7 7 0 1 1 19 12.2"/><path class="fill" d="M16.9 17.1 15.7 10.5l6.6 2.8zM7.1 17.1 1.7 13.3l6.6-2.8z"/><circle class="fill" cx="12" cy="12" r="2"/>',
   ),
 };
 
