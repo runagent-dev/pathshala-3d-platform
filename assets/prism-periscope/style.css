@@ -1,0 +1,88 @@
+/* Periscope and binoculars: the page, the calm first card and the lead-in line, the drawing layer over the view, the
+   labels and the test's answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pp sub, .pp sup { font-size: 0.72em; line-height: 0; }
+/* the light, the normal and the angle are painted on this canvas, over the 3D and under the labels */
+.pp-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* the line before the action, and the result with its rule: each a stack of layers in one grid cell (the live words and
+   hidden copies of every step's words), so they keep one height in every state; on the first screen the calm card
+   stands where the result and the rule will be */
+.pp .pp-leadbox, .pp .pp-body { display: grid; }
+.pp .pp-leadbox > *, .pp .pp-body > * { grid-area: 1 / 1; min-width: 0; margin: 0; }
+.pp .pp-ghost { visibility: hidden; pointer-events: none; }
+.pp .pp-body .pp-live, .pp .pp-body .pp-ghost { display: flex; flex-direction: column; gap: inherit; }
+.pp .pp-body { gap: 8px; }
+.pp .pp-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+.pp .pp-card { font-size: 15px; line-height: 1.6; align-self: start; }
+.pp .pp-card .pp-short { display: none; }
+.pp .pvc-learn.pp-calm .pp-live, .pp .pvc-learn:not(.pp-calm) .pp-card { visibility: hidden; }
+
+/* the how-to row keeps its room in the test (hidden, not gone), so the test sheet and the 3D keep their height */
+.pvc.pp[data-mode='quiz'] .pvc-howto { display: flex; visibility: hidden; }
+.pp .pvc-act-row { min-height: 50px; }
+
+/* the result and the rule */
+.pp .pvc-outcome { font-size: 15px; line-height: 1.5; }
+.pp .pvc-outcome b { font-size: 1.1em; font-weight: 600; color: var(--ink); }
+.pp .pvc-rule { font-size: 14.5px; line-height: 1.55; }
+.pp .pvc-rule b { color: var(--ink); }
+
+/* the test: answers in words or numbers */
+.pp .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.pp-opt { display: block; white-space: normal; text-align: center; }
+.pp .pvc-q-text { font-size: 15px; }
+.pp .pvc-q-feedback { font-size: 13.5px; }
+
+@container pvc-panel (max-width: 420px) {
+  .pp .pvc-rule { font-size: 14px; }
+  .pp .pvc-outcome { font-size: 14px; }
+  .pp .pvc-opt { height: 40px; font-size: 13px; line-height: 1.2; }
+  .pp .pvc-q-text { font-size: 14.5px; }
+  .pp .pvc-learn { gap: 6px; }
+}
+/* a side panel of middle height (800 × 500) */
+@container pvc (max-height: 620px) {
+  .pp .pp-lead { font-size: 14px; line-height: 1.5; }
+  .pp .pvc-outcome { font-size: 14px; line-height: 1.45; }
+  .pp .pvc-rule { font-size: 14px; line-height: 1.5; }
+  .pp .pvc-howto-orbit .pvc-howto-word, .pp .pvc-howto-front .pvc-howto-word { display: none; }
+}
+/* a low side panel (844 × 390, 640 × 400): the short words, no lead-in once the steps start (the action says it) */
+@container pvc (max-height: 460px) {
+  .pp .pp-card .pp-long { display: none; }
+  .pp .pp-card .pp-short { display: inline; }
+  .pp .pp-lead { font-size: 13.5px; line-height: 1.45; }
+  .pp .pp-card { font-size: 14px; line-height: 1.5; padding: 5px 10px; }
+  .pp .pp-leadbox { display: none; }
+  .pp .pvc-howto, .pvc.pp[data-mode='quiz'] .pvc-howto { display: none; }
+  .pp .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
+  .pp .pvc-rule { font-size: 13.5px; line-height: 1.5; }
+  .pp .pvc-learn { gap: 6px; }
+  .pp .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 13.5px; }
+  .pp .pvc-q-text { font-size: 13.5px; }
+  .pp .pvc-opt { font-size: 12.5px; height: 44px; }
+  .pvc-anno-chip { font-size: 12.5px; }
+}
+/* a phone held upright (the panel under the 3D) */
+@media (orientation: portrait), (max-width: 599px) {
+  .pp .pp-card .pp-long { display: none; }
+  .pp .pp-card .pp-short { display: inline; }
+  .pp .pp-leadbox { display: none; }
+  .pp .pvc-learn { gap: 6px; }
+  .pp .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
+  .pp .pvc-howto-orbit .pvc-howto-word, .pp .pvc-howto-front .pvc-howto-word { display: none; }
+}
+/* the shortest phone frame (390 × 520) */
+@media (orientation: portrait) and (max-height: 600px) {
+  .pp .pvc-howto, .pvc.pp[data-mode='quiz'] .pvc-howto { display: none; }
+  .pp .pvc-learn { gap: 5px; }
+  .pp .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
+  .pp .pvc-rule { font-size: 13.5px; line-height: 1.5; }
+  .pp .pvc-q-text { --pvc-q-text-min: 2lh; font-size: 13.5px; line-height: 1.4; }
+  .pp .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 13px; line-height: 1.38; }
+  .pp .pvc-opt { height: 38px; font-size: 12.5px; }
+}
