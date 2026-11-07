@@ -29,11 +29,10 @@ export const STRINGS = {
     u_m2: 'm<sup>2</sup>',
     u_m3: 'm<sup>3</sup>',
 
-    // the row of words: the four steps
+    // the row of words: the three steps
     steps: 'ধাপ',
     chip_pressure: 'চাপ',
     chip_weight: 'ওজন ও প্লবতা',
-    chip_displaced: 'অপসারিত পানি',
     chip_load: 'মাল বোঝাই',
 
     // the action and the quiet button
@@ -44,8 +43,6 @@ export const STRINGS = {
     act_lower: 'সিলিন্ডার পানিতে নামাও',
     act_drop: 'সিলিন্ডার ছেড়ে দাও',
     act_again_w: 'আবার ঝোলাও',
-    act_ghost: 'সরানো পানি তুলে ওজন করো',
-    act_again_d: 'আবার দেখাও',
     act_load: 'একটি কন্টেইনার তোলো',
     act_unload: 'সব কন্টেইনার নামাও',
 
@@ -61,8 +58,6 @@ export const STRINGS = {
     eq_ship_w: 'জাহাজের ওজন W = mg = {m}&nbsp;kg × {g} = <b>{W}&nbsp;{u_N}</b>',
     eq_steel_air: 'নিরেট স্টিলের সিলিন্ডার: ভর একই, কিন্তু আয়তন মাত্র {V}&nbsp;{u_m3}',
     eq_steel_water: 'সিলিন্ডারের ওজন {W}&nbsp;{u_N}, প্লবতা মাত্র প্রায় {B}&nbsp;{u_N}',
-    eq_v: 'অপসারিত পানির আয়তন V = Ah = {A}&nbsp;{u_m2} × {h}&nbsp;{u_m} = <b>{V}&nbsp;{u_m3}</b>',
-    eq_vw: 'তার ওজন = Vρg = {V} × {rho} × {g} = <b>{F}&nbsp;{u_N}</b>',
     eq_load: 'ভর m = {m} টন, পানির নিচে h = <b>{h}&nbsp;{u_m}</b>',
     eq_balance: 'ওজন W = প্লবতা F = <b>{W}&nbsp;{u_N}</b>',
 
@@ -73,8 +68,6 @@ export const STRINGS = {
     out_w0: 'বাতাসে নিক্তির পাঠ <b>{R}&nbsp;{u_N}</b>: পুরো ওজন',
     out_w1: 'পানিতে নিক্তির পাঠ কমে প্রায় <b>{R}&nbsp;{u_N}</b>',
     out_w2: 'ওজন প্লবতার চেয়ে বেশি: সিলিন্ডার <b>ডুবে গেল</b>',
-    out_d0: 'জাহাজের তলা পানির <b>{h}&nbsp;{u_m}</b> নিচে: সেখানকার পানি সরে গেছে',
-    out_d1: 'অপসারিত পানির ওজন <b>{F}&nbsp;{u_N}</b> = প্লবতা',
     out_empty: 'খালি জাহাজ পানির <b>{h}&nbsp;{u_m}</b> নিচে ডুবে আছে',
     out_load: '{n}টি কন্টেইনার: জাহাজ <b>{h}&nbsp;{u_m}</b> ডুবে আছে',
     out_full: 'পানি বোঝাই রেখায় পৌঁছেছে: <b>আর মাল নয়</b>',
@@ -87,14 +80,12 @@ export const STRINGS = {
     rule_lower: 'তরলে নিমজ্জিত বস্তুর <b>ওজন কমে</b> যায় বলে মনে হয়। কমে ঠিক ততটা, যতটা তার অপসারিত তরলের ওজন। সিলিন্ডার সরায় অল্প পানি।',
     rule_drop:
       'ভর একই, তবু সিলিন্ডার ডোবে, জাহাজ ভাসে। স্টিলের ঘনত্ব {rs} kg m<sup>−3</sup>, পানির চেয়ে অনেক বেশি। ফাঁপা জাহাজ অনেক পানি সরায়, তার <b>গড় ঘনত্ব</b> পানির চেয়ে কম।',
-    rule_archimedes:
-      '<b>আর্কিমিডিসের নীতি:</b> কোনো বস্তু তরলে নিমজ্জিত করলে সেটি যে পরিমাণ তরল অপসারণ করে সেইটুকু তরলের সমান ওজন বস্তুটির ওজন থেকে কমে যায়। ভাসমান জাহাজের বেলায় তা পুরো ওজন।',
     rule_load: 'মাল বাড়লে <b>ওজন</b> বাড়ে। জাহাজ আরও ডোবে, আরও পানি সরায়। প্লবতা বাড়তে থাকে, যতক্ষণ না আবার ওজনের সমান হয়।',
     rule_full: '<b>বোঝাই রেখা (প্লিমসল দাগ):</b> পানি এই দাগ ছুঁলে আর মাল তোলা নিরাপদ নয়। খালি থেকে পুরো বোঝাই: h বাড়ল, প্লবতাও ঠিক ততটা বাড়ল।',
 
     // notes on the stage
     note_data: 'পানির ঘনত্ব ρ = {rho} kg m<sup>−3</sup>, g = {g} m s<sup>−2</sup>',
-    note_imagine: 'কল্পনা করো: সরানো পানি তুলে নিক্তিতে ওজন',
+    note_model: 'অপসারিত পানি মেপে দেখতে পাশের জাহাজের মডেল দেখো',
 
     // labels on the picture
     lbl_P2: 'P<sub>2</sub> = {v}&nbsp;{u_Pa}',
@@ -109,11 +100,7 @@ export const STRINGS = {
     lbl_steel: 'নিরেট স্টিল',
     lbl_sB: 'প্লবতা প্রায় {v}&nbsp;{u_N}',
     lbl_reading: 'নিক্তি {v}&nbsp;{u_N}',
-    lbl_reading_q: 'নিক্তি ?',
     lbl_reading_about: 'নিক্তি প্রায় {v}&nbsp;{u_N}',
-    lbl_V: 'অপসারিত পানি V = {v}&nbsp;{u_m3}',
-    lbl_V_sym: 'অপসারিত পানি',
-    lbl_water_w: 'পানির ওজন',
     lbl_loadline: 'বোঝাই রেখা',
     lbl_h: 'h = {v}&nbsp;{u_m}',
     lbl_h_sym: 'h',
@@ -148,12 +135,6 @@ export const STRINGS = {
     mis_noG: 'এখানে g দিয়ে গুণ করা হয়নি; চাপ = hρg।',
     mis_deck: 'এটি জাহাজের পুরো উচ্চতা ({d}&nbsp;{u_m}) দিয়ে করা; লাগে পানির নিচের গভীরতা h।',
     mis_force: 'এটি চাপ × ক্ষেত্রফল, অর্থাৎ বল (N), চাপ নয়।',
-
-    q_displaced: 'জাহাজটি যতটুকু পানি সরিয়েছে, তার আয়তন ছবিতে লেখা আছে। সেই পানির ওজন, অর্থাৎ প্লবতা কত?',
-    why_displaced: '<b>{F}&nbsp;{u_N}</b><span class="pvc-formula">ওজন = <i>Vρg</i> = {V} × {rho} × {g}</span>',
-    mis_mass: 'Vρ হলো পানির ভর (kg); ওজন পেতে g দিয়েও গুণ করতে হয়।',
-    mis_noRho: 'ঘনত্ব ρ বাদ পড়েছে; ওজন = Vρg।',
-    mis_steel: 'এখানে স্টিলের ঘনত্ব নেওয়া হয়েছে; চাই পানির ওজন, তাই পানির ঘনত্ব।',
 
     q_more: 'এই জাহাজে আরও দুটি কন্টেইনার তুললে কী হবে?',
     c_deeper_more: 'আরও একটু ডুববে, প্লবতা বাড়বে',
@@ -200,7 +181,6 @@ export const STRINGS = {
     steps: 'Steps',
     chip_pressure: 'Pressure',
     chip_weight: 'Weight, buoyancy',
-    chip_displaced: 'Water pushed aside',
     chip_load: 'Loading',
 
     act_home: 'Start again',
@@ -210,8 +190,6 @@ export const STRINGS = {
     act_lower: 'Lower the cylinder into the water',
     act_drop: 'Let go of the cylinder',
     act_again_w: 'Hang it up again',
-    act_ghost: 'Lift out the water and weigh it',
-    act_again_d: 'Show again',
     act_load: 'Load one container',
     act_unload: 'Unload all containers',
 
@@ -225,8 +203,6 @@ export const STRINGS = {
     eq_ship_w: "Ship's weight W = mg = {m}&nbsp;kg × {g} = <b>{W}&nbsp;{u_N}</b>",
     eq_steel_air: 'Solid steel cylinder: the same mass, but only {V}&nbsp;{u_m3}',
     eq_steel_water: 'Cylinder: weight {W}&nbsp;{u_N}, buoyancy only about {B}&nbsp;{u_N}',
-    eq_v: 'Volume pushed aside V = Ah = {A}&nbsp;{u_m2} × {h}&nbsp;{u_m} = <b>{V}&nbsp;{u_m3}</b>',
-    eq_vw: 'Its weight = Vρg = {V} × {rho} × {g} = <b>{F}&nbsp;{u_N}</b>',
     eq_load: 'Mass m = {m} t, under water h = <b>{h}&nbsp;{u_m}</b>',
     eq_balance: 'Weight W = buoyancy F = <b>{W}&nbsp;{u_N}</b>',
 
@@ -236,8 +212,6 @@ export const STRINGS = {
     out_w0: 'In air the balance reads <b>{R}&nbsp;{u_N}</b>: its whole weight',
     out_w1: 'In water the reading drops to about <b>{R}&nbsp;{u_N}</b>',
     out_w2: 'Weight more than buoyancy: the cylinder <b>sank</b>',
-    out_d0: 'The bottom is <b>{h}&nbsp;{u_m}</b> under water: that water was pushed aside',
-    out_d1: 'The water pushed aside weighs <b>{F}&nbsp;{u_N}</b> = buoyancy',
     out_empty: 'Empty, the ship floats <b>{h}&nbsp;{u_m}</b> deep',
     out_load: '{n} containers: the ship floats <b>{h}&nbsp;{u_m}</b> deep',
     out_full: 'The water is at the load line: <b>no more cargo</b>',
@@ -252,15 +226,13 @@ export const STRINGS = {
       'A body sunk in a liquid seems to <b>lose weight</b>, by as much as the weight of the liquid it pushes aside. The cylinder pushes aside little water.',
     rule_drop:
       'The same mass, yet the cylinder sinks and the ship floats. Steel’s density, {rs} kg m<sup>−3</sup>, is far more than water’s. The hollow ship pushes aside a lot of water: its <b>average density</b> is less than water’s.',
-    rule_archimedes:
-      '<b>Archimedes’ principle:</b> a body immersed in a liquid loses as much weight as the weight of the liquid it pushes aside. For a floating ship that is its whole weight.',
     rule_load:
       'More cargo means more <b>weight</b>. The ship sinks deeper and pushes aside more water. The buoyancy grows until it equals the weight again.',
     rule_full:
       '<b>The load line (Plimsoll mark):</b> once the water reaches it, loading more is unsafe. From empty to full: h grew, and the buoyancy grew just as much.',
 
     note_data: 'Water density ρ = {rho} kg m<sup>−3</sup>, g = {g} m s<sup>−2</sup>',
-    note_imagine: 'Imagine: the water pushed aside, lifted and weighed',
+    note_model: 'To measure the water pushed aside, see the model ship beside this figure',
 
     lbl_P2: 'P<sub>2</sub> = {v}&nbsp;{u_Pa}',
     lbl_P2_sym: 'P<sub>2</sub>',
@@ -274,11 +246,7 @@ export const STRINGS = {
     lbl_steel: 'Solid steel',
     lbl_sB: 'Buoyancy about {v}&nbsp;{u_N}',
     lbl_reading: 'Balance {v}&nbsp;{u_N}',
-    lbl_reading_q: 'Balance ?',
     lbl_reading_about: 'Balance about {v}&nbsp;{u_N}',
-    lbl_V: 'Water pushed aside V = {v}&nbsp;{u_m3}',
-    lbl_V_sym: 'Water pushed aside',
-    lbl_water_w: 'Its weight',
     lbl_loadline: 'Load line',
     lbl_h: 'h = {v}&nbsp;{u_m}',
     lbl_h_sym: 'h',
@@ -313,12 +281,6 @@ export const STRINGS = {
     mis_noG: 'This leaves out g; pressure = hρg.',
     mis_deck: 'This uses the ship’s whole height ({d}&nbsp;{u_m}); it takes the depth under water, h.',
     mis_force: 'This is pressure × area, a force (N), not a pressure.',
-
-    q_displaced: 'The volume of water the ship pushed aside is written on the picture. What does that water weigh, that is, what is the buoyancy?',
-    why_displaced: '<b>{F}&nbsp;{u_N}</b><span class="pvc-formula">weight = <i>Vρg</i> = {V} × {rho} × {g}</span>',
-    mis_mass: 'Vρ is the water’s mass (kg); for its weight multiply by g too.',
-    mis_noRho: 'The density ρ is missing; weight = Vρg.',
-    mis_steel: 'This uses steel’s density; we want the water’s weight, so water’s density.',
 
     q_more: 'What happens if two more containers are loaded onto this ship?',
     c_deeper_more: 'It sinks a little deeper; buoyancy grows',

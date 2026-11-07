@@ -27,7 +27,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
-| `step` | Step | `pressure` pressure (চাপ) · `weight` weight and buoyancy (ওজন ও প্লবতা) · `displaced` water pushed aside (অপসারিত পানি) · `load` loading (মাল বোঝাই) | `pressure` |
+| `step` | Step | `pressure` pressure (চাপ) · `weight` weight and buoyancy (ওজন ও প্লবতা) · `load` loading (মাল বোঝাই) | `pressure` |
 | `load` | Containers on board (20 t each; 12 bring the water to the load line) | number | `0` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |

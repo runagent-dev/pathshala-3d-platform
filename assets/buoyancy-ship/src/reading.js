@@ -124,8 +124,8 @@ export function groupIntl(x) {
   return `${x < 0 ? '−' : ''}${int.replace(/\B(?=(\d{3})+$)/g, ',')}${frac ? `.${frac}` : ''}`;
 }
 
-/** The four steps (the row of words). */
-export const STEPS = ['pressure', 'weight', 'displaced', 'load'];
+/** The three steps (the row of words). */
+export const STEPS = ['pressure', 'weight', 'load'];
 
 // ── the test ────────────────────────────────────────────────────────────────
 /** Loads for the questions (never the empty ship, never full). */
@@ -141,15 +141,5 @@ export function pressureChoices(h) {
     { key: 'noG', v: round(h * RHO, 6) },
     { key: 'deck', v: pressureAt(HULL.depth) },
     { key: 'force', v: buoyancy(h) },
-  ];
-}
-
-/** The weight of the water pushed aside from its volume: Vρg, then Vρ (the mass), Vg, V × steel's ρ × g. */
-export function displacedChoices(V) {
-  return [
-    { key: 'right', v: round(V * RHO * G, 6) },
-    { key: 'mass', v: round(V * RHO, 6) },
-    { key: 'noRho', v: round(V * G, 6) },
-    { key: 'steel', v: round(V * RHO_STEEL * G, 6) },
   ];
 }

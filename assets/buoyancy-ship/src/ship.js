@@ -1,5 +1,5 @@
-// The things in the water, built from simple shapes (metres): the cargo ship, the "ghost" of the water it pushes
-// aside, a solid steel cylinder of the ship's own mass and the spring balance that weighs them.
+// The things in the water, built from simple shapes (metres): the cargo ship, a solid steel cylinder of the ship's own
+// mass and the spring balance that weighs it.
 //
 // The ship's group has its keel at y = 0, the flat stern (transom) at x = +14 and the bow's tip at x = −14; the app
 // moves the group down by the draft h, so the water's surface (y = 0 of the world) crosses the hull at y = h. Below the
@@ -8,9 +8,6 @@
 // white line there, navy above; the load-line (Plimsoll) mark amidships and draft marks near the stern, on the side
 // the camera sees (−z) and on the transom.
 import * as THREE from 'three';
-import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
-import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
-import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { textMesh } from '@shared/student/materials.js';
 import { HULL, LOAD_LINE, MAX_CONTAINERS, STEEL, hullOutline } from './reading.js';
 
@@ -368,74 +365,6 @@ export function createFoam() {
   m.renderOrder = 3;
   m.userData.noExport = true;
   return m;
-}
-
-/**
- * The water the hull pushes aside, as a solid of its own: the hull's outline from the keel up to the waterline (the
- * group is 1 m tall; the app scales it by h). Light, see-through water with bright edges.
- */
-export function createGhost() {
-  const root = new THREE.Group();
-  root.name = 'DisplacedWater';
-  const pts = offsetOutline(hullOutline(16), 0.04);
-  const geo = new THREE.BufferGeometry();
-  const parts = [wallGeometry(pts, 0, 1), capGeometry(pts, 1), capGeometry(pts, 0, { down: true })];
-  const merged = mergeSimple(parts);
-  geo.copy(merged);
-  const material = new THREE.MeshStandardMaterial({
-    color: '#7fdcff',
-    emissive: '#1fa3d6',
-    emissiveIntensity: 0.35,
-    roughness: 0.2,
-    transparent: true,
-    opacity: 0.5,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-  });
-  const body = new THREE.Mesh(geo, material);
-  body.name = 'DisplacedWaterBody';
-  body.renderOrder = 6;
-  root.add(body);
-  // its edges: the outline at the top and the bottom, the stern's corners
-  const seg = [];
-  for (const y of [0, 1])
-    for (let i = 0; i < pts.length; i++) {
-      const a = pts[i];
-      const b = pts[(i + 1) % pts.length];
-      seg.push(a[0], y, a[1], b[0], y, b[1]);
-    }
-  for (const p of [pts[0], pts[pts.length - 1]]) seg.push(p[0], 0, p[1], p[0], 1, p[1]);
-  const lineGeo = new LineSegmentsGeometry().setPositions(seg);
-  const lineMat = new LineMaterial({ color: '#ffffff', linewidth: 2.5, transparent: true, depthWrite: false });
-  const edges = new LineSegments2(lineGeo, lineMat);
-  edges.name = 'DisplacedWaterEdges';
-  edges.renderOrder = 7;
-  root.add(edges);
-  root.visible = false;
-  return {
-    root,
-    setOpacity(a) {
-      material.opacity = 0.5 * a;
-      lineMat.opacity = a;
-      root.visible = a > 0.001;
-    },
-  };
-}
-
-/** Several plain geometries (position, normal) in one. */
-function mergeSimple(list) {
-  const pos = [];
-  const nor = [];
-  for (const g0 of list) {
-    const g = g0.index ? g0.toNonIndexed() : g0;
-    if (!g.attributes.normal) g.computeVertexNormals();
-    pos.push(...g.attributes.position.array);
-    nor.push(...g.attributes.normal.array);
-  }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
-  return g;
 }
 
 /** A solid steel cylinder with the ship's own mass (src/reading.js STEEL): its centre at the group's origin. */

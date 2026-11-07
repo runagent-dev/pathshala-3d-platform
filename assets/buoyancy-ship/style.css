@@ -1,5 +1,5 @@
 /* Buoyancy: the page, the colours that carry meaning (the weight W purple, the buoyancy প্লবতা orange, the water's
-   pressure P red, the water pushed aside blue: the same as the arrows and labels on the picture, src/app.js), the sums
+   pressure P red, the pointer to the next figure blue: the same as the arrows and labels on the picture, src/app.js), the sums
    under the action (with the containers' stepper in মাল বোঝাই), the notes on the stage, the labels and the test's
    answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
@@ -17,8 +17,7 @@ body.bg-transparent { background: transparent; }
 .by-line { min-height: 1.5em; color: var(--ink); }
 .by-line b { color: var(--c-B); }
 .by-eq[data-step='pressure'] .by-line[data-line='1'] b { color: var(--c-P); }
-.by-eq[data-step='weight'] .by-line[data-line='1'] b, .by-eq[data-step='displaced'] .by-line[data-line='2'] b { color: var(--c-W); }
-.by-eq[data-step='displaced'] .by-line[data-line='1'] b { color: var(--c-V); }
+.by-eq[data-step='weight'] .by-line[data-line='1'] b { color: var(--c-W); }
 .by-load { display: none; align-items: center; justify-content: space-between; gap: 10px; --c: #364fc7; }
 .by-eq[data-step='load'] .by-load { display: flex; }
 .by-eq[data-step='load'] .by-line[data-line='2'] { display: none; }
@@ -31,7 +30,7 @@ body.bg-transparent { background: transparent; }
 .by-pm:focus-visible { outline: 2px solid var(--c); outline-offset: -3px; }
 .by-val { min-width: 2.6em; display: grid; place-items: center; font-size: 18px; font-weight: 600; color: var(--c); }
 
-/* notes on the stage: the water's numbers, and "imagine" while the water is weighed (top left; the buttons are top right) */
+/* notes on the stage: the water's numbers, and in মাল বোঝাই the way to the next figure (top left; the buttons are top right) */
 .by-notes { display: flex; flex-direction: column; gap: 0; }
 .by-note { font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
 .by-note-x { color: var(--c-V); font-weight: 600; }
@@ -47,7 +46,7 @@ body.bg-transparent { background: transparent; }
 .by .pvc-q-text { font-size: 15px; }
 .by .pvc-q-feedback { font-size: 14px; }
 
-/* the four steps' words may wrap in a narrow panel (never run into each other) */
+/* the three steps' words may wrap in a narrow panel (never run into each other) */
 .by .pvc-examples .pvc-ex-word { white-space: normal; text-align: center; line-height: 1.2; }
 
 /* a phone held upright: the water's numbers only beside the 3D, so the 3D keeps more than half the height */
@@ -89,6 +88,10 @@ body.bg-transparent { background: transparent; }
 /* the panel beside the 3D (a size container, so a height query matches only there) */
 @container pvc-panel (min-height: 300px) {
   .by-notes { display: flex; }
+}
+/* a short panel beside the 3D: in মাল বোঝাই the note about the next figure takes the place of the water's numbers */
+@container pvc-panel (max-height: 420px) {
+  .by-eq[data-step='load'] .by-note:not(.by-note-x) { display: none; }
 }
 @container pvc-panel (max-width: 330px) {
   .by-eq { font-size: 12.5px; }

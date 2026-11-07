@@ -1,16 +1,14 @@
 // Archimedes' principle and buoyancy (book page 137, topic 5.3.1), student view. One cargo ship floats in a sunny
-// harbour; the water behind its flat stern is cut away, so the hull under the water shows. Four steps, one idea at a
+// harbour; the water behind its flat stern is cut away, so the hull under the water shows. Three steps, one idea at a
 // time (the row of words):
 //   চাপ: the water's pressure arrows on the hull, short near the surface, long at the bottom (P = hρg); the two sides'
 //     arrows are equal pairs that cancel; the bottom's add up to one bold upward arrow, প্লবতা F = P₂A = Ahρg.
 //   ওজন ও প্লবতা: the ship's weight W down and its buoyancy up, equal. A solid steel cylinder of the empty ship's mass
 //     hangs on a spring balance: lowered into the water it seems to weigh less (by the water it pushes aside); let go,
 //     it sinks, because it pushes aside far less water than the hollow ship.
-//   অপসারিত পানি: the water the hull pushes aside, as a glowing block of the hull's shape, slides out, rises and hangs
-//     on the spring balance: its weight Vρg is the ship's buoyancy.
 //   মাল বোঝাই: containers (20 t each) are lowered onto the deck; the ship settles deeper, the waterline climbs the
 //     draft marks and the load line, W and প্লবতা grow together.
-// Then a five-question test. Built on the shared student kit.
+// Then a four-question test. Weighing the water pushed aside is the next figure's (displaced-water-ship). Built on the shared student kit.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createArrow } from '@shared/arrow.js';
@@ -24,7 +22,7 @@ import { ICONS } from '@shared/student/icons.js';
 import { createI18n } from './i18n.js';
 import { fitPose } from './camera.js';
 import { FLOOR, XC, createHarbour } from './harbour.js';
-import { BOX, createBalance, createFoam, createGhost, createShip, createSteel } from './ship.js';
+import { BOX, createBalance, createFoam, createShip, createSteel } from './ship.js';
 import {
   AREA,
   CONTAINER_T,
@@ -39,7 +37,6 @@ import {
   STEPS,
   buoyancy,
   displaced,
-  displacedChoices,
   draft,
   fixLoad,
   forceLength,
@@ -56,7 +53,7 @@ import {
 } from './reading.js';
 
 export const DEFAULTS = {
-  step: 'pressure', // 'pressure' | 'weight' | 'displaced' | 'load'
+  step: 'pressure', // 'pressure' | 'weight' | 'load'
   load: 0, // containers on board (0 … 12)
   view: 'front', // 'front' | '3d'
   mode: 'explore', // 'explore' | 'quiz'
@@ -68,17 +65,14 @@ export const DEFAULTS = {
   sound: true,
 };
 
-const COLORS = { W: '#7048e8', B: '#e8590c', P: '#e03131', water: '#0b6e99', steel: '#495057', ink: '#14171c' };
+const COLORS = { W: '#7048e8', B: '#e8590c', P: '#e03131', steel: '#495057', ink: '#14171c' };
 const NBSP = ' ';
 const DOUBLE_TAP = 450; // ms
 const AX = XC - 0.1; // the arrows on the ship are drawn here: just inside the water's cut face, over the stern
 const STEEL_AT = new THREE.Vector3(12, 0, -10.2); // where the steel cylinder hangs (x, z)
-const GHOST_Z = -12.6; // where the pushed-aside water hangs, beside the ship
-const GHOST_X = 1.41; // the middle of the hull's outline (its centroid)
 const WIRE = 2.2; // the wire from the balance's hook to the cylinder
 const STEEL_AIR = 0.5; // the cylinder's bottom this far above the water, hanging
 const STEEL_DEEP = 0.7; // lowered: its top this far under the water (the book's h₁)
-const GHOST_UP = 0.9; // the hanging block's bottom above the water
 const SIDE_ROWS = 4; // pressure arrows on each side
 const BOTTOM_ZS = [-3.2, -1.6, 0, 1.6, 3.2];
 const MARGIN = { top: 52, bottom: 14, side: 6 };
@@ -137,7 +131,7 @@ export function createApp(root, options = {}) {
   const line1 = /** @type {HTMLElement} */ (eq.querySelector('[data-line="1"]'));
   const line2 = /** @type {HTMLElement} */ (eq.querySelector('[data-line="2"]'));
 
-  // the water's numbers and, while the water is weighed, "imagine": in the panel, under the sums
+  // the water's numbers and, in মাল বোঝাই, the way to the next figure: in the panel, under the sums
   const notes = document.createElement('div');
   notes.className = 'by-notes';
   const dataNote = document.createElement('div');
@@ -166,14 +160,12 @@ export function createApp(root, options = {}) {
   scene.add(ship.root);
   const foam = createFoam();
   scene.add(foam);
-  const ghost = createGhost();
-  scene.add(ghost.root);
   const steel = createSteel();
   scene.add(steel.root);
   const balance = createBalance();
   scene.add(balance.root);
   const cableMat = new THREE.MeshStandardMaterial({ color: '#3b4148', metalness: 0.6, roughness: 0.4 });
-  /** A thin rod between two points (wires, slings). */
+  /** A thin rod between two points (the wire). */
   function rod(radius = 0.05) {
     const m = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 6).translate(0, 0.5, 0), cableMat);
     m.visible = false;
@@ -197,12 +189,6 @@ export function createApp(root, options = {}) {
     };
   }
   const wire = rod(0.045);
-  // the spreader beam and its wires for the hanging block of water
-  const spreader = new THREE.Mesh(new THREE.BoxGeometry(17, 0.32, 0.32), new THREE.MeshStandardMaterial({ color: '#f2b705', roughness: 0.5 }));
-  spreader.visible = false;
-  spreader.userData.noExport = true;
-  scene.add(spreader);
-  const slings = [rod(), rod(), rod(0.04), rod(0.04)];
 
   // the water's particles round the hull's section (চাপ): more of them deeper, where they push harder; they jostle
   // while the arrows grow, then rest
@@ -324,7 +310,6 @@ export function createApp(root, options = {}) {
     B: boldArrow('ShipBuoyancy', COLORS.B, 4.2),
     sW: boldArrow('SteelWeight', COLORS.W, 3.6),
     sB: boldArrow('SteelBuoyancy', COLORS.B, 3.6),
-    gW: boldArrow('WaterWeight', COLORS.W, 3.6),
     left: Array.from({ length: SIDE_ROWS }, (_, i) => boldArrow(`PressureLeft${i}`, COLORS.P, 2.4)),
     right: Array.from({ length: SIDE_ROWS }, (_, i) => boldArrow(`PressureRight${i}`, COLORS.P, 2.4)),
     bottom: BOTTOM_ZS.map((_, i) => boldArrow(`PressureBottom${i}`, COLORS.P, 2.4)),
@@ -344,7 +329,7 @@ export function createApp(root, options = {}) {
 
   const s = {
     step: STEPS.includes(o.step) ? o.step : 'pressure',
-    phase: 0, // what the step's action has done: চাপ 0 / 1 arrows / 2 added up; ওজন 0 in the air / 1 in the water / 2 let go; অপসারিত 0 / 1 weighed
+    phase: 0, // what the step's action has done: চাপ 0 / 1 arrows / 2 added up; ওজন 0 in the air / 1 in the water / 2 let go
     n: fixLoad(o.load), // containers on board
     hv: draft(fixLoad(o.load)), // the ship's draft as drawn now (it eases to draft(n))
     view: o.view === '3d' ? '3d' : 'front',
@@ -355,11 +340,10 @@ export function createApp(root, options = {}) {
     sum: 0, // they add up (0 … 1)
     steelY: 0, // the cylinder's centre (m)
     steelHung: true,
-    ghostK: 0, // the block of water's journey (0 … 1)
     drop: Array(MAX_CONTAINERS).fill(0), // how far above its place each container is (m)
     reading: 0, // the balance's reading (N)
-    found: { pressure: false, sum: false, lower: false, drop: false, ghost: false, load: false },
-    show: { values: true, arrows: true, h: true, V: true, reading: true }, // the test hides some until the answer
+    found: { pressure: false, sum: false, lower: false, drop: false, load: false },
+    show: { values: true, arrows: true, h: true }, // the test hides some until the answer
     userMovedCamera: false,
     run: 0, // a token: every new action, step, reset bumps it
   };
@@ -390,8 +374,6 @@ export function createApp(root, options = {}) {
     const inWeight = s.step === 'weight';
     steel.root.visible = inWeight;
     steel.root.position.set(STEEL_AT.x, s.steelY, STEEL_AT.z);
-    const g = ghostPath();
-    const ghostOn = s.step === 'displaced' && s.ghostK > 0;
     if (inWeight && s.steelHung) {
       hookAt.set(STEEL_AT.x, s.steelY + steel.top + WIRE, STEEL_AT.z);
       balance.root.visible = true;
@@ -401,51 +383,15 @@ export function createApp(root, options = {}) {
       // let go: the balance stays where it was, empty
       balance.root.visible = true;
       wire.hide();
-    } else if (ghostOn && g.hang > 0) {
-      balance.root.visible = true;
-      hookAt.set(GHOST_X, g.y + g.h + 3.4, GHOST_Z);
-      balance.root.position.copy(hookAt);
-      wire.hide();
     } else {
       balance.root.visible = false;
       wire.hide();
     }
     balance.setPull(s.reading / weight(shipMass(MAX_CONTAINERS)));
 
-    // the block of water the hull pushes aside (অপসারিত পানি)
-    ghost.root.position.set(0, g.y, g.z);
-    ghost.root.scale.set(1, Math.max(0.01, g.h), 1);
-    ghost.setOpacity(ghostOn ? g.alpha : 0);
-    const rig = ghostOn && g.hang > 0;
-    spreader.visible = rig;
-    if (rig) {
-      const top = g.y + g.h;
-      spreader.position.set(GHOST_X, top + 1.6, GHOST_Z);
-      const ends = [GHOST_X - 8.2, GHOST_X + 8.2];
-      ends.forEach((x, i) => {
-        slings[i].between(tmpA.set(x, top + 1.6, GHOST_Z), hookAt);
-        slings[i + 2].between(tmpA.set(x, top, GHOST_Z), tmpB.set(x, top + 1.6, GHOST_Z));
-      });
-    } else for (const r of slings) r.hide();
-
     placeDots();
     layoutArrows();
     stage.invalidate();
-  }
-
-  /** Where the block of water is on its journey: in the hull, sideways under the water, up, hanging. */
-  function ghostPath() {
-    const k = s.ghostK;
-    const h = s.hv;
-    const slide = ease.inOutCubic(Math.min(1, Math.max(0, (k - 0.22) / 0.3)));
-    const rise = ease.inOutCubic(Math.min(1, Math.max(0, (k - 0.55) / 0.3)));
-    return {
-      alpha: Math.min(1, k / 0.12),
-      z: GHOST_Z * slide,
-      y: -h + (h + GHOST_UP) * rise,
-      h,
-      hang: k >= 0.85 ? 1 : 0,
-    };
   }
 
   /** Every arrow from the state (and at the camera's distance). */
@@ -480,12 +426,11 @@ export function createApp(root, options = {}) {
       arrows.hUp.set(tmpA.set(AX, -h / 2, 2.3), UPV, h / 2);
       arrows.hDown.set(tmpA.set(AX, -h / 2, 2.3), DOWN, h / 2);
     }
-    // the ship's weight and buoyancy (ওজন ও প্লবতা, মাল বোঝাই, অপসারিত পানি)
-    if ((s.step === 'weight' || s.step === 'load' || (s.step === 'displaced' && s.ghostK >= 0.85)) && showArrows) {
+    // the ship's weight and buoyancy (ওজন ও প্লবতা, মাল বোঝাই)
+    if ((s.step === 'weight' || s.step === 'load') && showArrows) {
       const Lb = forceLength(buoyancy(h));
       arrows.B.set(tmpA.set(AX, -h - Lb, 0), UPV, Lb);
-      // (beside the hanging water, its own weight stands for the ship's: the two arrows match)
-      if (s.step !== 'displaced') arrows.W.set(tmpA.set(AX, HULL.depth - h + 0.15, 0), DOWN, forceLength(W()));
+      arrows.W.set(tmpA.set(AX, HULL.depth - h + 0.15, 0), DOWN, forceLength(W()));
     }
     if (s.step === 'load' && s.show.h) {
       arrows.hUp.set(tmpA.set(AX, -h / 2, 2.3), UPV, h / 2);
@@ -498,11 +443,6 @@ export function createApp(root, options = {}) {
       const Lb = forceLength(steelBuoyancy() * steelUnder());
       const bottom = s.steelY - STEEL.h / 2;
       if (Lb > 0.01) arrows.sB.set(tmpA.set(STEEL_AT.x, bottom - Lb, STEEL_AT.z), UPV, Lb);
-    }
-    // the hanging water's weight
-    if (s.step === 'displaced' && s.ghostK >= 0.85 && showArrows && s.show.reading) {
-      const g = ghostPath();
-      arrows.gW.set(tmpA.set(AX - 0.4, g.y + g.h / 2, GHOST_Z), DOWN, forceLength(buoyancy(h)));
     }
   }
   function placeArrows() {
@@ -523,7 +463,6 @@ export function createApp(root, options = {}) {
       if (s.phase === 1) return { label: 'act_drop', step: f.drop ? '' : 2 };
       return { label: 'act_again_w', step: '' };
     }
-    if (s.step === 'displaced') return { label: s.phase ? 'act_again_d' : 'act_ghost', step: f.ghost || s.phase ? '' : 1 };
     if (s.n >= MAX_CONTAINERS) return { label: 'act_unload', step: '' };
     return { label: 'act_load', step: f.load ? '' : 1 };
   }
@@ -542,10 +481,6 @@ export function createApp(root, options = {}) {
       if (s.phase === 0) return [a, t('eq_steel_air', { W: G_(steelWeight()), V: N(round(STEEL.V, 1)) })];
       return [a, t('eq_steel_water', { W: G_(steelWeight()), B: G_(near100(steelBuoyancy())) })];
     }
-    if (s.step === 'displaced') {
-      const V = displaced(h);
-      return [t('eq_v', { A: N(AREA), h: D1(h), V: N(round(V, 1)) }), t('eq_vw', { V: N(round(V, 1)), rho: G_(RHO), g: N(G), F: G_(buoyancy(h)) })];
-    }
     return [t('eq_load', { n: N(n), m: N(SHIP_T + CONTAINER_T * n), h: D1(h) }), t('eq_balance', { W: G_(W()) })];
   }
 
@@ -561,7 +496,6 @@ export function createApp(root, options = {}) {
       if (s.phase === 1) return t('out_w1', { R: G_(near100(s.reading)) });
       return t('out_w2');
     }
-    if (s.step === 'displaced') return s.phase ? t('out_d1', { F: G_(buoyancy(h)) }) : t('out_d0', { h: D1(h) });
     if (s.n >= MAX_CONTAINERS) return t('out_full');
     if (s.n === 0) return t('out_empty', { h: D1(h) });
     return t('out_load', { n: N(s.n), h: D1(h) });
@@ -572,7 +506,6 @@ export function createApp(root, options = {}) {
     if (s.step === 'pressure') return s.phase >= 2 || (s.phase === 0 && f.sum) ? t('rule_sum', { zero: N(0) }) : t('rule_pressure');
     if (s.step === 'weight')
       return s.phase >= 2 || (s.phase === 0 && f.drop) ? t('rule_drop', { rs: G_(RHO_STEEL) }) : s.phase === 1 ? t('rule_lower') : t('rule_weight');
-    if (s.step === 'displaced') return t('rule_archimedes');
     return s.n >= MAX_CONTAINERS ? t('rule_full') : t('rule_load');
   }
 
@@ -606,7 +539,7 @@ export function createApp(root, options = {}) {
     const key = `${s.step}|${s.phase}|${stage.width < 560}`;
     if (key !== lastNotes) {
       dataNote.innerHTML = t('note_data', { rho: G_(RHO), g: N(G) });
-      extraNote.textContent = s.step === 'displaced' && s.phase ? t('note_imagine') : '';
+      extraNote.textContent = s.step === 'load' ? t('note_model') : '';
       lastNotes = key;
     }
     syncLabels();
@@ -733,29 +666,6 @@ export function createApp(root, options = {}) {
           color: COLORS.ink,
         });
     }
-    if (s.step === 'displaced' && s.ghostK > 0.15) {
-      const g = ghostPath();
-      add('V', {
-        text: s.show.V ? t('lbl_V', { v: N(round(displaced(h), 1)) }) : t('lbl_V_sym'),
-        point: () => P('V').set(2, g.y + g.h, g.z - HULL.beam / 2 + 0.6),
-        spots: [spot(18, -14), spot(18, 8), spot(18, 24), ...BELOW],
-        color: COLORS.water,
-      });
-      if (arrows.gW.on)
-        add('gW', {
-          text: t('lbl_water_w'),
-          point: () => mid(arrows.gW),
-          spots: [...RIGHT_OF, ...BELOW, ...LEFT_OF],
-          color: COLORS.W,
-        });
-      if (s.ghostK >= 0.85)
-        add('reading', {
-          text: s.show.reading ? t('lbl_reading', { v: G_(round(s.reading, 0)) }) : t('lbl_reading_q'),
-          point: () => P('rd').copy(balance.root.position).add(balance.labelAt()),
-          spots: [spot(20, 0), spot(20, 16), spot(-20, 0), spot(20, -16)],
-          color: COLORS.ink,
-        });
-    }
     if (s.step === 'load') {
       add('loadline', {
         text: t('lbl_loadline'),
@@ -773,7 +683,7 @@ export function createApp(root, options = {}) {
           optional: true,
         });
     }
-    const order = ['P', 'B', 'W', 'gW', 'reading', 'V', 'h', 'steel', 'sB', 'loadline', 'cancelL', 'cancelR'];
+    const order = ['P', 'B', 'W', 'reading', 'h', 'steel', 'sB', 'loadline', 'cancelL', 'cancelR'];
     const sorted = [...want.entries()].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
     for (const id of [...labelState.keys()])
       if (!want.has(id)) {
@@ -814,10 +724,6 @@ export function createApp(root, options = {}) {
       box.min.set(STEEL_AT.x - 2, lowest, STEEL_AT.z - STEEL.r - 0.4);
       box.max.set(XC, hook + 3.6, HULL.beam / 2 + 0.2);
       dir = dirFrom(portrait ? 10 : 14, 7);
-    } else if (step === 'displaced') {
-      box.min.set(-6, -h - forceLength(buoyancy(h)) - 0.3, GHOST_Z - HULL.beam / 2 - 0.4);
-      box.max.set(XC, GHOST_UP + h + 3.4 + 1.6, HULL.beam / 2 + 0.3);
-      dir = dirFrom(portrait ? 12 : 18, 9);
     } else if (step === 'load') {
       const Lmax = forceLength(weight(shipMass(MAX_CONTAINERS)));
       box.min.set(-4, -2.5 - Lmax - 0.3, -HULL.beam / 2 - 0.3);
@@ -905,7 +811,6 @@ export function createApp(root, options = {}) {
   function sceneFor(step, phase = 0) {
     tweener.cancel('pa');
     tweener.cancel('steel');
-    tweener.cancel('ghost');
     tweener.cancel('wait');
     s.step = step;
     s.phase = phase;
@@ -913,14 +818,12 @@ export function createApp(root, options = {}) {
     s.sum = step === 'pressure' && phase >= 2 ? 1 : 0;
     s.steelHung = !(step === 'weight' && phase >= 2);
     s.steelY = step === 'weight' ? ([steelAirY(), steelDeepY(), steelFloorY()][phase] ?? steelAirY()) : steelAirY();
-    s.ghostK = step === 'displaced' && phase >= 1 ? 1 : 0;
     s.reading = readingNow();
     syncScene();
   }
-  /** The balance's reading for the scene as it is (what holds the cylinder up, or the water's weight). */
+  /** The balance's reading for the scene as it is (what holds the cylinder up). */
   function readingNow() {
     if (s.step === 'weight') return s.steelHung ? steelWeight() - steelBuoyancy() * steelUnder() : 0;
-    if (s.step === 'displaced') return s.ghostK >= 0.85 ? buoyancy(s.hv) * Math.min(1, (s.ghostK - 0.85) / 0.15) : 0;
     return 0;
   }
 
@@ -1022,26 +925,6 @@ export function createApp(root, options = {}) {
         sceneFor('weight', 0);
         frame(jump ? 0 : 0.9);
       }
-    } else if (step === 'displaced') {
-      s.phase = 1;
-      if (s.mode === 'explore') s.found.ghost = true;
-      s.ghostK = 0;
-      refresh();
-      if (jump) s.ghostK = 1;
-      else
-        await tweener.animate({
-          key: 'ghost',
-          duration: 5.2,
-          ease: ease.linear,
-          onUpdate: (k) => {
-            s.ghostK = k;
-            s.reading = readingNow();
-            syncScene();
-            refresh();
-          },
-        }).finished;
-      if (!alive()) return false;
-      s.ghostK = 1;
     } else {
       if (s.n >= MAX_CONTAINERS) await setLoad(0, { animate: !jump });
       else await setLoad(s.n + 1, { animate: !jump });
@@ -1293,13 +1176,13 @@ export function createApp(root, options = {}) {
     s.n = fixLoad(n);
     s.drop.fill(0);
     s.hv = target();
-    s.show = { values: true, arrows: true, h: true, V: true, reading: true, ...show };
+    s.show = { values: true, arrows: true, h: true, ...show };
     sceneFor(step, phase);
     refresh();
     return flyTo(viewPose(), 0.6);
   }
   function revealAll() {
-    s.show = { values: true, arrows: true, h: true, V: true, reading: true };
+    s.show = { values: true, arrows: true, h: true };
     syncScene();
     refresh();
   }
@@ -1307,14 +1190,13 @@ export function createApp(root, options = {}) {
   let question = null;
   let picked = -1;
   const paText = (v) => `${G_(v)}${NBSP}Pa`;
-  const nText = (v) => `${G_(v)}${NBSP}N`;
 
   const quiz = createQuiz({
     ui,
     t,
     emit,
     audio,
-    questions: 5,
+    questions: 4,
     lines: { text: 3, feedback: 3 },
     action,
     hooks: {
@@ -1329,7 +1211,7 @@ export function createApp(root, options = {}) {
         s.mode = 'explore';
         s.locked = false;
         const saved = learnSaved;
-        s.show = { values: true, arrows: true, h: true, V: true, reading: true };
+        s.show = { values: true, arrows: true, h: true };
         s.found = { ...(saved?.found || s.found) };
         syncUI();
         s.run++;
@@ -1343,7 +1225,7 @@ export function createApp(root, options = {}) {
       },
       async prepare(i, alive) {
         picked = -1;
-        const kind = ['sides', 'pressure', 'displaced', 'more', 'steel'][i % 5];
+        const kind = ['sides', 'pressure', 'more', 'steel'][i % 4];
         const n = pickOne(QUIZ_LOADS);
         if (kind === 'sides') {
           await scene_(n, 'pressure', 1, { values: false, h: false });
@@ -1358,13 +1240,6 @@ export function createApp(root, options = {}) {
           const h = target();
           question = { kind, h };
           return { text: t('q_pressure'), ...choicesOf(pressureChoices(h), kind, (x) => paText(x.v)) };
-        }
-        if (kind === 'displaced') {
-          await scene_(n, 'displaced', 1, { values: false, reading: false });
-          if (!alive()) return null;
-          const V = displaced(target());
-          question = { kind, V };
-          return { text: t('q_displaced'), ...choicesOf(displacedChoices(V), kind, (x) => nText(x.v)) };
         }
         if (kind === 'more') {
           await scene_(Math.min(n, MAX_CONTAINERS - 2), 'load', 0, { values: false });
@@ -1389,13 +1264,6 @@ export function createApp(root, options = {}) {
           return (
             t('why_pressure', { P: G_(pressureAt(h)), h: D1(h), rho: G_(RHO), g: N(G) }) +
             note({ noG: 'mis_noG', deck: 'mis_deck', force: 'mis_force' })
-          );
-        }
-        if (k === 'displaced') {
-          const V = question.V;
-          return (
-            t('why_displaced', { F: G_(buoyancy(target())), V: N(round(V, 1)), rho: G_(RHO), g: N(G) }) +
-            note({ mass: 'mis_mass', noRho: 'mis_noRho', steel: 'mis_steel' })
           );
         }
         if (k === 'sides') return t('why_sides') + note({ c_lift: 'mis_lift', c_down: 'mis_down', c_one_side: 'mis_one_side' });
@@ -1427,7 +1295,7 @@ export function createApp(root, options = {}) {
   }
   function goHome() {
     s.run++;
-    s.found = { pressure: false, sum: false, lower: false, drop: false, ghost: false, load: false };
+    s.found = { pressure: false, sum: false, lower: false, drop: false, load: false };
     tweener.cancel('drop');
     s.n = 0;
     s.drop.fill(0);
@@ -1474,13 +1342,12 @@ export function createApp(root, options = {}) {
     if (tgt.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key;
     const onButton = Boolean(tgt.closest('button'));
-    const sceneKey =
-      ['1', '2', '3', '4', 'r', 'R', 'Home', 'ArrowUp', 'ArrowDown', '+', '-'].includes(k) || ((k === ' ' || k === 'Enter') && !onButton);
+    const sceneKey = ['1', '2', '3', 'r', 'R', 'Home', 'ArrowUp', 'ArrowDown', '+', '-'].includes(k) || ((k === ' ' || k === 'Enter') && !onButton);
     if (sceneKey && s.mode === 'quiz') {
       if (quiz.active && !quiz.revealed) lockedNudge();
       return;
     }
-    if (['1', '2', '3', '4'].includes(k)) chooseStep(STEPS[Number(k) - 1]);
+    if (['1', '2', '3'].includes(k)) chooseStep(STEPS[Number(k) - 1]);
     else if (k === 'ArrowUp' || k === '+') stepLoad(1);
     else if (k === 'ArrowDown' || k === '-') stepLoad(-1);
     else if ((k === ' ' || k === 'Enter') && !onButton) doAction();
@@ -1511,7 +1378,7 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: step ('pressure' | 'weight' | 'displaced' | 'load'), load (containers 0 … 12; the ship settles to
+     * Change any of: step ('pressure' | 'weight' | 'load'), load (containers 0 … 12; the ship settles to
      * its draft), phase (what the step's action has done: 0, 1, 2; with animate: false it is there at once), view
      * ('front' | '3d'), found (what the rule has already told).
      */
@@ -1525,7 +1392,7 @@ export function createApp(root, options = {}) {
       if (p.step && (p.step !== s.step || p.phase != null)) await chooseStep(p.step, { animate });
       if (p.load != null) await setLoad(p.load, { animate });
       if (p.phase != null) {
-        const ph = Math.max(0, Math.min(s.step === 'pressure' || s.step === 'weight' ? 2 : 1, Math.round(Number(p.phase) || 0)));
+        const ph = Math.max(0, Math.min(2, Math.round(Number(p.phase) || 0)));
         if (ph !== s.phase && s.step !== 'load') {
           if (s.phase > ph) sceneFor(s.step, 0);
           while (s.phase < ph) await act({ jump: !animate });
@@ -1537,7 +1404,7 @@ export function createApp(root, options = {}) {
     },
     async reset() {
       quiz.stop();
-      s.show = { values: true, arrows: true, h: true, V: true, reading: true };
+      s.show = { values: true, arrows: true, h: true };
       await setView('front', { animate: false });
       await goHome();
       refresh();

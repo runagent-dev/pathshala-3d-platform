@@ -97,15 +97,12 @@ describe('buoyancy-ship: numbers and choices', () => {
     assert.equal(r.groupIntl(2940000), '2,940,000');
   });
 
-  it('builds four different choices for each question, the right one first', () => {
+  it('builds four different choices for the pressure question, the right one first', () => {
     for (const n of r.QUIZ_LOADS) {
       const h = r.draft(n);
       const p = r.pressureChoices(h);
       assert.equal(p[0].v, r.pressureAt(h));
       assert.equal(new Set(p.map((c) => c.v)).size, 4);
-      const d = r.displacedChoices(r.displaced(h));
-      assert.equal(d[0].v, r.buoyancy(h));
-      assert.equal(new Set(d.map((c) => c.v)).size, 4);
     }
   });
 
