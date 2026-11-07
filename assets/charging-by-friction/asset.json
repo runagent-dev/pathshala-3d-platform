@@ -1,0 +1,85 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "charging-by-friction",
+  "title": "Static electricity by rubbing (ঘর্ষণে স্থির বিদ্যুৎ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 274,
+  "topic": "10.2",
+  "placement": "Book page 274, topic 10.2 ঘর্ষণে স্থির বিদ্যুৎ তৈরি, চিত্র ১০.০২ and ১০.০৩ (pp. 274–275).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Charging by rubbing and like and unlike charges (pages 274–275, topic 10.2, চিত্র ১০.০২ and ১০.০৩). On a plain sand table in a calm deep-blue setting: a clear glass rod and a piece of silk, a plastic rod and a piece of flannel, each rod on two wooden V-blocks with the cloth draped over its end; behind them two lab stands, each with a rod hanging from a silk thread tied at its middle. Charges are signs that face the camera (red + protons, blue − electrons, the sign always drawn). Every body starts neutral; rubbing (a tap, or dragging the cloth back and forth, with a count of strokes) moves electrons only: three hop from the glass to the silk, and from the flannel to the plastic. Then the book's experiment: the rubbed rod is held near a hanging one (a tap, or dragging the rod) and the hanging rod turns away (+ and +, − and −) or toward it (+ and −), from a Coulomb torque about the thread, with outlined teal force arrows on both rods. Five experiments in the book's order, each in two steps (look, then do); a row of what has been found; the book's rule. Test: five tap questions (which way electrons move, the flannel's charge read off its signs, predict the swing, a hanging rod's unknown charge, why two kinds of force). Phone-first, Bangla and English.",
+  "tags": ["static electricity", "charge", "friction", "electron", "repulsion", "attraction", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "phase": "glass", "animate": false } },
+    { "name": "set", "payload": { "phase": "plastic", "animate": false } },
+    { "name": "set", "payload": { "phase": "pp", "animate": false } },
+    { "name": "set", "payload": { "phase": "nn", "animate": false } },
+    { "name": "set", "payload": { "phase": "pn", "animate": false } },
+    { "name": "set", "payload": { "phase": "glass0", "strokes": 2, "animate": false } },
+    { "name": "set", "payload": { "phase": "pn0", "near": 0.5, "animate": false } },
+    { "name": "set", "payload": { "item": "glass", "animate": false } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "phase": "pp", "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [] }],
+    "video": {
+      "kind": "script",
+      "seconds": 34,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "phase": "glass0" } },
+        { "at": 4.4, "command": "set", "payload": { "phase": "glass" } },
+        { "at": 9.5, "command": "set", "payload": { "phase": "plastic0" } },
+        { "at": 13.2, "command": "set", "payload": { "phase": "plastic" } },
+        { "at": 18.4, "command": "set", "payload": { "phase": "pp0" } },
+        { "at": 22, "command": "set", "payload": { "phase": "pp" } },
+        { "at": 27, "command": "set", "payload": { "phase": "pn", "animate": false } }
+      ]
+    }
+  }
+}
