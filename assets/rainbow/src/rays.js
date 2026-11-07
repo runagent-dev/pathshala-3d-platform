@@ -416,7 +416,7 @@ export function createRays({ stage, host, drop }) {
     if (which === 'back') return { x: p.p2.x, y: p.p2.y };
     if (which === 'enter') return { x: p.p1.x, y: p.p1.y };
     if (which === 'normal') return { x: p.p1.x * 1.5, y: p.p1.y * 1.5 };
-    if (which === 'through') return { x: p.p2.x + p.out.x * 0.6, y: p.p2.y + p.out.y * 0.6 };
+    if (which === 'through') return { x: p.p2.x + p.out.x * 0.65, y: p.p2.y + p.out.y * 0.65 };
     if (which === 'redIn' || which === 'violetIn') {
       const c = which === 'redIn' ? DROP_PATHS[0] : DROP_PATHS[DROP_PATHS.length - 1];
       return { x: c.p2.x, y: c.p2.y };
@@ -432,5 +432,59 @@ export function createRays({ stage, host, drop }) {
     }
     return list;
   };
-  return { canvas, view: v, paint, boxes, dropPoint, size };
+  /** The box (canvas pixels) round the colours leaving the drop toward the eye: a label about the back must keep off it. */
+  const fan = { left: 0, top: 0, right: 0, bottom: 0 };
+  const FB = { x: 0, y: 0, ok: true };
+  function fanBox() {
+    if (v.drop < 0.5 || v.outK < 0.5) return null;
+    let l = Infinity;
+    let t = Infinity;
+    let r = -Infinity;
+    let b = -Infinity;
+    for (const p of [DROP_PATHS[0], DROP_PATHS[DROP_PATHS.length - 1]])
+      for (const k of [0, LOUT]) {
+        D(p.p3.x + p.d3.x * k, p.p3.y + p.d3.y * k, FB);
+        l = Math.min(l, FB.x);
+        t = Math.min(t, FB.y);
+        r = Math.max(r, FB.x);
+        b = Math.max(b, FB.y);
+      }
+    fan.left = l - 8;
+    fan.top = t - 8;
+    fan.right = r + 8;
+    fan.bottom = b + 8;
+    return fan;
+  }
+  /** Strips (canvas pixels) that follow the big drop's outline: the label about the back keeps outside the drop. */
+  const OUTLINE = Array.from({ length: 32 }, () => ({ x: 0, y: 0, ok: true }));
+  const STRIPS = Array.from({ length: 8 }, () => ({ left: 0, top: 0, right: 0, bottom: 0 }));
+  function dropBox() {
+    if (v.drop < 0.5) return null;
+    let t = Infinity;
+    let b = -Infinity;
+    OUTLINE.forEach((o, i) => {
+      const th = (i / OUTLINE.length) * Math.PI * 2;
+      D(Math.cos(th), Math.sin(th), o);
+      t = Math.min(t, o.y);
+      b = Math.max(b, o.y);
+    });
+    const step = (b - t) / STRIPS.length;
+    STRIPS.forEach((r, k) => {
+      const y0 = t + k * step;
+      const y1 = y0 + step;
+      let l = Infinity;
+      let rr = -Infinity;
+      for (const o of OUTLINE)
+        if (o.y >= y0 - step && o.y <= y1 + step) {
+          l = Math.min(l, o.x);
+          rr = Math.max(rr, o.x);
+        }
+      r.left = l;
+      r.right = rr;
+      r.top = y0;
+      r.bottom = y1;
+    });
+    return STRIPS;
+  }
+  return { canvas, view: v, paint, boxes, dropPoint, size, fanBox, dropBox };
 }

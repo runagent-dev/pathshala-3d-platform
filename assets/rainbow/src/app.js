@@ -339,10 +339,14 @@ export function createApp(root, options = {}) {
       show: () => near() && s.v.inK > 0.95 && s.v.outK < 0.05,
     },
     reflect: { text: () => t('lbl_reflect'), point: inDrop('back'), spots: [...RIGHT_OF, ...ABOVE], show: () => near() && s.v.outK > 0.5 },
+    // names the faint light leaving through the BACK of the drop: on its right, outside the drop, with a leader to that
+    // ray; it never sits on the drop or on the coloured light going out to the eye (hidden where there is no room)
     through: {
       text: () => t('lbl_through'),
       point: inDrop('through'),
-      spots: [spot(16, 26), spot(24, 34), ...BELOW, ...RIGHT_OF],
+      kind: 'leader',
+      spots: [spot(44, 22), spot(0, 36), spot(0, 52), spot(40, 44), spot(-6, 40), spot(-6, 58)],
+      avoid: [() => rays.fanBox(), () => rays.dropBox()],
       optional: true,
       show: () => near() && s.v.outK > 0.95,
     },
@@ -416,8 +420,9 @@ export function createApp(root, options = {}) {
         anno.add(id, {
           text: L.text(),
           point: L.point,
-          kind: 'chip',
-          color: L.color || COL.ink,
+          kind: L.kind || 'chip',
+          avoid: L.avoid || [],
+          color: L.kind ? undefined : L.color || COL.ink,
           spots: typeof L.spots === 'function' ? L.spots() : L.spots,
           optional: Boolean(L.optional),
         });
