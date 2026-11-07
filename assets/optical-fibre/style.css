@@ -1,0 +1,119 @@
+/* The optical fibre: the page, the panel's calm first card and lead-in line, the graph under the rule, the labels on the
+   picture (short words on a white chip, in the colour of what they name) and the test's answers. The rest of the panel is
+   the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.of sub, .of sup { font-size: 0.72em; line-height: 0; }
+
+/* the light's drawing: over the 3D, under the labels; touches go through to the view */
+.of .of-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* the note in a corner: the model is bigger than a real fibre */
+.of-note { position: absolute; left: 8px; bottom: 6px; z-index: 2; padding: 1px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.86); color: var(--ink-2); font-size: 11.5px; line-height: 1.4; pointer-events: none; white-space: nowrap; }
+.pvc[data-mode='quiz'] .of-note { display: none; }
+
+/* the line before the action; on the first screen a calm card that sets the scene */
+.of .of-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+.of .of-lead:empty { display: none; }
+.of .of-lead.pvc-note { font-size: 15px; line-height: 1.6; }
+.of .of-lead .of-short { display: none; }
+.of .pvc-learn.of-calm .pvc-outcome,
+.of .pvc-learn.of-calm .pvc-rule { display: none; }
+
+/* the result and the rule */
+.of .pvc-outcome { font-size: 15px; line-height: 1.5; }
+.of .pvc-outcome b { font-size: 1.1em; font-weight: 600; color: var(--ink); }
+.of .pvc-rule { font-size: 14.5px; line-height: 1.55; }
+.of .pvc-rule b { color: var(--ink); }
+
+/* the graph: the panel's free height, never less than it needs to be read */
+.of .of-graph { position: relative; flex: 1 1 auto; min-height: 120px; max-height: 240px; }
+.of.of-side .pvc-sheets { flex: 1 1 auto; }
+.of.of-side .pvc-learn { min-height: 0; }
+.of .of-graph.off { visibility: hidden; }
+.of .of-graph .of-graph-svg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; overflow: visible; font-family: inherit; }
+.of-graph-svg text { paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.of-graph-svg .g-in { fill: #eef6ff; }
+.of-graph-svg .g-out { fill: #fff1e6; }
+.of-graph-svg .g-grid { stroke: #e3e8ee; stroke-width: 1; }
+.of-graph-svg .g-axis { stroke: #6b7785; stroke-width: 1.4; fill: none; }
+.of-graph-svg .g-num { fill: #5c6773; }
+.of-graph-svg .g-name { fill: #3d4954; }
+.of-graph-svg .g-crit { stroke-width: 1.8; stroke-dasharray: 5 3; }
+.of-graph-svg .g-tag { font-weight: 600; }
+.of-graph-svg .g-dot { stroke: #fff; stroke-width: 1.6; }
+.of-graph-svg .g-leak { fill: #fff; stroke-width: 2; }
+.of-graph-svg .g-x { stroke-width: 2; stroke-linecap: round; }
+.of-graph-svg .g-ring { fill: none; stroke-width: 2; }
+
+/* labels on the picture: short words on a white chip, in their colour */
+.pvc-anno-chip { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-chip sub { font-size: 0.72em; line-height: 0; }
+/* a short leader from each label to what it names */
+.pvc-anno-lines .k-chip { stroke: rgba(255, 255, 255, 0.9); stroke-width: 1.4; }
+
+/* the test */
+.of .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.of-opt { display: block; white-space: normal; text-align: center; }
+.of .pvc-q-text { font-size: 15px; }
+.of .pvc-q-feedback { font-size: 13.5px; }
+
+/* narrow panels: tighter type */
+@container pvc-panel (max-width: 420px) {
+  .of .pvc-rule { font-size: 14px; }
+  .of .pvc-outcome { font-size: 14px; }
+  .of .pvc-opt { height: 40px; font-size: 13px; line-height: 1.2; }
+  .of .pvc-q-text { font-size: 14.5px; }
+  .of .pvc-learn { gap: 6px; }
+}
+/* a side panel of middle height (800 × 500) */
+@container pvc (max-height: 620px) {
+  .of:lang(en) .of-lead .of-long { display: none; }
+  .of:lang(en) .of-lead .of-short { display: inline; }
+  .of .of-graph { display: none; }
+  .of .pvc-howto-orbit .pvc-howto-word, .of .pvc-howto-front .pvc-howto-word { display: none; }
+}
+/* a low side panel (844 × 390, 640 × 400): the short words, no lead-in once the steps start, a smaller graph */
+@container pvc (max-height: 460px) {
+  .of .of-lead .of-long { display: none; }
+  .of .of-lead .of-short { display: inline; }
+  .of .of-lead { font-size: 13.5px; line-height: 1.45; }
+  .of .of-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 5px 10px; }
+  .of .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
+  .of .pvc-rule { font-size: 13.5px; line-height: 1.5; }
+  .of .pvc-learn:not(.of-calm) .of-lead { display: none; }
+  .of .of-graph { display: none; }
+  .of .pvc-learn { gap: 6px; }
+  .of .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 13.5px; }
+  .of .pvc-q-text { font-size: 13.5px; }
+  .of .pvc-opt { font-size: 12.5px; height: 44px; }
+  .pvc-anno-chip { font-size: 12.5px; }
+}
+
+/* a phone held upright (the panel under the 3D): no graph, so the 3D keeps its height */
+@media (orientation: portrait), (max-width: 599px) {
+  .of .of-graph { display: none; }
+  /* the short calm words, and no lead-in line once the steps start (the action says what comes next) */
+  .of .of-lead .of-long { display: none; }
+  .of .of-lead .of-short { display: inline; }
+  .of .pvc-learn:not(.of-calm) .of-lead { display: none; }
+  .of .pvc-learn { gap: 6px; }
+  /* the worked answer with the note on a wrong choice: up to four lines, kept, so the 3D keeps its height */
+  .of .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
+  /* the how-to row on one line: the pill and the সামনে button carry their own words */
+  .of .pvc-howto-orbit .pvc-howto-word, .of .pvc-howto-front .pvc-howto-word { display: none; }
+}
+/* the shortest phone frame (390 × 520): the short calm words, no lead-in line once the steps start */
+@media (orientation: portrait) and (max-height: 600px) {
+  .of .pvc-howto { display: none; }
+  .of .of-lead .of-long { display: none; }
+  .of .of-lead .of-short { display: inline; }
+  .of .pvc-learn:not(.of-calm) .of-lead { display: none; }
+  .of .pvc-learn { gap: 5px; }
+  .of .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
+  .of .pvc-rule { font-size: 13.5px; line-height: 1.5; }
+  .of .pvc-q-text { --pvc-q-text-min: 2lh; }
+  .of .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
+}
