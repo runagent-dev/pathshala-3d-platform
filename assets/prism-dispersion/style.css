@@ -1,0 +1,133 @@
+/* The prism: the page, the panel's calm first card and lead-in line, the graph, the labels on the picture (each in the
+   colour of what it names) and the test's answers. The rest of the panel is the kit's clean sheet
+   (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.pd { --c-inc: #1971c2; --c-ref: #2b8a3e; --c-turn: #b86e00; --c-red: #c92a2a; --c-violet: #6741d9; --c-normal: #495057; }
+
+/* the note in a corner: what is drawn, and what is drawn wider than life */
+.pd-note { position: absolute; left: 10px; bottom: 10px; z-index: 3; max-width: 62%; padding: 3px 9px; border-radius: 6px; background: rgba(13, 27, 52, 0.78); color: #f1f5fb; font-size: 12.5px; line-height: 1.35; pointer-events: none; }
+.pd-note[hidden] { display: none; }
+.pvc[data-mode='quiz'] .pd-note { display: none; }
+
+/* the calm first card stands in for the lead line, the result and the rule (app.js gives it their height) */
+.pd .pvc-learn { gap: 6px; }
+.pd-stack { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.pd .pd-card { margin: 0; font-size: 14.5px; line-height: 1.55; box-sizing: border-box; }
+.pd .pd-card .pd-short { display: none; }
+.pd .pvc-learn.pd-calm .pd-lead, .pd .pvc-learn.pd-calm .pvc-outcome, .pd .pvc-learn.pd-calm .pvc-rule { display: none; }
+.pd .pvc-learn:not(.pd-calm) .pd-card { display: none; }
+.pd .pd-lead { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.5; min-height: 1.5em; }
+
+/* the steps: five words in a row */
+.pd .pvc-examples { flex-wrap: nowrap; gap: 2px; }
+.pd .pvc-examples button { flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 2px 2px 3px; }
+.pd .pvc-ex-word { font-size: 13px; white-space: nowrap; line-height: 1.2; }
+
+/* the result and the rule */
+.pd .pvc-outcome { font-size: 14.5px; line-height: 1.45; --pvc-outcome-lines: 2; }
+.pd .pvc-outcome b { font-size: 1.08em; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.pd .pvc-rule { font-size: 13.5px; line-height: 1.5; --pvc-rule-lines: 4; }
+.pd .pvc-rule b { color: var(--ink); }
+
+/* the graph: the refractive index for each colour; it takes the free height */
+.pd-graph { position: relative; flex: 1 1 auto; min-height: 120px; }
+.pd .pd-graph .pd-graph-svg { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; overflow: visible; font-family: inherit; }
+.pd-graph-svg text { paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; font-size: 12px; }
+.pd-graph-svg .grid { stroke: #e3e9ef; }
+.pd-graph-svg .axis { stroke: #58717d; stroke-width: 1.4; fill: none; }
+.pd-graph-svg .g-title { fill: #3d5a66; font-weight: 600; font-size: 12.5px; }
+.pd-graph-svg .g-num { fill: #58717d; }
+.pd-graph-svg .g-name { fill: #3d5a66; }
+.pd-graph-svg .g-tag { fill: #6c7f8b; }
+.pd-graph-svg .g-book { stroke: #8fa4b3; stroke-width: 1.2; stroke-dasharray: 5 4; }
+.pd-graph-svg .g-curve { fill: none; stroke-width: 3.2; stroke-linecap: round; }
+.pd-graph-svg .g-dot { stroke: #1d2733; stroke-width: 1.2; }
+.pd-graph-svg .g-ring { fill: none; stroke: #1d2733; stroke-width: 2; }
+.pd-graph-svg .g-hit { fill: transparent; stroke: none; }
+.pd-graph-svg .g-pick { cursor: pointer; outline: none; }
+.pd-graph-svg .g-pick:focus-visible .g-hit { stroke: var(--accent); stroke-width: 2; }
+.pd-graph-svg .g-val { fill: #1d2733; font-weight: 600; font-size: 12.5px; }
+
+/* labels on the picture: short words in their colour on a white chip */
+.pd .pvc-anno { --c: #1d2733; transition: none; font-size: 13px; font-weight: 600; color: var(--c); border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); padding: 0 6px; line-height: 1.5; white-space: nowrap; }
+.pd .pvc-anno-lines .k-num { display: none; }
+.pd .pvc-anno-lines line { stroke-width: 1.2; stroke: rgba(255, 255, 255, 0.92) !important; }
+.pd .pvc-anno-lines circle { stroke: #fff; }
+.pd .pvc-anno.pd-normal { --c: var(--c-normal); }
+.pd .pvc-anno.pd-inc { --c: var(--c-inc); }
+.pd .pvc-anno.pd-ref { --c: var(--c-ref); }
+.pd .pvc-anno.pd-turn { --c: var(--c-turn); }
+.pd .pvc-anno.pd-out { --c: var(--c-red); }
+.pd .pvc-anno.pd-orig { --c: #495057; }
+.pd .pvc-anno.pd-red { --c: var(--c-red); }
+.pd .pvc-anno.pd-violet { --c: var(--c-violet); }
+.pd .pvc-anno.pd-white { --c: #5c4a00; }
+.pd .pvc-anno.pd-pick { --c: #1d2733; }
+.pd .pvc-anno.pd-letter { --c: #6b4300; background: #fff3bf; font-size: 14px; padding: 0 7px; }
+
+/* the test */
+.pd .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.pd-opt { display: block; white-space: normal; text-align: center; }
+.pd-opt-letter { font-size: 17px; font-weight: 600; }
+.pd .pvc-q-text { font-size: 15px; }
+.pd .pvc-q-feedback { font-size: 13.5px; }
+
+/* ── sizes ──────────────────────────────────────────────────────────────────────────────────────────────────────
+   Budget (no panel ever scrolls): tabs, steps, the action row, the how-to row (beside the 3D only), the lead line,
+   the result (two lines), the rule (four lines), the graph. */
+.pd.pd-side .pvc-sheets { flex: 1 1 auto; }
+.pd.pd-side .pvc-learn { min-height: 0; }
+.pd.pd-side .pd-graph { max-height: 260px; min-height: 84px; }
+.pd.pvc[data-mode='quiz'] .pvc-howto { display: flex; visibility: hidden; } /* the test keeps its room */
+/* under the 3D (a phone held upright): no how-to row (the 3D has the ৩৬০° pill and সামনে), a low graph */
+.pd.pvc:not(.pd-side) .pvc-howto { display: none !important; }
+.pd:not(.pd-side) .pd-lead { display: none; }
+.pd:not(.pd-side) .pvc-rule { --pvc-rule-lines: 3; }
+.pd:not(.pd-side) .pd-graph { min-height: 88px; flex: none; height: 88px; }
+@container pvc (max-width: 420px) {
+  .pd .pvc-learn, .pd-stack { gap: 4px; }
+  .pd .pvc-examples button { min-height: 32px; }
+  .pd .pvc-ex-word { font-size: 12.5px; }
+  .pd .pvc-outcome { font-size: 14px; }
+  .pd .pvc-rule { font-size: 13px; line-height: 1.45; }
+  .pd .pvc-opt { height: 42px; font-size: 13px; line-height: 1.2; }
+  .pd .pvc-q-text { font-size: 14.5px; }
+  .pd .pvc-q-feedback { font-size: 13.5px; }
+}
+/* the tightest frames (390 × 520): the short card, no lead line, no graph (the result line gives n) */
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .pd .pd-card .pd-long { display: none; }
+  .pd .pd-card .pd-short { display: inline; }
+  .pd:not(.pd-side) .pd-lead { display: none; }
+  .pd .pvc-outcome { font-size: 13.5px; line-height: 1.4; }
+  .pd .pvc-rule { font-size: 13px; line-height: 1.42; --pvc-rule-lines: 3; }
+  .pd:not(.pd-side) .pd-graph { display: none; }
+  /* the test as low as the শেখো sheet, so the 3D gets the room */
+  .pd:not(.pd-side) .pvc-q-ask { gap: 5px; }
+  .pd:not(.pd-side) .pvc-q-options { gap: 6px; }
+  .pd:not(.pd-side) .pvc-opt { height: 36px; }
+  .pd:not(.pd-side) .pvc-q-text { font-size: 13.5px; line-height: 1.35; }
+  .pd:not(.pd-side) .pvc-q-feedback { font-size: 12.5px; line-height: 1.38; }
+  .pd .pvc-anno { font-size: 12px; }
+}
+/* short and beside (844 × 390, 640 × 400): no lead line, no how-to row, the graph as big as is left */
+@container pvc (max-height: 460px) {
+  .pd.pd-side .pd-lead { display: none; }
+  .pd.pd-side .pvc-howto { display: none !important; }
+  .pd .pd-card { font-size: 13.5px; line-height: 1.5; padding: 5px 10px; }
+  .pd .pvc-learn, .pd-stack { gap: 4px; }
+  .pd .pvc-examples button { min-height: 32px; }
+  .pd .pvc-outcome { font-size: 13.5px; line-height: 1.4; }
+  .pd .pvc-rule { font-size: 13px; line-height: 1.42; --pvc-rule-lines: 4; }
+  .pd.pd-side .pd-graph { min-height: 70px; }
+  .pd .pvc-q-text { font-size: 13.5px; }
+  .pd .pvc-opt { font-size: 12.5px; height: 40px; }
+  .pd .pvc-anno { font-size: 12px; }
+}
+/* the test's letters on the screen: a dark leader from the mark's bar, readable on the white card */
+.pd .pvc-anno-lines line.k-mark { stroke: #1d2733 !important; stroke-width: 1.6; }
+.pd .pvc-anno-lines circle.k-mark { fill: #1d2733; stroke: #fff; }
+.pd-graph-svg .g-chip { fill: #fff; }
