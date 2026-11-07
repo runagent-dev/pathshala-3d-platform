@@ -75,11 +75,20 @@ Mass on the hanging scale violet (#6741d9 chip, as W); water blue (#1864ab); ও
 buoyancy-ship); h grey. Arrows: flat colour, white outline, thin dark edge, drawn over the glass and water (as
 torricelli-barometer-straw).
 
+## Directions (the owner: the student must always know what to tap next)
+- ① ② the ring and badge on the part and the verb on the button. After lowering, the arm's handle, labelled with what it
+  does ("টেনে জাহাজ ওঠাও-নামাও"), appears only once the arm is free; its words sit above the arm, off the scale and the badge.
+- ③ ④ the six containers stand in one row with gaps; the ring circles exactly one and it pulses three times; any
+  container can be tapped and that one flies. The lead counts ("কন্টেইনার তোলো: ২ / ৬"), the button too ("২/৬"); a one-time
+  caption says "যেকোনো কন্টেইনারে টোকা দাও" (on a phone the how-to row says it).
+- At six: "৬ / ৬ ✓", the hull's "বোঝাই রেখা" lit and labelled, a pulsing ring on "পরীক্ষা দাও".
+- In the test the reading a question needs has a pulsing ring, and each question has its own hint in place of the general one.
+
 ## Test (4 questions, every one read off the picture)
 1. The ship part-way down, the hanging scale hidden ("---", "? g"): from the beaker's reading (60/80/120/140 g), what
    does the hanging scale read? (200 − w; wrong: the beaker's own number, 200 unchanged, 200 + w.)
 2. Floating, scale 0 g: what carries the ship's weight? (প্লবতা; wrong: the cords, the tank's bottom (look: it does not
-   touch), "nothing, the weight is zero".) The answer shows the two arrows.
+   touch), "buoyancy took away its mass".) The answer shows the two arrows.
 3. 2 or 3 containers on board: read the beaker; one more container, how much in all? (+50; wrong: unchanged, +100, only
    50.) The answer loads it.
 4. 1, 2 or 4 containers: read the beaker; the weight of that water = buoyancy in N? (Vρg; wrong: kg not × g, grams × g,
@@ -87,10 +96,12 @@ torricelli-barometer-straw).
 The kit's quiz scores with numbers (choice indices); a browser test answers all four right and checks 4/4.
 
 ## Performance (0.1.0, headless Chromium, 844×390, shadows on)
-- Per frame (renderer.info, shadow pass included), at 4 azimuths 90° apart: first screen 107 draws / 8.9k triangles;
-  step ② 109 / 9.1k; step ③ and ④ (six containers) 105 / 7.6k. The same at every azimuth.
+- Per frame, counted at the WebGL call (ch7 perf script, shadows on): step ② 52 draws / 9.3k triangles; step ④ with six
+  containers 51 / 7.4k; the same turned 50° in the 3D view. First version: 105–109; the draft numerals are now an atlas,
+  small parts are merged by material, each arrow is two meshes, and the hanging scale is hidden once it is out of view.
 - 0 frames drawn while idle (also after an orbit, once the damping settles).
-- The figure's own JS per animated frame at 6× CPU throttling (frame callbacks minus the `renderer.render` call):
+- The figure's own JS per animated frame at 6× CPU throttling (frame callbacks minus the `renderer.render` call; first
+  version, not measured again after the merges):
   lowering median 0.7 ms, p90 2.4 ms, max 4.9 ms (345 frames); a container median 0.2, p90 1.8, max 4.1 ms. No shader
   is compiled on any step's first tap (15 programs before and after; later parts warmed with `stage.warmUp`).
 - The displays are 256×128 canvases redrawn only when their number changes; the stream is one tube shown with a draw

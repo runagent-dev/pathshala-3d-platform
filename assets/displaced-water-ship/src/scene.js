@@ -8,6 +8,7 @@
 // when their number changes.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FONT } from '@shared/student/materials.js';
 import { BEAKER, beakerLevel, CENTRE_X, TANK } from './reading.js';
 import { EYES } from './ship.js';
@@ -31,21 +32,23 @@ export function backdrop() {
 }
 
 // ── where things stand (world, cm) ──────────────────────────────────────────────
-export const KSCALE = { x: 20.6, z: 0, w: 13, h: 2.2, pan: 0.3 }; // the kitchen scale
+export const KSCALE = { x: 20.6, z: 0, w: 13, h: 2.4, pan: 0.3 }; // the kitchen scale
+/** The hanging scale's body (cm). */
+export const HSCALE = { w: 5.4, h: 7.8 };
 export const BEAKER_AT = new THREE.Vector3(KSCALE.x, KSCALE.h + KSCALE.pan, KSCALE.z); // the beaker's outer bottom
 export const BEAKER_FLOOR = BEAKER_AT.y + BEAKER.base; // its inside bottom (2.9)
 export const ROD = { x: -18.5, z: 0, top: 41.5 };
 /** The cords' ring above the keel, the arm above the ring (the hanging scale between them). */
 export const RING_ABOVE_KEEL = 11.5;
-export const ARM_ABOVE_RING = 9.65;
-/** The six containers on the table at first: three along, two rows, in front of the tank on the left. */
+export const ARM_ABOVE_RING = 2.0 + HSCALE.h + 1.0 + 0.45; // the body's bottom, the body, the eye and link, the arm's radius
+/** The six containers on the table at first: one row in front of the tank, with a gap between them. */
 export const STACK = [
-  [-6.6, 9.0],
-  [-6.6, 11.6],
-  [-10.6, 9.0],
-  [-2.6, 9.0],
-  [-10.6, 11.6],
-  [-2.6, 11.6],
+  [-13.25, 10],
+  [-7.95, 10],
+  [-2.65, 10],
+  [2.65, 10],
+  [7.95, 10],
+  [13.25, 10],
 ].map(([x, z]) => new THREE.Vector3(x, 1.15, z));
 
 /** The table top: a finite rounded slab, light sand on top and a darker band round its edge (one draw). */
@@ -100,6 +103,13 @@ function glassMaterial(name, opacity = 0.16) {
     clearcoat: 1,
     clearcoatRoughness: 0.05,
   });
+}
+
+/** A geometry with only position and normal, non-indexed (for merging parts of one material). */
+function stripped(g) {
+  const ng = g.index ? g.toNonIndexed() : g;
+  for (const k of Object.keys(ng.attributes)) if (k !== 'position' && k !== 'normal') ng.deleteAttribute(k);
+  return ng;
 }
 
 /** Merged copies of geometries (position, normal, uv), non-indexed. */
@@ -176,6 +186,10 @@ function createTank() {
     opacity: 0.75,
     depthWrite: false,
   });
+  // the spout's lip: a ring round its outlet, in the same faint green
+  const sdir = SPOUT.to.clone().sub(SPOUT.from).normalize();
+  const lipQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), sdir);
+  edgeParts.push(new THREE.TorusGeometry(SPOUT.r, 0.07, 6, 20).applyQuaternion(lipQ).translate(SPOUT.to.x, SPOUT.to.y, SPOUT.to.z));
   const edges = new THREE.Mesh(merge(edgeParts), edgeMat);
   edges.name = 'TankEdges';
   edges.renderOrder = 5;
@@ -189,11 +203,7 @@ function createTank() {
   tube.position.copy(SPOUT.from).addScaledVector(dir, 0.5);
   tube.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
   tube.renderOrder = 5;
-  const lip = new THREE.Mesh(new THREE.TorusGeometry(SPOUT.r, 0.07, 6, 20), edgeMat);
-  lip.position.copy(SPOUT.to);
-  lip.quaternion.copy(tube.quaternion).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2));
-  lip.name = 'SpoutLip';
-  root.add(tube, lip);
+  root.add(tube);
 
   // the water: a box inside the glass, its top at the level
   const waterMat = new THREE.MeshStandardMaterial({
@@ -327,10 +337,13 @@ function createStream() {
 
 // ── an LCD: a small canvas redrawn only when its text changes ─────────────────────
 function createLcd({ w, h, name, unit }) {
+  // drawn in a 256-wide space of the display's own proportions, then squeezed into a power-of-two canvas
+  const vh = (256 * h) / w;
   const c = document.createElement('canvas');
   c.width = 256;
-  c.height = 128;
+  c.height = vh > 96 ? 128 : 64;
   const ctx = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+  ctx.setTransform(1, 0, 0, c.height / vh, 0, 0);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
@@ -350,22 +363,22 @@ function createLcd({ w, h, name, unit }) {
     if (key === last) return false;
     last = key;
     ctx.fillStyle = on ? '#c9d2bd' : '#7d857a';
-    ctx.fillRect(0, 0, 256, 128);
+    ctx.fillRect(0, 0, 256, vh);
     // a soft inner shadow at the top, as under the glass of a display
-    const gr = ctx.createLinearGradient(0, 0, 0, 30);
+    const gr = ctx.createLinearGradient(0, 0, 0, vh * 0.25);
     gr.addColorStop(0, 'rgba(0,0,0,0.18)');
     gr.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = gr;
-    ctx.fillRect(0, 0, 256, 30);
+    ctx.fillRect(0, 0, 256, vh * 0.25);
     if (on) {
       ctx.fillStyle = '#1b2219';
       ctx.textBaseline = 'alphabetic';
       ctx.textAlign = 'right';
-      ctx.font = `700 92px ${FONT}`;
-      ctx.fillText(text, 200, 104);
-      ctx.font = `700 46px ${FONT}`;
+      ctx.font = `700 ${Math.round(vh * 0.74)}px ${FONT}`;
+      ctx.fillText(text, 200, vh * 0.82);
+      ctx.font = `700 ${Math.round(vh * 0.38)}px ${FONT}`;
       ctx.textAlign = 'left';
-      ctx.fillText(unit, 210, 104);
+      ctx.fillText(unit, 210, vh * 0.82);
     }
     tex.needsUpdate = true;
     return true;
@@ -410,12 +423,25 @@ function button(ctx, x, y, r, label, { color = '#d9dde2', text = '#2b2f33', size
 }
 
 // ── the kitchen scale with the beaker ─────────────────────────────────────────────
+/** The console's slope at the front: its face leans back toward the viewer (rise over depth). */
+const CONSOLE = { w: 10.4, d: 2.4, lo: 0.7 };
 function createKitchenScale() {
   const root = new THREE.Group();
   root.name = 'KitchenScale';
   const { w, h, pan } = KSCALE;
   const bodyMat = new THREE.MeshStandardMaterial({ name: 'ScaleBody', color: '#e9ecef', roughness: 0.45, metalness: 0.05 });
-  const body = new THREE.Mesh(new RoundedBoxGeometry(w, h, w, 2, 0.45).translate(0, h / 2, 0), bodyMat);
+  // the body and, along its front, a sloping console (a wedge): one mesh
+  const wedgeShape = new THREE.Shape([
+    new THREE.Vector2(0, 0),
+    new THREE.Vector2(CONSOLE.d, 0),
+    new THREE.Vector2(CONSOLE.d, CONSOLE.lo),
+    new THREE.Vector2(0, h),
+  ]);
+  const wedge = new THREE.ExtrudeGeometry(wedgeShape, { depth: CONSOLE.w, bevelEnabled: false })
+    .rotateY(-Math.PI / 2)
+    .translate(CONSOLE.w / 2, 0, w / 2 - 0.05);
+  // (after the turn the shape's x runs along +z: from the body's front out to the console's lip)
+  const body = new THREE.Mesh(mergeGeometries([stripped(new RoundedBoxGeometry(w, h, w, 2, 0.45).translate(0, h / 2, 0)), stripped(wedge)]), bodyMat);
   body.name = 'KitchenScaleBody';
   body.castShadow = true;
   body.receiveShadow = true;
@@ -424,9 +450,14 @@ function createKitchenScale() {
   plate.name = 'KitchenScalePan';
   plate.castShadow = true;
   plate.receiveShadow = true;
-  // the front: a dark panel with the display and two buttons (ON, TARE)
-  const faceW = 9.6;
-  const faceH = 1.5;
+  // the sloping face: a dark panel with the display and two buttons (ON, TARE), leaning back toward the viewer
+  const slope = Math.atan2(h - CONSOLE.lo, CONSOLE.d);
+  const faceW = CONSOLE.w - 0.6;
+  const faceH = Math.hypot(h - CONSOLE.lo, CONSOLE.d) - 0.4;
+  const tilt = new THREE.Group();
+  tilt.position.set(0, (h + CONSOLE.lo) / 2, w / 2 - 0.05 + CONSOLE.d / 2);
+  tilt.rotation.x = -(Math.PI / 2 - slope);
+  tilt.translateZ(0.02);
   const face = new THREE.Mesh(
     new THREE.PlaneGeometry(faceW, faceH),
     new THREE.MeshStandardMaterial({
@@ -437,18 +468,22 @@ function createKitchenScale() {
         ctx.beginPath();
         ctx.roundRect(0, 0, W, H, 30);
         ctx.fill();
-        button(ctx, 700, H / 2, 46, 'ON', { size: 30 });
-        button(ctx, 850, H / 2, 46, 'TARE', { size: 22 });
+        button(ctx, W - 250, H / 2, 58, 'ON', { size: 34 });
+        button(ctx, W - 100, H / 2, 58, 'TARE', { size: 26 });
       }),
     }),
   );
   face.name = 'KitchenScaleFace';
-  face.position.set(0.4, h / 2, w / 2 + 0.005);
-  const lcd = createLcd({ w: 4.6, h: 1.15, name: 'KitchenScaleDisplay', unit: 'g' });
-  lcd.mesh.position.set(-2.0, h / 2, w / 2 + 0.01);
-  root.add(body, plate, face, lcd.mesh);
+  const lcd = createLcd({ w: 5.4, h: Math.min(1.7, faceH - 0.3), name: 'KitchenScaleDisplay', unit: 'g' });
+  lcd.mesh.position.set(-faceW / 2 + 3.1, 0, 0.01);
+  tilt.add(face, lcd.mesh);
+  root.add(body, plate, tilt);
   root.position.set(KSCALE.x, 0, KSCALE.z);
-  return { root, lcd };
+  /** The display's centre (world), for its reading's chip. */
+  const lcdAt = new THREE.Vector3();
+  root.updateMatrixWorld(true);
+  lcd.mesh.getWorldPosition(lcdAt);
+  return { root, lcd, lcdAt };
 }
 
 function createBeaker(N) {
@@ -568,16 +603,20 @@ function createStand() {
   // the part that slides: the boss head and the arm
   const arm = new THREE.Group();
   arm.name = 'StandArm';
-  const boss = new THREE.Mesh(new RoundedBoxGeometry(2.0, 2.2, 2.0, 2, 0.25), iron);
-  boss.position.set(ROD.x, 0, ROD.z);
+  const boss = new THREE.Mesh(
+    mergeGeometries([
+      stripped(new RoundedBoxGeometry(2.0, 2.2, 2.0, 2, 0.25).translate(ROD.x, 0, ROD.z)),
+      stripped(new THREE.CylinderGeometry(0.35, 0.35, 1.4, 12).rotateX(Math.PI / 2).translate(ROD.x, 0, ROD.z + 1.6)),
+    ]),
+    iron,
+  );
+  boss.name = 'StandBoss';
   boss.castShadow = true;
-  const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.4, 12).rotateX(Math.PI / 2), iron);
-  knob.position.set(ROD.x, 0, ROD.z + 1.6);
   const len = CENTRE_X + 1.2 - ROD.x;
   const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, len, 16).rotateZ(Math.PI / 2), steel);
   bar.position.set(ROD.x + len / 2, 0, ROD.z);
   bar.castShadow = true;
-  arm.add(boss, knob, bar);
+  arm.add(boss, bar);
   root.add(base, rod, arm);
   return {
     root,
@@ -594,23 +633,33 @@ function createHangingScale() {
   root.name = 'HangingScale';
   const dark = new THREE.MeshStandardMaterial({ name: 'HangingScaleBody', color: '#474c52', roughness: 0.4, metalness: 0.15 });
   const steel = new THREE.MeshStandardMaterial({ name: 'Hook', color: '#c3c9d0', roughness: 0.3, metalness: 1, envMapIntensity: 1.1 });
-  // the ring the cords meet in, and the hook through it
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.1, 8, 20), steel);
-  ring.name = 'BridleRing';
-  const hook = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.12, 8, 20, Math.PI * 1.45).rotateZ(-Math.PI * 0.62).rotateY(Math.PI / 2), steel);
-  hook.position.y = 0.88;
-  hook.name = 'ScaleHook';
-  const shank = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.9, 8), steel);
-  shank.position.y = 1.65;
   // the body: rounded, a display at the top and three buttons (as on the reference picture)
-  const bw = 4.6;
-  const bh = 6.4;
-  const body = new THREE.Mesh(new RoundedBoxGeometry(bw, bh, 1.8, 2, 0.45), dark);
-  body.position.y = 2.0 + bh / 2;
+  const bw = HSCALE.w;
+  const bh = HSCALE.h;
+  const y0 = 2.0; // the body's bottom above the ring
+  const body = new THREE.Mesh(new RoundedBoxGeometry(bw, bh, 2.0, 2, 0.5), dark);
+  body.position.y = y0 + bh / 2;
   body.name = 'HangingScaleBody';
   body.castShadow = true;
-  const fw = 4.0;
-  const fh = 5.8;
+  // the hardware, one mesh: the hook through the ring, its shank, the eye on top and a link up to the arm
+  const top = y0 + bh;
+  const hardware = new THREE.Mesh(
+    mergeGeometries([
+      stripped(
+        new THREE.TorusGeometry(0.42, 0.12, 8, 20, Math.PI * 1.45)
+          .rotateZ(-Math.PI * 0.62)
+          .rotateY(Math.PI / 2)
+          .translate(0, 0.88, 0),
+      ),
+      stripped(new THREE.CylinderGeometry(0.13, 0.13, 0.9, 8).translate(0, 1.65, 0)),
+      stripped(new THREE.TorusGeometry(0.34, 0.1, 8, 16).translate(0, top + 0.35, 0)),
+      stripped(new THREE.TorusGeometry(0.34, 0.09, 8, 16).rotateY(Math.PI / 2).translate(0, top + 0.97, 0)),
+    ]),
+    steel,
+  );
+  hardware.name = 'HangingScaleHook';
+  const fw = bw - 0.6;
+  const fh = bh - 0.6;
   const face = new THREE.Mesh(
     new THREE.PlaneGeometry(fw, fh),
     new THREE.MeshStandardMaterial({
@@ -624,60 +673,56 @@ function createHangingScale() {
         // the display's bezel (the display itself is its own plane)
         ctx.fillStyle = '#16191c';
         ctx.beginPath();
-        ctx.roundRect(22, 30, W - 44, 190, 18);
+        ctx.roundRect(22, 26, W - 44, 236, 18);
         ctx.fill();
-        button(ctx, 95, 330, 50, '');
-        button(ctx, W - 95, 330, 50, '');
-        button(ctx, W / 2, 440, 62, '');
+        button(ctx, 100, 410, 54, '');
+        button(ctx, W - 100, 410, 54, '');
+        button(ctx, W / 2, 530, 66, '');
         ctx.fillStyle = '#f1f3f5';
-        ctx.font = `700 40px ${FONT}`;
+        ctx.font = `700 44px ${FONT}`;
         ctx.textAlign = 'center';
-        ctx.fillText('UNIT', 95, 410);
-        ctx.fillText('TARE', W - 95, 410);
+        ctx.fillText('UNIT', 100, 498);
+        ctx.fillText('TARE', W - 100, 498);
         ctx.fillStyle = '#ffe066';
-        ctx.fillText('ON', W / 2, 270);
+        ctx.fillText('ON', W / 2, 340);
       }),
     }),
   );
-  face.position.set(0, body.position.y, 0.91);
+  face.position.set(0, body.position.y, 1.01);
   face.name = 'HangingScaleFace';
-  const lcd = createLcd({ w: 3.4, h: 1.5, name: 'HangingScaleDisplay', unit: 'g' });
-  lcd.mesh.position.set(0, body.position.y + bh / 2 - 0.3 - 1.25 / 2 - 0.25, 0.92);
-  // the eye on top and a link up to the arm
-  const eye = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.1, 8, 16), steel);
-  eye.position.y = 2.0 + bh + 0.35;
-  const link = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.09, 8, 16).rotateY(Math.PI / 2), steel);
-  link.position.y = eye.position.y + 0.62;
-  // the four cords from the ring down to the eyes on the ship's rail
+  const lcd = createLcd({ w: fw - 0.6, h: 2.0, name: 'HangingScaleDisplay', unit: 'g' });
+  lcd.mesh.position.set(0, top - 0.3 - 0.26 - 1.0, 1.02);
+  // the bridle: the ring and four cords down to the eyes on the ship's rail (one mesh each)
   const cordMat = new THREE.MeshStandardMaterial({ name: 'Cord', color: '#f1e6cf', roughness: 0.9, transparent: true });
-  const cords = [];
-  for (const e of EYES) {
+  const cordGeos = EYES.map((e) => {
     const to = new THREE.Vector3(e.x - CENTRE_X, e.y - RING_ABOVE_KEEL, e.z);
-    const geo = new THREE.CylinderGeometry(0.05, 0.05, 1, 5, 1, true).translate(0, 0.5, 0);
-    const c = new THREE.Mesh(geo, cordMat);
-    c.scale.y = to.length();
-    c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), to.clone().normalize());
-    c.name = 'Cord';
-    cords.push(c);
-  }
-  const ringFade = steel.clone();
-  ringFade.transparent = true;
+    const g = new THREE.CylinderGeometry(0.05, 0.05, 1, 5, 1, true).translate(0, 0.5, 0).scale(1, to.length(), 1);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), to.clone().normalize()));
+    return stripped(g);
+  });
+  const cords = new THREE.Mesh(mergeGeometries(cordGeos), cordMat);
+  cords.name = 'Cords';
+  const ringMat = steel.clone();
+  ringMat.transparent = true;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.1, 8, 20), ringMat);
+  ring.name = 'BridleRing';
   const bridle = new THREE.Group();
   bridle.name = 'Bridle';
-  bridle.add(ring, ...cords);
-  root.add(bridle, hook, shank, body, face, lcd.mesh, eye, link);
+  bridle.add(ring, cords);
+  root.add(bridle, hardware, body, face, lcd.mesh);
   return {
     root,
     lcd,
     body,
-    top: link.position.y + 0.4,
+    /** The display's centre in the scale's own coordinates (for its reading's chip). */
+    lcdAt: lcd.mesh.position.clone(),
     /** The cords and their ring: a = 1 on, 0 taken off. */
     setBridle(a) {
       bridle.visible = a > 0.01;
       cordMat.opacity = a;
       cordMat.depthWrite = a > 0.99;
-      ring.material = a > 0.99 ? steel : ringFade;
-      ringFade.opacity = a;
+      ringMat.opacity = a;
+      ringMat.depthWrite = a > 0.99;
     },
   };
 }

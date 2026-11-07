@@ -117,6 +117,6 @@ describe('displaced-water-ship: strings', () => {
   it('writes numbers with Bangla digits', () => {
     const t = createI18n('bn');
     assert.equal(t('lbl_reading', { x: 200 }), '২০০&nbsp;g');
-    assert.ok(t('lead_lower').includes('০'));
+    assert.ok(t('lead_lower', { r: 0 }).includes('০'));
   });
 });

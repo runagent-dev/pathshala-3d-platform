@@ -1,8 +1,8 @@
 // This figure's own behaviour, through the bridge (dev only, never packaged): the first screen is calm; the scales come
 // on (200 g and 0 g); while the ship is lowered the hanging scale's reading and the water in the beaker always add up to
 // the ship's 200 g, until it floats at 0 g with 200 g spilled; lifting it back lowers the tank's water and spills
-// nothing back; unhooked, weight = buoyancy; every container spills exactly 50 g more; the test scores four right
-// answers. Steps are jumped with animate: false where the motion itself is not the point, so each test stays short.
+// nothing back; unhooked, weight = buoyancy; every container spills exactly 50 g more; the directions (count, ring,
+// handle, the test's marked chip) show; the test scores four right answers. Steps are jumped with animate: false where the motion itself is not the point, so each test stays short.
 import { expect, test } from '@playwright/test';
 import { openFigure, preparePage } from '../../../scripts/lib/export/driver.mjs';
 
@@ -76,6 +76,58 @@ test('displaced-water-ship: a container tapped onto the deck', async ({ page }) 
   expect(log.errors).toEqual([]);
 });
 
+test('displaced-water-ship: the directions say what to do next', async ({ page }) => {
+  await page.setViewportSize({ width: 640, height: 400 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, 'displaced-water-ship', { params: { coach: '1', rotate: '0' } });
+  const frame = frameOf(page);
+  const lead = () => frame.locator('.dw-lead').first().textContent();
+  const button = () => frame.locator('.pvc-act').textContent();
+
+  // the handle shows once the ship is down; lifted, the lead gives the live reading
+  await fig.call('set', { step: 'lower', animate: false });
+  await fig.advance(100);
+  await expect(frame.locator('.pvc-dh')).toBeVisible();
+  expect(await lead()).toContain('০');
+  await fig.call('set', { lowered: 0 });
+  expect(await lead()).toContain('২০০');
+
+  // unhooking a lifted ship first lowers it: nothing jumps
+  await fig.call('set', { lowered: 0.3 });
+  await frame.locator('.pvc-act').click();
+  await fig.advance(150);
+  const mid = await fig.call('get');
+  expect(mid.hooked).toBe(true);
+  expect(mid.lowered).toBeLessThan(0.6);
+  await fig.advance(1800);
+  expect((await fig.call('get')).spilled).toBe(200);
+  await fig.advance(3500);
+  expect(await fig.call('get')).toMatchObject({ step: 'buoy', busy: false, hooked: false, spilled: 200 });
+
+  // the count in the lead and on the button; the ring offers one container
+  await fig.call('set', { step: 'load', containers: 2 });
+  await fig.advance(100);
+  expect(await lead()).toContain('২ / ৬');
+  expect(await button()).toContain('২/৬');
+  expect((await fig.call('get')).nextContainer).toBeGreaterThanOrEqual(0);
+
+  // at six: the tick, and the test button
+  await fig.call('set', { step: 'load', containers: 6 });
+  await fig.advance(100);
+  expect(await lead()).toContain('৬ / ৬');
+  expect(await frame.locator('.dw-lead .dw-done').count()).toBe(1);
+  expect(await button()).toContain('পরীক্ষা');
+  expect(await frame.locator('.pvc-act-slot.dw-go').count()).toBe(1);
+  expect(await frame.locator('.pvc-anno', { hasText: 'বোঝাই রেখা' }).count()).toBe(1);
+
+  // the test points at the reading the question needs
+  await fig.call('practice');
+  await fig.advance(900);
+  expect(await frame.locator('.pvc-anno-lcd .dw-look').count()).toBe(1);
+  expect(await frame.locator('.pvc-q-feedback').textContent()).toContain('বিকারের নিক্তি');
+  expect(log.errors).toEqual([]);
+});
+
 test('displaced-water-ship: the test scores four right answers', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 400 });
   const log = await preparePage(page);
@@ -89,7 +141,7 @@ test('displaced-water-ship: the test scores four right answers', async ({ page }
     // the right answer, worked out from the scene the question shows
     const right = [
       `${bn(200 - Math.round(s.spilled))} g`,
-      'পানির ঊর্ধ্বমুখী বল, প্লবতা',
+      'পানি নিচ থেকে ঠেলে: প্লবতা',
       `${bn(Math.round(s.spilled) + 50)} g`,
       `${bn(Math.round(s.spilled * 0.0098 * 100) / 100)} N`,
     ][i];
