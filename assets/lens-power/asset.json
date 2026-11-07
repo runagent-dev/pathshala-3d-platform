@@ -1,0 +1,102 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "lens-power",
+  "title": "Power of a lens (লেন্সের ক্ষমতা)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 264,
+  "topic": "9.4.3",
+  "placement": "Book page 264–266, topic 9.4.3 লেন্সের ক্ষমতা (P = 1/f, ডায়াপটার), next to চিত্র ৯.২৭ (page 265) and the closing নিজে করো (চিত্র ৯.২৮, ৯.২৯, page 266).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the power of a lens, book pages 264–266, topic 9.4.3, next to চিত্র ৯.২৭ and the closing নিজে করো. On an optical bench, a ray box's five parallel beams are traced exactly through glass lenses: the book's glasses lens (f = 40 cm, +2.5 ডায়াপটার), then more curved ones (20 cm, 10 cm) and two concave lenses. The student sees a pencil at the same distance look bigger through the lens with the shorter focal length (চিত্র ৯.২৭), measures each lens's f on the scale, and reads P = 1/f in dioptres, positive for convex and negative for concave, on a live P–f graph. A five-question test reads powers off the scale and does the book's নিজে করো.",
+  "tags": [
+    "light",
+    "refraction",
+    "lens",
+    "convex lens",
+    "concave lens",
+    "focal length",
+    "power of a lens",
+    "dioptre",
+    "optical bench",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "scene",
+      "label": "What is shown",
+      "type": "select",
+      "options": [
+        ["intro", "the bench, the lens, the ray box"],
+        ["focus", "the light meets at F′ (f = 40 cm)"],
+        ["pencil", "a pencil seen through it"],
+        ["compare", "a more curved lens: bigger"],
+        ["power", "P = 1/f: the book's glasses, +2.5"],
+        ["power20", "f = 20 cm: +5"],
+        ["power10", "f = 10 cm: +10"],
+        ["concave", "a concave lens: −2.5"],
+        ["concave20", "a more curved concave lens: −5"]
+      ],
+      "default": "intro"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered ring pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "scene": "power", "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "scene": "compare" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 50,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "scene": "focus" } },
+        { "at": 8, "command": "set", "payload": { "scene": "pencil" } },
+        { "at": 15, "command": "set", "payload": { "scene": "compare" } },
+        { "at": 22, "command": "set", "payload": { "scene": "power" } },
+        { "at": 29, "command": "set", "payload": { "scene": "power20" } },
+        { "at": 35, "command": "set", "payload": { "scene": "power10" } },
+        { "at": 42, "command": "set", "payload": { "scene": "concave" } }
+      ]
+    }
+  }
+}
