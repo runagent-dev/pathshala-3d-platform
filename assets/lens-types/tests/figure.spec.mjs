@@ -44,25 +44,29 @@ test(`${ID}: each step shows what the book says`, async ({ page }) => {
   expect(st.plano).toBe(true);
   st = await at('slab');
   expect(st.laser.on).toBe('slab');
-  const shift3 = st.laser.shift;
-  // twice as thick, twice the shift
-  st = await fig.call('set', { thick: 6 });
-  expect(st.laser.shift / shift3).toBeCloseTo(2, 5);
+  expect(st.laser.slab).toBe(4);
+  const shift4 = st.laser.shift;
+  // twice as thick, twice the shift; and the number on the picture says so
+  await expect(fig.frame.locator('.pvc-anno', { hasText: 'সরে গেল' })).toHaveCount(1);
+  st = await fig.call('set', { thick: 8 });
+  expect(st.laser.shift / shift4).toBeCloseTo(2, 5);
   st = await at('centre');
   expect(st.laser.on).toBe('convex');
-  expect(st.laser.shift).toBeLessThan(0.15); // a thin lens: nearly straight through
-  st = await fig.call('set', { thick: 2 });
+  expect(st.laser.shift).toBeLessThan(0.25); // a thin lens: nearly straight through
+  expect(st.lenses.convex.centre).toBeGreaterThan(2.5 * st.lenses.convex.edge); // and still plainly convex
+  st = await fig.call('set', { thick: 1 });
   expect(st.laser.shift).toBeGreaterThan(1); // a thick one moves it aside
   await expect(fig.frame.locator('.pvc-anno', { hasText: 'আলোকীয় কেন্দ্র' })).toHaveCount(1);
   st = await at('centre2');
   expect(st.laser.on).toBe('concave');
-  expect(st.laser.shift).toBeLessThan(0.15);
+  expect(st.laser.shift).toBeLessThan(0.1);
+  expect(st.lenses.concave.edge).toBeGreaterThan(2.5 * st.lenses.concave.centre);
   // the arrow keys make it thicker
   await fig.frame.locator('.pvc').first().focus();
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowRight');
   st = await fig.call('get');
-  expect(st.laser.w).toBeCloseTo(0.4, 5);
+  expect(st.laser.w).toBeCloseTo(0.2, 5);
   expect(log.errors).toEqual([]);
 });
 
@@ -95,7 +99,7 @@ test(`${ID}: the story plays on the action, one step a tap`, async ({ page }) =>
   await settled(fig);
   st = await fig.call('get');
   expect(st).toMatchObject({ stage: 'centre' });
-  expect(st.laser.shift).toBeLessThan(0.15);
+  expect(st.laser.shift).toBeLessThan(0.25);
   expect(log.errors).toEqual([]);
 });
 
@@ -111,8 +115,13 @@ test(`${ID}: the test, answered all right, scores five`, async ({ page }) => {
     const st = await fig.call('get');
     expect(st.question).not.toBeNull();
     kinds.add(st.question.kind);
+    // the slab question: the shift to read off is on the picture before the answer
+    if (st.question.kind === 'slab') await expect(fig.frame.locator('.pvc-anno', { hasText: 'সরে গেল' })).toBeVisible();
+    // every question and choice is written out: no {placeholder} left
+    expect(await fig.frame.locator('.pvc-quiz').innerText()).not.toContain('{');
     await fig.frame.locator(`[data-q="${st.question.right}"]`).first().click();
     await fig.advance(600);
+    expect(await fig.frame.locator('.pvc-quiz').innerText()).not.toContain('{');
     const next = fig.frame.locator('[data-act="q-next"]').first();
     if (await next.isVisible()) await next.click();
   }

@@ -136,3 +136,11 @@ body.bg-transparent { background: transparent; }
   .lab .pvc-rule { font-size: 16px; line-height: 1.65; }
   .lab .lab-cap { display: block; }
 }
+/* the first screen: under the calm card, the book's own words on what lenses are used for (not on the tightest frames) */
+.lab .pvc-learn.lab-calm .lab-cap { display: block; margin-top: 2px; padding-top: 6px; font-size: 13px; line-height: 1.45; }
+@container pvc (max-width: 420px) and (max-height: 600px) {
+  .lab .pvc-learn.lab-calm .lab-cap { display: none; }
+}
+@container pvc-panel (max-height: 430px) {
+  .lab .pvc-learn.lab-calm .lab-cap { display: none; }
+}

@@ -35,14 +35,24 @@ The page's typos are not repeated: "বিচ্যুৎ" is written বিচ�
   book's glass, table ৯.০১), a 0.3 cm edge on the convex lens; the same MeshPhysical glass (opacity 0.26, clearcoat), green rim, black
   ring with lips, brass screw and steel pin. The concave lens has the same faces and 0.6 cm in the middle; its wide rim is the same green,
   fainter (0.5). concave-lens-image and lens-power can take `lensOf()` and the stand from here.
+- **The teaching lens (round 2, after the review).** For the spheres (④ ⑤) and the centre (⑧ ⑨) a more strongly curved lens is put on the
+  stand, as the book draws চিত্র ৯.১৫ and ৯.১৭: faces of radius 10 cm (`teachLens()`, `TEACH`), 7.1 cm thick in the middle (convex) or
+  2.5 cm in the middle and 9.3 cm at the rim (concave). The bench lens is lifted off and the teaching lens set down in its ring (the lead
+  line says "আরও বাঁকা পিঠের একটি … লেন্স"); with R = 15.6 cm the convex lens's overlap was only 4 cm wide, ~20 px on a phone, too small
+  to see which circle runs along which face. In ⑧ ⑨ the lens thins by getting **smaller at the same radius of its faces** (half-height
+  7.5 → 2.5 cm): the thin lens stays plainly convex (0.94 cm in the middle, 0.3 at the edge) or concave, never a near-flat window. The
+  ring, its screw and the post follow its size, and the camera comes closer as it thins, so the thin lens stays big on a phone; its
+  outline is painted in the plane of the ray, pale blue with a dark edge, as চিত্র ৯.১৭ draws it.
 - **Each lens is two halves** split in the plane of the axis (`createLensHalf`), the ring too, so that the front half can be taken away
-  toward the viewer: the section (প্রস্থচ্ছেদ) shows pale blue with a dark outline, as in চিত্র ৯.১৪. The panel and a corner note say the cut
+  toward the viewer: the section (প্রস্থচ্ছেদ) shows opaque pale blue with a dark outline, as in চিত্র ৯.১৪, seen almost square onto it
+  (8° to the side, 10° from above) in ①, ⑥ and the test's first question; the two lenses stand 22 cm apart so they are big on a phone. The panel and a corner note say the cut
   is in imagination. The glass's positions are rewritten in place when its shape changes (a flat face, thick → thin): no new geometry.
 - **Ten states, nine taps, one action** (`STAGES`, `POSE`, `run()` in `src/app.js`): ① cut → ② convex lens with the ray box (the concave
   one lifted off): five parallel rays traced through both faces meet past the lens (F′) → ③ concave lens: the rays spread, dashed back to
   F → ④ ⑤ the faces' spheres: faint glass half-spheres and the book's circles with "+" centres C₁, C₂ and the principal axis → ⑥ the right
   face of both lenses flattens → ⑦ a glass slab and a laser: the ray comes out parallel, moved aside (a white bar marks it; the original
-  direction dashed), then the slab thins from 6 to 3 cm → ⑧ ⑨ a thick convex, then concave lens with the laser through its centre: the ray
+  direction dashed, the number on the bar: "সরে গেল … cm"), then the slab thins from 8 to 4 cm. The slab is 1.5 cm deep, so the ray (drawn
+  in its middle plane) enters and leaves at its visible faces → ⑧ ⑨ a thick convex, then concave lens with the laser through its centre: the ray
   moves aside, then the lens thins and the ray goes straight; O marked. The words দুই রকম · আলো · গোলক · পুরু কাচ · কেন্দ্র jump.
   `run()` walks any jump in one order: the light goes, marks go, faces come back, parts leave the rail, parts slide, arrivals come down,
   the cut, the flat face, the spheres, then the light, then the thinning.
@@ -57,8 +67,10 @@ The page's typos are not repeated: "বিচ্যুৎ" is written বিচ�
 - **Labels** (`createAnnotations` with spots) keep off each other, the corner pills, the action ring, the handle and every ray and circle
   drawn (`drawing.boxes()`); the axis label is optional and steps aside when there is no room.
 - **The test**: five questions, each set up in the 3D view with no names showing: which lens is this section (convex/concave, sometimes
-  plano), what parallel light will do after this lens, which sphere the left face belongs to (the answer differs for the two kinds), what
-  doubling the slab's thickness does to the shift, and which of four paths (ক–ঘ) the ray through a thin lens's centre takes. Choices are
+  plano), what parallel light will do after this lens (a wrong choice: all bend the same way, as through a prism), which sphere the left
+  face belongs to (the answer differs for the two kinds; a wrong choice: a small sphere the lens's size), how far the ray moves when the
+  slab is made twice as thick (the student reads the shift off the picture; choices ×2, ×½, ×1, ×4, at thicknesses where the rounded
+  numbers agree exactly), and which of four paths (ক–ঘ) the ray through a thin lens's centre takes. Choices are
   indices; every wrong choice has its own note; a browser test answers all right and checks ৫টির মধ্যে ৫টি.
 
 ## Honest notes
@@ -66,26 +78,33 @@ The page's typos are not repeated: "বিচ্যুৎ" is written বিচ�
   6 mm nearer the lens than those 1.2 cm off (spherical aberration); the drawing shows it as traced, and the book's "এক বিন্দুতে" is very
   nearly true. No number for f is printed: the exact trace of this 4.1 cm thick lens puts F′ about 16 cm from its centre, while the sister
   figure prints the thin-lens 15 cm; showing either here would put two disagreeing numbers in the chapter.
-- The thick lens of the centre steps is made thicker than the book's drawings need (7.7 cm in the middle for the convex one) so that the
-  shift is seen on a phone (12 mm); thinned, the shift is 1.4 mm (convex) and 0.6 mm (concave): "প্রায়" nothing, as the book says.
+- The thick teaching lens moves the ray through its centre 11.9 mm (convex) and 6.5 mm (concave); the thin one, at the same radius of its
+  faces, 2.2 mm and 0.7 mm: "প্রায়" nothing, as the book says, and the panel gives the number.
 - The spheres are drawn as their back halves (their front halves "cut away" like the lens), with the book's circles in the cut plane.
 - The principal axis is introduced as the line through C₁ and C₂ (the book names it only in 9.4.1, on the same page).
 - The laser pointer is not in the book (its চিত্র ৯.১৬–৯.১৭ draw a ray); a laser makes one visible ray.
 
-## Performance (2026-11-07, 844 × 390, shadows on, software WebGL)
+## Performance (2026-11-07, round 2, 844 × 390, shadows on, software WebGL)
 | state | draw calls (max of 4 azimuths) | triangles |
 |---|---|---|
-| kinds (both lenses cut) | 39 | 21.6 k |
-| converge / diverge | 43 / 42 | 24.5 k |
-| sphere / sphere2 | 27 | 20 k |
-| slab | 27 | 4.6 k |
-| centre | 44 | 23.6 k |
+| kinds (both lenses cut) | 37 | 16.8 k |
+| converge / diverge | 43 / 42 | 20.1 k |
+| sphere / sphere2 (teaching lens, half-spheres) | 27 | 17.8 k |
+| slab | 28 | 4.6 k |
+| centre (teaching lens) | 41 | 19.0 k |
 
-Script per animated frame at 6× CPU (rAF callbacks, real clock): the cut 1.85 ms mean / 3.3 ms max, the concave light 1.2 / 2.9, the
-centre step 0.6 / 2.4; idle: no drawing. Ready in about 3.9 s with software WebGL. GLB 524 KB (17.2 k triangles, the two lens stands). Textures: the scale 1024 × 128, the glow 64², the backdrop 4 × 256. Parts of later steps are
-made at load (hidden) and compiled ahead with `stage.warmUp({ show })`.
+Script per animated frame at 6× CPU (rAF callbacks, real clock, two runs): the cut 2.0 ms mean / 4.1 ms max, the concave light 1.2 / 3.3,
+the whole centre step (swap, beam, thinning with the camera following) 1.2 / 4.4–4.9; idle: no drawing. While the lens thins its two
+halves are rewritten in place (no new geometry); rays and F are traced only while the ray box is lit. Ready in about 4 s with software
+WebGL. Textures: the scale 1024 × 128, the glow 64², the backdrop 4 × 256. Parts of later steps are made at load (hidden) and compiled
+ahead with `stage.warmUp({ show })`. The GLB's geometry is welded (indexed) on export.
+
+## Later (orchestrator's decision, round 2)
+- `src/bench.js` repeats convex-lens-image's rail, printed scale, carrier and glass helpers. One shared optics-bench kit module will
+  take them, with convex-lens-image, lens-types, concave-lens-image and lens-power moved onto it, after the lens figures land.
 
 ## Open questions
+- ফোকাস বিন্দু (F′, F) appears in ② ③, a few lines before the book's 9.4.1 introduces it (same page 257): for the book team.
 - common.md lists "আলোক কেন্দ্র" and "প্রধান ফোকাস"; page 257 writes **আলোকীয় কেন্দ্র** and 9.4.1 **ফোকাস বিন্দু**: the figure follows
   the page (as convex-lens-image does). F′ / F for the two foci follows convex-lens-image.
 - Spectacles: the book's "বয়স্কদের … কম বয়সীদের" is kept as the book says it ("সাধারণত").

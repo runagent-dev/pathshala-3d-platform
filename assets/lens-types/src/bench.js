@@ -214,7 +214,6 @@ function revolve(n, segs, phi0, phi1) {
     g.attributes.position.needsUpdate = true;
     g.computeVertexNormals();
     g.computeBoundingSphere();
-    g.computeBoundingBox();
   }
   return { geometry: g, write };
 }
@@ -279,8 +278,8 @@ function lensEdge(name, kind) {
   });
 }
 
-const M = 18; // rings from the axis to the rim, on each face
-const SEG = 40; // segments round each half
+const M = 14; // rings from the axis to the rim, on each face
+const SEG = 32; // segments round each half (64 round the lens)
 /** The section's rows, from the bottom of the rim to the top. */
 const ROWS = 2 * M + 1;
 
@@ -398,13 +397,14 @@ function createLensStand(kind, mats, geos) {
   const glassFront = lensGlass(`${kind}-glass-front`);
   const edgeBack = lensEdge(`${kind}-edge`, kind);
   const edgeFront = lensEdge(`${kind}-edge-front`, kind);
-  const cutMat = new THREE.MeshStandardMaterial({
-    name: 'LensSection',
+  // the section: an opaque pale blue, as the book prints it (the front half's copy fades as it goes)
+  const cutMat = new THREE.MeshStandardMaterial({ name: 'LensSection', color: 0xc8e6f4, emissive: 0x2a4a5c, roughness: 0.35 });
+  const cutFront = new THREE.MeshStandardMaterial({
+    name: 'LensSectionFront',
     color: 0xc8e6f4,
     emissive: 0x2a4a5c,
     roughness: 0.35,
     transparent: true,
-    opacity: 0.86,
     depthWrite: false,
   });
   const ringBackMat = mats.black;
@@ -420,7 +420,7 @@ function createLensStand(kind, mats, geos) {
   const ringFront = new THREE.Mesh(geos.ringFront, ringFrontMat);
   ringFront.castShadow = true;
   const halfBack = createLensHalf(false, glassBack, edgeBack, cutMat);
-  const halfFront = createLensHalf(true, glassFront, edgeFront, cutMat);
+  const halfFront = createLensHalf(true, glassFront, edgeFront, cutFront);
   back.add(ringBack, halfBack.root);
   front.add(ringFront, halfFront.root);
   // a brass screw on top of the ring, with its steel pin
@@ -437,12 +437,20 @@ function createLensStand(kind, mats, geos) {
     front,
     halfBack,
     halfFront,
-    /** The glass's shape (a lens of reading.js). */
+    /** The glass's shape (a lens of reading.js); the ring, its screw and the post follow its size. */
     setShape(L) {
-      if (shape && shape.t === L.t && shape.c1 === L.c1 && shape.c2 === L.c2) return;
+      if (shape && shape.t === L.t && shape.c1 === L.c1 && shape.c2 === L.c2 && shape.h === L.h) return;
       shape = L;
       halfBack.setShape(L);
       halfFront.setShape(L);
+      const k = (L.h + 0.25) / RING.in;
+      ringBack.scale.set(1, k, k);
+      ringFront.scale.set(1, k, k);
+      cap.position.y = RING.out * k + 0.2;
+      pin.position.y = RING.out * k + 0.55;
+      const len = RAIL.axis - RING.out * k - RAIL.carrier;
+      post.scale.y = len + 0.4;
+      post.position.y = RAIL.carrier - RAIL.top + len / 2;
     },
     /** cut 0 … 1: the front half goes toward the viewer and fades; the section shows. */
     setCut(cut) {
@@ -452,6 +460,7 @@ function createLensStand(kind, mats, geos) {
       glassFront.opacity = GLASS_OPACITY * a;
       edgeFront.opacity = EDGE_OPACITY[kind] * a;
       ringFrontMat.opacity = a;
+      cutFront.opacity = a;
       ringFrontMat.depthWrite = a > 0.98;
       halfBack.cut.visible = cut > 0.01;
       halfFront.cut.visible = cut > 0.01 && cut < 0.995;
@@ -463,7 +472,7 @@ function createLensStand(kind, mats, geos) {
 function createRayBox({ black, steel, paint }, glow, geos) {
   const root = new THREE.Group();
   root.name = 'ray-box';
-  const W = 8.5;
+  const W = 6.5;
   const H = 16;
   const D = 11;
   const body = new THREE.Mesh(new RoundedBoxGeometry(W, H, D, 3, 0.4), paint);
@@ -625,7 +634,7 @@ export function createSetting({ stage, shadow, t, transparent = false }) {
   const rayBox = createRayBox(mats, glow, geos);
   rayBox.root.position.y = RAIL.axis - RAIL.top;
   const boxCarrier = createCarrier(mats, geos);
-  boxCarrier.position.x = -4.25;
+  boxCarrier.position.x = -3.25;
   boxRoot.add(rayBox.root, boxCarrier);
   boxRoot.position.y = RAIL.top;
   apparatus.add(boxRoot);
@@ -634,7 +643,7 @@ export function createSetting({ stage, shadow, t, transparent = false }) {
   const slabRoot = new THREE.Group();
   slabRoot.name = 'glass-slab';
   slabRoot.add(createCarrier(mats, geos));
-  const plat = new THREE.Mesh(new RoundedBoxGeometry(9.5, 0.6, 2 * SLAB.depth + 1, 2, 0.12), mats.black);
+  const plat = new THREE.Mesh(new RoundedBoxGeometry(11.5, 0.6, 6, 2, 0.12), mats.black);
   const SLAB_BOTTOM = RAIL.axis - SLAB.half - RAIL.top;
   plat.position.y = SLAB_BOTTOM - 0.3;
   plat.castShadow = true;

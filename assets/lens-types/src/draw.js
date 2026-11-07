@@ -218,7 +218,7 @@ export function createDrawing({ stage, host }) {
     dashed({ x: a.x0, y: 0 }, { x: xm, y: 0 }, 1, C.line, 'rgba(20,32,46,0.75)', 1.2, [12, 4, 2, 4]);
     ctx.globalAlpha = 1;
   }
-  function section({ L, at, k }) {
+  function section({ L, at, k, fill = false }) {
     if (k <= 0.01) return;
     ctx.globalAlpha = Math.min(1, k);
     ctx.beginPath();
@@ -236,6 +236,13 @@ export function createDrawing({ stage, host }) {
     }
     ctx.closePath();
     ctx.lineJoin = 'round';
+    if (fill) {
+      ctx.fillStyle = 'rgba(200, 230, 244, 0.82)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 3.4;
+      ctx.stroke();
+    }
     ctx.strokeStyle = C.section;
     ctx.lineWidth = 1.8;
     ctx.stroke();

@@ -10,21 +10,21 @@ export const N_AIR = 1;
 /** The lenses: half their height (cm), the radius of their faces in the early steps (cm: f = 15 cm with n = 1.52, the lens of the
  * sister figure convex-lens-image), the convex lens's edge (cm). */
 export const LENS = { half: 7.5, R: 2 * (1.52 - 1) * 15, edge: 0.3 };
-/** How thick the lenses get in the steps about the centre (চিত্র ৯.১৭): w = THICK is the book's thick lens, 0 a thin one. */
-export const THICK = 2;
+/** The teaching lenses (চিত্র ৯.১৫, ৯.১৭): the radius of their faces (cm), half-height of the small thin one, the concave one's middle (thin, thick). */
+export const TEACH = { R: 10, small: 2.5, waist: 0.3, thickWaist: 2.5 };
 /** The two lenses' places on the rail while they stand side by side (cm). */
-export const SIDE = 14;
+export const SIDE = 11;
 /** The ray box's plate (cm), the heights of its five holes above the axis (cm). */
 export const BOX_X = -26;
 export const HOLES = [-2.4, -1.2, 0, 1.2, 2.4];
 /** How far the drawn rays go (cm). */
 export const RAY_END = 27;
 /** The glass slab (চিত্র ৯.১৬): its thickness range and start (cm), half its height and depth, the laser's angle of incidence. */
-export const SLAB = { min: 1, max: 8, start: 6, half: 7.5, depth: 5, angle: 40 };
+export const SLAB = { min: 1, max: 10, start: 8, end: 4, half: 7.5, depth: 0.75, angle: 40 };
 /** The ray through the centre of a lens (চিত্র ৯.১৭): its angle to the axis (degrees). */
 export const CENTRE_ANGLE = 35;
 /** The laser's distance from the point it aims at (cm). */
-export const LASER_DIST = 17;
+export const LASER_DIST = 12;
 
 export const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 export const round = (x, digits = 1) => {
@@ -68,22 +68,26 @@ export function bookCentres(L) {
 }
 
 /**
- * The two kinds of lens of the figure, as a family: w = 1 is the full lens of the early steps (faces of radius 12 cm, the book's
- * drawings; w up to THICK makes it thicker still), w → 0 thins it to a thin lens of the same height. kind: 'convex' | 'concave'. plano (0 … 1) flattens the right face.
+ * The bench lenses of the figure (the lens of convex-lens-image and its concave sister): faces of radius LENS.R, half-height LENS.half.
+ * kind: 'convex' | 'concave'. plano (0 … 1) flattens the right face.
  */
-export function lensOf(kind, w = 1, plano = 0) {
+export function lensOf(kind, plano = 0) {
   const h = LENS.half;
-  const s1 = LENS.R - Math.sqrt(LENS.R * LENS.R - h * h); // the sag of a face of radius R at the rim
-  if (kind === 'convex') {
-    const s = 0.15 + (s1 - 0.15) * w;
-    const c = 1 / radiusFor(h, s);
-    const c2 = c * (1 - plano);
-    return makeLens(LENS.edge + s + sag(c2, h), c, c2, h);
-  }
-  // beyond w = 1 (the thick lens of চিত্র ৯.১৭) mostly the middle thickens, as in the book's drawing, not the rim
-  const s = 0.3 + (s1 - 0.3) * Math.min(w, 1) + 0.3 * Math.max(0, w - 1);
-  const c = -1 / radiusFor(h, s);
-  return makeLens(0.25 + 0.35 * w + 1.6 * Math.max(0, w - 1), c, c * (1 - plano), h);
+  const c = (kind === 'convex' ? 1 : -1) / LENS.R;
+  const c2 = c * (1 - plano);
+  if (kind === 'convex') return makeLens(LENS.edge + sag(c, h) + sag(c2, h), c, c2, h);
+  return makeLens(0.6, c, c2, h);
+}
+
+/**
+ * The teaching lenses of চিত্র ৯.১৫ and ৯.১৭: more strongly curved (faces of radius TEACH.R), as the book draws them. w = 1 is the full,
+ * thick lens; as w → 0 the lens gets smaller at the same radius of its faces, so it gets thin but stays plainly convex or concave.
+ */
+export function teachLens(kind, w = 1) {
+  const h = TEACH.small + (LENS.half - TEACH.small) * w;
+  const c = (kind === 'convex' ? 1 : -1) / TEACH.R;
+  if (kind === 'convex') return makeLens(LENS.edge + 2 * sag(c, h), c, c, h);
+  return makeLens(TEACH.waist + (TEACH.thickWaist - TEACH.waist) * w, c, c, h);
 }
 
 // ── the tracer: a ray is a point and a unit direction ─────────────────────────────────────────────────────────────
@@ -215,7 +219,7 @@ export function centreRay(L, at = 0, angle = CENTRE_ANGLE, dist = LASER_DIST) {
   let lo = 0;
   let hi = Math.asin(1 / N_GLASS) * 0.999;
   let got = null;
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 36; i++) {
     const mid = (lo + hi) / 2;
     const s = solve(mid);
     if (!s) {

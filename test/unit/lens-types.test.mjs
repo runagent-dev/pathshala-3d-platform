@@ -18,7 +18,8 @@ import {
   SLAB,
   slabRay,
   slabShift,
-  THICK,
+  TEACH,
+  teachLens,
   thicknessAt,
 } from '../../assets/lens-types/src/reading.js';
 
@@ -37,13 +38,14 @@ test('the convex lens is thicker in the middle than at the edge, the concave one
 
 test('each face is part of a sphere: convex spheres overlap, concave ones leave a gap the lens fills (চিত্র ৯.১৫)', () => {
   for (const kind of ['convex', 'concave']) {
-    const L = lensOf(kind);
+    const L = teachLens(kind);
+    near(Math.abs(1 / L.c1), TEACH.R, 1e-9);
     const { c1, c2 } = bookCentres(L);
     assert.ok(c1 < 0 && c2 > 0);
     const R = Math.abs(1 / L.c1);
     // every point of the left face is R from its own centre: C₂ for the convex lens (the other side), C₁ for the concave
     const own = kind === 'convex' ? c2 : c1;
-    for (const y of [0, 2, 5, LENS.half]) near(Math.hypot(leftFace(L, y) - own, y), R, 1e-9);
+    for (const y of [0, 2, 5, L.h]) near(Math.hypot(leftFace(L, y) - own, y), R, 1e-9);
     if (kind === 'convex') assert.ok(c2 - c1 < 2 * R);
     else near(c2 - c1 - 2 * R, L.t, 1e-9);
   }
@@ -80,6 +82,7 @@ test('a slab shifts a ray sideways by T sin(i − r)/cos r and it comes out para
   const r = slabRay(6);
   near(r.shift, slabShift(6), 1e-12);
   near(slabShift(SLAB.max) / slabShift(SLAB.max / 2), 2, 1e-12);
+  assert.ok(slabShift(SLAB.start) > 2 * slabShift(SLAB.end) - 1e-9);
   // the ray inside obeys Snell's law
   near(Math.sin((SLAB.angle * Math.PI) / 180), N_GLASS * Math.sin((r.r * Math.PI) / 180), 1e-12);
   assert.ok(slabShift(1) < 0.3 && slabShift(6) > 1.5);
@@ -87,22 +90,32 @@ test('a slab shifts a ray sideways by T sin(i − r)/cos r and it comes out para
 
 test('through the centre: parallel out, moved aside; a thin lens moves it almost not at all (চিত্র ৯.১৭)', () => {
   for (const kind of ['convex', 'concave']) {
-    const thick = centreRay(lensOf(kind, THICK));
-    const thin = centreRay(lensOf(kind, 0));
+    const thick = centreRay(teachLens(kind, 1));
+    const thin = centreRay(teachLens(kind, 0));
     for (const c of [thick, thin]) {
       near(c.dOut.x, c.dIn.x, 1e-9);
       near(c.dOut.y, c.dIn.y, 1e-9);
       near(c.inAngle, 35, 1e-6);
     }
-    assert.ok(thick.shift > 4 * thin.shift, `${kind}: ${thick.shift} vs ${thin.shift}`);
-    assert.ok(thin.shift < 0.15, `${kind} thin: ${thin.shift} cm`);
+    assert.ok(thick.shift > 5 * thin.shift, `${kind}: ${thick.shift} vs ${thin.shift}`);
+    assert.ok(thin.shift < 0.25, `${kind} thin: ${thin.shift} cm`);
   }
-  assert.ok(centreRay(lensOf('convex', THICK)).shift > 1);
+  assert.ok(centreRay(teachLens('convex', 1)).shift > 1);
+});
+
+test('the thin teaching lens keeps the radius of its faces: smaller, still plainly convex or concave', () => {
+  const thin = teachLens('convex', 0);
+  near(1 / thin.c1, TEACH.R, 1e-12);
+  assert.ok(thin.t > 2.5 * thicknessAt(thin, thin.h));
+  const tc = teachLens('concave', 0);
+  assert.ok(thicknessAt(tc, tc.h) > 2.5 * tc.t);
+  // the teaching lens's F is nearer than the bench lens's: it is more curved
+  assert.ok(focusFrom(teachLens('convex', 0)) < focusFrom(lensOf('convex')));
 });
 
 test('a flat face is still a lens: plano-convex thick in the middle, plano-concave thin', () => {
-  const pv = lensOf('convex', 1, 1);
-  const pc = lensOf('concave', 1, 1);
+  const pv = lensOf('convex', 1);
+  const pc = lensOf('concave', 1);
   near(rightFace(pv, 5), rightFace(pv, 0), 1e-12);
   assert.ok(pv.t > thicknessAt(pv, LENS.half));
   assert.ok(pc.t < thicknessAt(pc, LENS.half));

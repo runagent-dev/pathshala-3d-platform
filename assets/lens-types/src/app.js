@@ -8,6 +8,7 @@
 // traced with Snell's law at each face (reading.js) and drawn as crisp lines over the view (draw.js). The student can walk all the
 // way round, drag the slab or lens thicker and thinner, and take a five-question test.
 import * as THREE from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
@@ -40,7 +41,7 @@ import {
   SLAB,
   shuffle,
   slabRay,
-  THICK,
+  teachLens,
   thicknessAt,
 } from './reading.js';
 
@@ -94,6 +95,8 @@ const T = {
 const REST = {
   convX: -SIDE,
   concX: SIDE,
+  convT: 0, // 1: the teaching lens is on the stand (swapped while lifted off the rail)
+  concT: 0,
   convUp: 0,
   concUp: 0,
   boxUp: 1,
@@ -124,15 +127,15 @@ const POSE = {
   kinds: { ...REST, cut: 1 },
   converge: { ...REST, convX: 0, concUp: 1, boxUp: 0, lamp: 1, inK: 1, outK: 1, showF: 1, axis: 1 },
   diverge: { ...REST, convX: 0, convUp: 1, concX: 0, boxUp: 0, lamp: 1, inK: 1, outK: 1, extK: 1, showF: 1, axis: 1 },
-  sphere: { ...REST, convX: 0, concUp: 1, cut: 1, sphA: 1, axis: 1 },
-  sphere2: { ...REST, concX: 0, convUp: 1, cut: 1, sphB: 1, axis: 1 },
+  sphere: { ...REST, convX: 0, convT: 1, concUp: 1, cut: 1, sphA: 1, axis: 1 },
+  sphere2: { ...REST, concX: 0, concT: 1, convUp: 1, cut: 1, sphB: 1, axis: 1 },
   plano: { ...REST, cut: 1, plano: 1 },
-  slab: { ...REST, convUp: 1, concUp: 1, slabUp: 0, laserUp: 0, laserOn: 1, beamK: 1, origK: 1, slabT: 3 },
-  centre: { ...REST, convX: 0, concUp: 1, laserUp: 0, laserOn: 1, beamK: 1, origK: 1, convW: 0, showO: 1 },
-  centre2: { ...REST, concX: 0, convUp: 1, laserUp: 0, laserOn: 1, beamK: 1, origK: 1, concW: 0, showO: 1 },
+  slab: { ...REST, convUp: 1, concUp: 1, slabUp: 0, laserUp: 0, laserOn: 1, beamK: 1, origK: 1, slabT: SLAB.end },
+  centre: { ...REST, convX: 0, convT: 1, concUp: 1, laserUp: 0, laserOn: 1, beamK: 1, origK: 1, convW: 0, showO: 1 },
+  centre2: { ...REST, concX: 0, concT: 1, convUp: 1, laserUp: 0, laserOn: 1, beamK: 1, origK: 1, concW: 0, showO: 1 },
 };
 /** Where a step's thinning starts (the thick slab or lens), before its beam comes. */
-const START_OF = { slab: { slabT: SLAB.start }, centre: { convW: THICK }, centre2: { concW: THICK } };
+const START_OF = { slab: { slabT: SLAB.start }, centre: { convW: 1 }, centre2: { concW: 1 } };
 /** What the laser aims at in a stage. */
 const AIM = { slab: 'slab', centre: 'convex', centre2: 'concave' };
 /** The lens the ray box shines through. */
@@ -153,16 +156,20 @@ const AX = RAIL.axis;
 const box = (a, b, c, d, e, f) => new THREE.Box3(new THREE.Vector3(a, b, c), new THREE.Vector3(d, e, f));
 /** What the camera shows: a box to fill and the angle (az: degrees round from the front, negative = from the light's side; el: up). */
 const FRAMES = {
-  pair: (tall) => ({
-    box: box(-SIDE - 8.5, AX - 8.6, -3, SIDE + 8.5, AX + 9.4, 3),
-    az: tall ? -20 : -24,
-    el: 12,
-    margin: { top: 64, bottom: 10, side: 8 },
+  // the sections: almost square onto the cut face, as the book prints them, a little turned so that they still read as 3D
+  pair: () => ({ box: box(-SIDE - 5.5, AX - 8.6, -1, SIDE + 5.5, AX + 9.4, 1), az: -8, el: 10, margin: { top: 64, bottom: 10, side: 8 } }),
+  // the ray box whole, its light, the lens and F′
+  light: () => ({ box: box(BOX_X - 7.2, AX - 9, -3, RAY_END, AX + 9.5, 3), az: -22, el: 10 }),
+  // the teaching lens and its two spheres (the convex lens's overlap, the concave one's gap): the lens big enough to see which arc is whose
+  spheres: () => ({ box: box(-21.5, AX - 11, -1, 21.5, AX + 11.5, 1), az: -12, el: 9 }),
+  // the laser's front, its ray, the glass and the ray out
+  // (k: how big the lens of the centre steps is, 1 thick … 0 thin: the camera comes closer as it thins, so the thin lens stays big)
+  laser: (_tall, k = 1) => ({
+    box: box(-10 - 9.5 * k, AX - 7 - 3 * k, -2 - k, 12 + 9 * k, AX + 7.5 + 7 * k, 2 + k),
+    az: -20,
+    el: 10,
   }),
-  light: (tall) => ({ box: box(BOX_X - (tall ? 2 : 4), AX - 9, -3, RAY_END, AX + 9.5, 3), az: -24, el: 10 }),
-  spheres: () => ({ box: box(-31, AX - 16, -2, 31, AX + 16.5, 2), az: -20, el: 10 }),
-  laser: (tall) => ({ box: box(tall ? -19 : -21, AX - 10, -3, 21, AX + 12.5, 3), az: -22, el: 10 }),
-  single: () => ({ box: box(-10, AX - 10, -3, 10, AX + 9.5, 3), az: -12, el: 10 }),
+  single: () => ({ box: box(-10, AX - 10, -1, 10, AX + 9.5, 1), az: -8, el: 10 }),
   /** The test's four paths out of the lens's centre, and a little of the laser's beam. */
   paths: () => ({ box: box(-9, AX - 15, -2, 17, AX + 9, 2), az: -18, el: 8 }),
 };
@@ -251,7 +258,9 @@ export function createApp(root, options = {}) {
 
   // ── what the 3D shows, from V ───────────────────────────────────────────────────────────────────────────
   const shapes = { convex: null, concave: null };
-  const lensNow = (kind) => lensOf(kind, kind === 'convex' ? V.convW : V.concW, V.plano);
+  /** The bench lens, or (for the spheres and the centre) the more curved teaching lens, thick (w = 1) to thin (w = 0). */
+  const lensNow = (kind) =>
+    (kind === 'convex' ? V.convT : V.concT) > 0.5 ? teachLens(kind, kind === 'convex' ? V.convW : V.concW) : lensOf(kind, V.plano);
   let beam = null; // the laser's ray now
   let rays = null; // the ray box's rays now
   let focus = null;
@@ -305,8 +314,11 @@ export function createApp(root, options = {}) {
     } else dv.beam = null;
     // the ray box's light through the lens on the rail
     const kind = s.rayLens;
-    rays = parallelRays(shapes[kind], 0);
-    focus = focusFrom(shapes[kind], 0);
+    // traced only while the ray box's light is (or is about to be) drawn
+    if (V.lamp > 0 || V.inK > 0 || !rays) {
+      rays = parallelRays(shapes[kind], 0);
+      focus = focusFrom(shapes[kind], 0);
+    }
     dv.rays = V.inK > 0 ? { list: rays, inK: V.inK, outK: V.outK, extK: kind === 'concave' ? V.extK : 0, F: focus, showF: V.showF } : null;
     setting.placeStar(focus, 0, kind === 'convex' && V.outK >= 1 ? V.showF * 0.9 * V.alpha : 0, 3.2);
     dv.alpha = V.alpha;
@@ -316,6 +328,9 @@ export function createApp(root, options = {}) {
       if (V.convUp < 0.01) dv.sections.push({ L: shapes.convex, at: V.convX, k: (V.cut - 0.3) / 0.7 });
       if (V.concUp < 0.01) dv.sections.push({ L: shapes.concave, at: V.concX, k: (V.cut - 0.3) / 0.7 });
     }
+    // with the laser through a lens: its outline in the plane of the ray, as চিত্র ৯.১৭ draws it (so a thin lens still reads as convex or concave)
+    if (V.cut <= 0.3 && s.aim !== 'slab' && V.laserOn > 0 && V[s.aim === 'convex' ? 'convUp' : 'concUp'] < 0.01)
+      dv.sections.push({ L: shapes[s.aim], at: 0, k: V.laserOn, fill: true });
     // the spheres of the faces: the book's circles, with their centres
     dv.circles.length = 0;
     for (const [kind, k, x] of [
@@ -418,12 +433,15 @@ export function createApp(root, options = {}) {
     const ups = ['convUp', 'concUp', 'boxUp', 'slabUp', 'laserUp'];
     const leave = {};
     for (const k of ups) if (goal[k] > V[k]) leave[k] = goal[k];
+    // a lens that changes from the bench lens to the teaching lens (or back) is lifted off and set down again, the other one in its ring
+    if (goal.convT !== V.convT && V.convUp < 1) leave.convUp = 1;
+    if (goal.concT !== V.concT && V.concUp < 1) leave.concUp = 1;
     fly(FRAME_OF[name], T.fly);
     if (!(await move(alive, leave, T.lift, ease.inOutCubic))) return false;
     // 4. what is off the rail is put where it will come down, in its starting shape
     const lifted = (k) => V[k] >= 0.999;
-    if (lifted('convUp')) Object.assign(V, { convX: goal.convX, convW: first.convW ?? goal.convW });
-    if (lifted('concUp')) Object.assign(V, { concX: goal.concX, concW: first.concW ?? goal.concW });
+    if (lifted('convUp')) Object.assign(V, { convX: goal.convX, convT: goal.convT, convW: first.convW ?? goal.convW });
+    if (lifted('concUp')) Object.assign(V, { concX: goal.concX, concT: goal.concT, concW: first.concW ?? goal.concW });
     if (lifted('slabUp')) V.slabT = first.slabT ?? goal.slabT;
     apply();
     // 5. parts on the rail slide to their places and take their starting shape
@@ -487,9 +505,12 @@ export function createApp(root, options = {}) {
   const camOff = new THREE.Vector3();
   function poseNow() {
     const tall = stage.width / Math.max(1, stage.height) < 1.25;
-    const f = FRAMES[s.frame](tall);
+    const lensK = s.aim === 'slab' ? 1 : (shapes[s.aim]?.h ?? LENS.half) / LENS.half;
+    const f = FRAMES[s.frame](tall, clamp((lensK * LENS.half - 2.5) / 5, 0, 1));
     dirFrom(f.az, f.el, camDir);
-    return fitPose({ box: f.box, dir: camDir, camera, width: stage.width, height: stage.height, margin: f.margin ?? MARGINS });
+    // a narrow view: the labels over the lenses' tops need to clear the corner buttons too
+    const m = f.margin && stage.width < 500 ? { ...f.margin, top: f.margin.top + 28 } : (f.margin ?? MARGINS);
+    return fitPose({ box: f.box, dir: camDir, camera, width: stage.width, height: stage.height, margin: m });
   }
   function applyCamera() {
     if (s.userMovedCamera) return;
@@ -672,6 +693,23 @@ export function createApp(root, options = {}) {
       [0, -34],
       [50, 10],
     ]),
+    boxTop: sp([
+      [0, -26],
+      [30, -26],
+      [44, -10],
+      [20, -40],
+    ]),
+    shift: sp([
+      [30, 20],
+      [40, 4],
+      [24, 34],
+      [-34, -20],
+      [44, -14],
+      [56, 30],
+      [-60, -10],
+      [10, 52],
+      [-40, -40],
+    ]),
     tag: sp([
       [0, 0],
       [16, 0],
@@ -731,11 +769,16 @@ export function createApp(root, options = {}) {
       [-40, 0],
       [-30, 30],
       [30, 22],
+      [-60, 24],
+      [-50, -20],
     ]),
     plane: sp([
       [34, -10],
       [40, 8],
       [30, -28],
+      [-36, -24],
+      [0, -36],
+      [-44, 8],
     ]),
     o: sp([
       [26, -26],
@@ -772,7 +815,7 @@ export function createApp(root, options = {}) {
     label('lensName', lit && (named || !q), t(rk === 'convex' ? 'l_conv' : 'l_div'), 0, lensTop, 0, INK.dark, SPOTS.up);
     const fOn = lit && V.showF >= 1 && named && focus != null;
     label('f', fOn, `${t('l_f')} ${big(rk === 'convex' ? 'F′' : 'F')}`, focus ?? 0, AX, 0, INK.focus, SPOTS.focus);
-    label('box', lit && !q && st === 'converge', t('l_box'), BOX_X - 4, AX + 8.4, 0, INK.dark, SPOTS.upLeft, true);
+    label('box', lit && !q && st === 'converge', t('l_box'), BOX_X - 3.2, AX + 8.4, 0, INK.dark, SPOTS.boxTop);
     // the spheres' centres and the axis
     const circ = calm && (V.sphA >= 1 || V.sphB >= 1);
     const ck = V.sphA >= 1 ? 'convex' : 'concave';
@@ -782,17 +825,31 @@ export function createApp(root, options = {}) {
     label('c2', circ, big(t('l_c2')), cx + cc.c2, AX, 0, INK.dark, SPOTS.centreMark);
     label('axis', circ && V.axis >= 1 && !q, t('l_axis'), -30, AX, 0, INK.axis, SPOTS.axis, true);
     // the laser: the original direction, the ray out, the optical centre
-    const beamOn = calm && V.beamK >= 1 && dv.beam && named;
+    const beamOn = calm && V.beamK >= 1 && dv.beam && (named || q?.shiftLabel); // the slab question shows the number to read off
     if (beamOn) {
       const b = dv.beam;
-      label('orig', V.origK >= 1, t('l_orig'), b.origEnd.x, AX + b.origEnd.y, 0, INK.dark, SPOTS.orig);
+      label('orig', V.origK >= 1, t('l_orig'), b.origEnd.x, AX + b.origEnd.y, 0, INK.dark, SPOTS.orig, st !== 'slab');
       const mx = b.b.x + (b.end.x - b.b.x) * 0.55;
       const my = b.b.y + (b.end.y - b.b.y) * 0.55;
       label('dev', st === 'slab' && !q, t('l_dev'), mx, AX + my, 0, INK.laser, SPOTS.ray);
+      // how far the ray moved, on the bar that marks it: the slab step, and the test's question about it
+      const sh = (st === 'slab' && !q) || q?.shiftLabel;
+      label(
+        'shift',
+        sh && b.shiftK >= 1,
+        t('l_shift', { d: cm1(beam?.shift ?? 0) }),
+        (b.foot.x + b.at.x) / 2,
+        AX + (b.foot.y + b.at.y) / 2,
+        0,
+        INK.dark,
+        SPOTS.shift,
+        !q, // in the test the number is needed; in the step the result line has it too
+      );
       label('o', V.showO >= 1 && s.aim !== 'slab', `${t('l_o')} ${big('O')}`, 0, AX, 0, INK.dark, SPOTS.o);
     } else {
       label('orig', false);
       label('dev', false);
+      label('shift', false);
       label('o', false);
     }
     // the test's letters at the ends of the paths
@@ -834,9 +891,9 @@ export function createApp(root, options = {}) {
   const dragKey = () => (s.aim === 'slab' ? 'slabT' : s.aim === 'convex' ? 'convW' : 'concW');
   const canDrag = () =>
     s.mode === 'explore' && !s.locked && (!s.busy || s.holding) && V.beamK >= 1 && ['slab', 'centre', 'centre2'].includes(s.stage);
-  const RANGE = { slabT: [SLAB.min, SLAB.max], convW: [0, THICK], concW: [0, THICK] };
+  const RANGE = { slabT: [SLAB.min, SLAB.max], convW: [0, 1], concW: [0, 1] };
   /** The handle's x for a thickness value: the right face, top. */
-  const handleX = (key, v) => (key === 'slabT' ? v / 2 + 0.7 : 0.7 + v * 2.2);
+  const handleX = (key, v) => (key === 'slabT' ? v / 2 + 0.7 : 0.9 + v * 3.8);
   function setThick(value) {
     const key = dragKey();
     const [lo, hi] = RANGE[key];
@@ -850,12 +907,14 @@ export function createApp(root, options = {}) {
   const hTo = new THREE.Vector3();
   let dragStart = null;
   const HANDLE_Y = AX + LENS.half + 2.4;
+  /** The handle sits just above the glass: the slab's top, or the top of the lens's ring, whatever its size. */
+  const handleY = () => (s.aim === 'slab' ? HANDLE_Y : AX + (shapes[s.aim]?.h ?? LENS.half) + 2.6);
   handle = createDragHandle(stage, {
-    point: () => hp.set(handleX(dragKey(), V[dragKey()]), HANDLE_Y, 0),
+    point: () => hp.set(handleX(dragKey(), V[dragKey()]), handleY(), 0),
     axis: 'x',
     track: {
-      from: () => hFrom.set(handleX(dragKey(), RANGE[dragKey()][0]), HANDLE_Y, 0),
-      to: () => hTo.set(handleX(dragKey(), RANGE[dragKey()][1]), HANDLE_Y, 0),
+      from: () => hFrom.set(handleX(dragKey(), RANGE[dragKey()][0]), handleY(), 0),
+      to: () => hTo.set(handleX(dragKey(), RANGE[dragKey()][1]), handleY(), 0),
     },
     label: t('drag_me'),
     labelAt: 'right',
@@ -866,10 +925,10 @@ export function createApp(root, options = {}) {
       if (!canDrag()) return;
       const key = dragKey();
       // pixels per unit of the value along the rail on the screen
-      const a = drawing.screen(handleX(key, RANGE[key][0]), HANDLE_Y - AX);
+      const a = drawing.screen(handleX(key, RANGE[key][0]), handleY() - AX);
       const ax = a.x;
       const ay = a.y;
-      const b = drawing.screen(handleX(key, RANGE[key][1]), HANDLE_Y - AX);
+      const b = drawing.screen(handleX(key, RANGE[key][1]), handleY() - AX);
       const px = Math.max(20, Math.hypot(b.x - ax, b.y - ay));
       dragStart = { v: V[key], per: (RANGE[key][1] - RANGE[key][0]) / px };
       s.dragging = true;
@@ -890,7 +949,7 @@ export function createApp(root, options = {}) {
     onKey: (dir) => {
       if (!canDrag()) return;
       const key = dragKey();
-      setThick(V[key] + dir * (key === 'slabT' ? 0.5 : 0.2));
+      setThick(V[key] + dir * (key === 'slabT' ? 0.5 : 0.1));
       emitChange();
     },
   });
@@ -921,7 +980,7 @@ export function createApp(root, options = {}) {
       const b = shapes.concave;
       return t('out_kinds', { a: cm1(a.t), b: cm1(thicknessAt(a, a.h)), c: cm1(b.t), d: cm1(thicknessAt(b, b.h)) });
     }
-    if (st === 'sphere' || st === 'sphere2') return t(`out_${st}`, { r: cm1(LENS.R) });
+    if (st === 'sphere' || st === 'sphere2') return t(`out_${st}`, { r: cm1(Math.abs(1 / shapes[st === 'sphere' ? 'convex' : 'concave'].c1)) });
     if (st === 'slab') return t('out_slab', { d: cm1(beam?.shift ?? 0), T: cm1(V.slabT) });
     if (st === 'centre' || st === 'centre2') {
       const L = shapes[s.aim];
@@ -953,7 +1012,7 @@ export function createApp(root, options = {}) {
     const capKey = WORD_OF[s.stage];
     if (steady.cap !== capKey) {
       steady.cap = capKey;
-      caption.innerHTML = s.stage === 'intro' ? '' : t(`cap_${capKey}`);
+      caption.innerHTML = t(s.stage === 'intro' ? 'cap_intro' : `cap_${capKey}`);
     }
     const ph = phase();
     const nextWord = STAGES.includes(ph) ? WORD_OF[ph] : null;
@@ -1082,7 +1141,7 @@ export function createApp(root, options = {}) {
       const kind = Math.random() < 0.5 ? 'convex' : 'concave';
       quizScene({ kind: 'rays' }, kind === 'convex' ? 'converge' : 'diverge', { outK: 0, extK: 0, showF: 0 });
       const answer = kind === 'convex' ? 'meet' : 'spread';
-      const wrong = [kind === 'convex' ? 'spread' : 'meet', 'same', 'back'];
+      const wrong = [kind === 'convex' ? 'spread' : 'meet', 'same', 'bend'];
       return {
         text: t('q_rays'),
         answer,
@@ -1091,7 +1150,7 @@ export function createApp(root, options = {}) {
         notes: notesOf([
           [wrong[0], t('n_rays_other')],
           ['same', t('n_rays_same')],
-          ['back', t('n_rays_back')],
+          ['bend', t('n_rays_bend')],
         ]),
         reveal: t(`a_rays_${kind}`),
         after: { outK: 1, extK: kind === 'concave' ? 1 : 0, showF: 1 },
@@ -1105,32 +1164,33 @@ export function createApp(root, options = {}) {
       return {
         text: t('q_centres'),
         answer,
-        wrong: [near, 'both', 'none'],
+        wrong: [near, 'both', 'small'],
         label: (k) => t(`c_cen_${k}`),
         notes: notesOf([
           [near, t(`n_cen_${kind}`)],
           ['both', t('n_cen_both')],
-          ['none', t('n_cen_none')],
+          ['small', t('n_cen_small')],
         ]),
         reveal: t(`a_cen_${kind}`),
       };
     },
     slab() {
-      const T0 = shuffle([2.5, 3, 3.5])[0];
-      quizScene({ kind: 'slab' }, 'slab', { slabT: T0 });
-      const a = slabRay(T0).shift;
-      const b = slabRay(T0 * 2).shift;
+      // a thickness whose shift, read off the picture to 0.1 cm, doubles exactly in the same rounding: the numbers agree
+      const T0 = shuffle([2.8, 3.5, 4.2])[0];
+      quizScene({ kind: 'slab', shiftLabel: true }, 'slab', { slabT: T0 });
+      const d = round(slabRay(T0).shift, 1);
+      const value = { double: 2 * d, half: d / 2, same: d, four: 4 * d };
       return {
         text: t('q_slab'),
         answer: 'double',
-        wrong: ['half', 'same', 'none'],
-        label: (k) => t(`c_slab_${k}`),
+        wrong: ['half', 'same', 'four'],
+        label: (k) => t('c_cm', { x: cm1(value[k]) }),
         notes: notesOf([
           ['half', t('n_slab_half')],
           ['same', t('n_slab_same')],
-          ['none', t('n_slab_none')],
+          ['four', t('n_slab_four')],
         ]),
-        reveal: t('a_slab', { a: cm1(a), b: cm1(b) }),
+        reveal: t('a_slab', { a: cm1(d), b: cm1(2 * d), two: 2 }),
         thick: { slabT: T0 * 2 },
       };
     },
@@ -1233,7 +1293,7 @@ export function createApp(root, options = {}) {
           choices: [0, 1, 2, 3],
           expected: list.indexOf(q.answer),
           tolerance: 0.5,
-          label: (n) => q.label(list[n]),
+          label: (n) => `<span class="lab-opt">${q.label(list[n])}</span>`,
           meta: { kind: ORDER[i], answer: q.answer },
         };
       },
@@ -1333,7 +1393,7 @@ export function createApp(root, options = {}) {
       if (!canDrag()) return;
       handle.markUsed();
       const key = dragKey();
-      setThick(V[key] + step * (key === 'slabT' ? 0.5 : 0.2));
+      setThick(V[key] + step * (key === 'slabT' ? 0.5 : 0.1));
       emitChange();
       return;
     }
@@ -1463,6 +1523,7 @@ export function createApp(root, options = {}) {
     /** The bench with the two lenses in their rings (the slab, ray box and laser left out), in centimetres. */
     exportRoot() {
       const g = new THREE.Group();
+      const indexed = new Map(); // shared geometry, welded once (smaller GLB)
       g.name = 'lens-types';
       for (const kind of ['convex', 'concave']) {
         const L = setting.lenses[kind];
@@ -1470,6 +1531,10 @@ export function createApp(root, options = {}) {
         copy.position.set(kind === 'convex' ? -SIDE : SIDE, RAIL.top, 0);
         copy.traverse((ob) => {
           if (ob.isMesh && ob.material?.visible === false) ob.userData.noExport = true;
+          if (ob.isMesh && !ob.isInstancedMesh && !ob.geometry.index) {
+            if (!indexed.has(ob.geometry)) indexed.set(ob.geometry, mergeVertices(ob.geometry));
+            ob.geometry = indexed.get(ob.geometry);
+          }
         });
         g.add(copy);
       }
