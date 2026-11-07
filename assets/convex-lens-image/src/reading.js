@@ -29,8 +29,11 @@ export const U = { min: 4, max: 60, start: 30, step: 0.5 };
 export const SCREEN = { min: 6, max: 78, enter: 42, rest: 26, sharp: 0.75 };
 /** The paper of the screen: heights above the table, and half its width, cm. */
 export const CARD = { bottom: 6.6, top: 23.4, half: 5 };
-/** The book's cases, cm, in the book's order (inside F, F–2F, at 2F, beyond 2F): the words of the panel. */
-export const CASES = [10, 22.5, 30, 45];
+/** The book's cases, cm, in the book's order (inside F, F–2F, at 2F, beyond 2F): the words of the panel. Inside F at 9 cm, so the
+ * virtual image (22.5 cm) does not sit on 2F. */
+export const CASES = [9, 22.5, 30, 45];
+/** The উদাহরণ's pair when the student's own place makes no real swap: the pencil at 45 cm, its image at 22.5 cm. */
+export const SWAP = { a: 45, b: 22.5 };
 /** The rays go on this far past X′; the light is followed no farther than this on either side, and no higher or lower. */
 export const PAST = 9;
 export const X_END = 80;

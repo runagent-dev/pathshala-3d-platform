@@ -17,6 +17,7 @@ import {
   parallelBundle,
   pointBundle,
   R_FACE,
+  SWAP,
   rayOf,
   THICK,
   threeRays,
@@ -42,8 +43,9 @@ test("the book's four cases (pp 261–264)", () => {
   const [inside, between, two, far] = CASES.map((u) => imageOf(u));
   // inside F: on the object's side, virtual, upright, bigger
   assert.equal(inside.kind, 'virtual');
-  near(inside.v, -30);
-  near(inside.m, 3);
+  near(inside.v, -22.5);
+  near(inside.m, 2.5);
+  assert.notEqual(Math.abs(inside.v), 2 * F0, 'the virtual image does not sit on 2F');
   assert.ok(inside.tip > 0);
   // between F and 2F: beyond 2F, real, inverted, bigger
   assert.equal(zoneOf(CASES[1]), 'between');
@@ -76,6 +78,8 @@ test('the formula holds and the image moves as the book says', () => {
 });
 
 test('object and image change places (the উদাহরণ, p264)', () => {
+  near(imageOf(SWAP.a).v, SWAP.b);
+  near(imageOf(SWAP.b).v, SWAP.a);
   for (const u of [22.5, 30, 40, 45, 60]) {
     const { v } = imageOf(u);
     near(imageOf(v).v, u, 1e-9);

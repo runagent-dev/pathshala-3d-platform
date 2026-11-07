@@ -12,6 +12,7 @@ import { createAnnotations } from '@shared/student/annotations.js';
 import { createAudio } from '@shared/student/audio.js';
 import { createDragHandle } from '@shared/student/draghandle.js';
 import { createHowTo } from '@shared/student/howto.js';
+import { createLoupe } from '@shared/student/loupe.js';
 import { ICONS } from '@shared/student/icons.js';
 import { capturePointer, releasePointer } from '@shared/student/pointer.js';
 import { createQuiz } from '@shared/student/quiz.js';
@@ -40,6 +41,7 @@ import {
   pointBundle,
   round,
   SCREEN,
+  SWAP,
   shuffle,
   threeRays,
   U,
@@ -86,6 +88,8 @@ const REST = {
   image: 1,
   screen: 0,
   eye: 0,
+  spot: 0,
+  before: 0,
 };
 const MARKS = { axis: 1, showO: 1, showF: 1, showF2: 1 };
 const R1 = { r1in: 1, r1out: 1, r1ext: 1 };
@@ -95,14 +99,15 @@ const ALL = { ...REST, ...MARKS, show2F: 1, ...R1, ...R2, beam: 1, screen: 1, ey
 /** What each stage shows: first only the pencil, the lens and the image, then the rest of the picture, a piece at a time. */
 const POSE = {
   start: REST,
-  parallel: { ...REST, axis: 1, showO: 1, showF: 1, fBar: 1, bundleP: 1, image: 0 },
+  // চিত্র ৯.২১ and the book's নিজে করো: light from far away, and a screen at F′ that catches its picture, a bright point
+  parallel: { ...REST, axis: 1, showO: 1, showF: 1, fBar: 1, bundleP: 1, image: 0, screen: 1, spot: 1 },
   point: { ...REST, ...MARKS, source: 1, bundleS: 1, image: 0 },
   ray1: { ...REST, ...MARKS, ...R1 },
   ray2: { ...REST, ...MARKS, ...R1, ...R2, star: 1 },
   ray3: { ...REST, ...MARKS, ...R1, ...R2, ...R3, star: 1 },
   screen: { ...REST, ...MARKS, ...R1, ...R2, beam: 1, image: 0, screen: 1 },
   cases: ALL,
-  swap: ALL,
+  swap: { ...ALL, before: 1 },
   graph: ALL,
   table: ALL,
 };
@@ -115,7 +120,7 @@ const FRAME_OF = {
   ray3: 'story',
   screen: 'screen',
   cases: 'cases',
-  swap: 'cases',
+  swap: 'swap',
   graph: 'cases',
   table: 'cases',
 };
@@ -145,7 +150,9 @@ const UPS = [
   'beam',
   'image',
   'screen',
+  'spot',
   'eye',
+  'before',
 ];
 /** How long each takes to come, s: slow enough to follow (rays about 1 s a leg). */
 const TIME = {
@@ -171,7 +178,9 @@ const TIME = {
   beam: 1,
   image: 1.6,
   screen: 1.6,
+  spot: 0.6,
   eye: 0.6,
+  before: 0.6,
 };
 /** The time for the pencil to come to a new place, s. */
 const PENCIL_TIME = 2.5;
@@ -203,6 +212,8 @@ const SQ_HIDE = {
   star: 0,
   screen: 0,
   eye: 0,
+  spot: 0,
+  before: 0,
 };
 const BUNDLES = { parallel: parallelBundle(), point: pointBundle() };
 
@@ -240,6 +251,11 @@ export function createApp(root, options = {}) {
     learnAlign: 'start',
   });
   const sheet = bindCleanSheet(ui.learn);
+  // what the numbers of the row are: a small caption before them
+  const exCap = document.createElement('span');
+  exCap.className = 'lab-ex-cap';
+  exCap.textContent = t('ex_cap');
+  ui.$('.pvc-examples').prepend(exCap);
   CASES.forEach((u, i) => {
     const word = ui.$(`[data-example="c${i}"] .pvc-ex-word`);
     if (word) word.textContent = t.num(u);
@@ -268,6 +284,34 @@ export function createApp(root, options = {}) {
   controls.enablePan = false;
   const setting = createSetting({ stage, shadow: Boolean(o.shadow), t, transparent: o.bg === 'transparent' });
   const rays = createRays({ stage, host: ui.canvasHost });
+  // a small real image (under 30 px on the screen, e.g. far beyond 2F on a phone) gets the kit's magnifier over it
+  const loupe = createLoupe({ stage, layer: ui.lensLayer, clearColor: 0x123d7a, formatZoom: (z) => `${t.num(z)}×` });
+  const loupeAt = new THREE.Vector3();
+  loupe.setTarget(() => {
+    const img = imageOf(V.u);
+    return loupeAt.set(img.v, RAIL.axis + img.tip / 2, 0);
+  });
+  const pxA = new THREE.Vector3();
+  const pxB = new THREE.Vector3();
+  /** How tall the image X′Y′ is on the screen now, CSS px (0 when there is none). */
+  function imagePx() {
+    const img = imageOf(V.u);
+    if (img.kind === 'none' || !Number.isFinite(img.v)) return 0;
+    pxA.set(img.v, RAIL.axis, 0).project(camera);
+    pxB.set(img.v, RAIL.axis + img.tip, 0).project(camera);
+    return Math.abs(pxA.y - pxB.y) * 0.5 * stage.height;
+  }
+  function placeLoupe() {
+    const img = imageOf(V.u);
+    const px = img.kind === 'real' ? imagePx() : 0;
+    const want = !s.quiz && FREE.has(s.stage) && img.kind === 'real' && img.v <= SEE_V && V.image >= 1 && px > 0 && px < 30 && !s.userMovedCamera;
+    if (want !== loupe.visible) loupe.setVisible(want);
+    if (want) {
+      const z = Math.round(clamp(80 / px, 2, 4) * 2) / 2;
+      if (Math.abs(loupe.zoom - z) > 0.01) loupe.setZoom(z);
+    }
+    rays.view.hole = loupe.visible ? { x: loupe.center.x, y: loupe.center.y, r: loupe.diameter / 2 - 2 } : null;
+  }
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
   const pickU = (u) => {
@@ -308,8 +352,12 @@ export function createApp(root, options = {}) {
   }
   /** The paper follows the image once the student has found it; it waits where it is when there is nothing to catch. */
   const tracks = () => FREE.has(s.stage) && !s.held;
-  /** With no real image the paper goes (outside the screen step): there is nothing to catch, and the picture needs the room. */
-  const wantsPaper = () => !FREE.has(s.stage) || imageOf(V.u).kind === 'real';
+  /** With no real image on the bench the paper goes (outside the screen step): there is nothing to catch, and the picture needs the room. */
+  const wantsPaper = () => {
+    if (!FREE.has(s.stage)) return true;
+    const img = imageOf(V.u);
+    return img.kind === 'real' && img.v <= SCREEN.max;
+  };
   function screenGoal() {
     const img = imageOf(V.u);
     if (img.kind !== 'real') return SCREEN.rest;
@@ -318,6 +366,7 @@ export function createApp(root, options = {}) {
 
   /** A real image farther than this is not drawn (its rays end at the rail's end). */
   const X_SEE = 78;
+  const NO_PICTURE = { length: 0, tip: 0, blur: 0, gain: 0 };
 
   // ── what the 3D shows, from V ──────────────────────────────────────────────────────────────────────────
   let tracedU = -1;
@@ -355,8 +404,14 @@ export function createApp(root, options = {}) {
     note.hidden = !(V.r1in > 0 || V.bundleP > 0 || V.bundleS > 0);
     setting.placePencil(V.u);
     setting.placeImage(img.kind, img.v, img.m, near ? V.image : 0);
-    setting.placeScreen(paperOn, V.s, onScreen(V.s, V.u));
-    setting.placeStar(img.v, img.tip, img.kind === 'real' && near ? V.star * 0.75 : 0, 6);
+    // in the step of চিত্র ৯.২১ the paper catches the far light: a bright point at F′, no pencil
+    setting.placeScreen(paperOn, V.s, V.spot > 0 || s.stage === 'parallel' ? NO_PICTURE : onScreen(V.s, V.u));
+    if (V.spot > 0) setting.placeStar(V.s, 0, V.spot * 0.95, 4.5);
+    else setting.placeStar(img.v, img.tip, img.kind === 'real' && near ? V.star * 0.75 : 0, 6);
+    const sw = s.swap ?? SWAP;
+    const marks = s.busy || s.u === sw.b ? V.before : 0;
+    setting.placeBefore(sw.a, sw.b, sw.b / sw.a, marks);
+    rv.before = marks >= 1 ? sw : null;
     setting.placeSource(-F0, V.source);
   }
   const wait = (seconds) => tweener.animate({ key: 'wait', duration: seconds }).finished;
@@ -382,7 +437,7 @@ export function createApp(root, options = {}) {
     Object.assign(V, POSE[name]);
     V.u = s.u;
     s.frame = FRAME_OF[name];
-    V.s = FREE.has(name) ? screenGoal() : s.sx;
+    V.s = name === 'parallel' ? F0 : FREE.has(name) ? screenGoal() : s.sx;
     V.paper = wantsPaper() ? 1 : 0;
     apply();
   }
@@ -417,8 +472,10 @@ export function createApp(root, options = {}) {
   /** The book's উদাহরণ: where the pencil goes (b) from where it stands (a), and so where its image goes. */
   function swapPlan() {
     const img = imageOf(s.u);
-    if (img.kind === 'real' && img.v >= U.min && img.v <= U.max) return { a: s.u, b: round(img.v, 1) };
-    return { a: 45, b: 22.5 };
+    // the student's own place, if it makes a real swap (on the bench, and the two places at least 2 cm apart); else the book's pair
+    const b = round(img.v, 1);
+    if (img.kind === 'real' && b >= U.min && b <= U.max && Math.abs(b - s.u) >= 2 && Math.abs(imageOf(b).v - s.u) < 0.15) return { a: s.u, b };
+    return { ...SWAP };
   }
 
   /** One step of the story, and any jump between steps: what must go goes first, then the camera and the pencil, then the light. */
@@ -448,6 +505,7 @@ export function createApp(root, options = {}) {
       s.found = false;
       V.s = s.sx;
     }
+    if (name === 'parallel') V.s = F0;
     const flying = s.frame !== frame;
     if (flying) {
       s.frame = frame;
@@ -506,6 +564,7 @@ export function createApp(root, options = {}) {
       s: V.screen >= 1 ? V.s : s.sx,
       v: img.kind === 'real' ? Math.min(img.v, SEE_V) : 30,
       img,
+      swap: s.swap ?? SWAP,
       aspect: stage.width / Math.max(1, stage.height),
     });
     goal.box.copy(f.box);
@@ -605,6 +664,7 @@ export function createApp(root, options = {}) {
     if (!now.ready) camSnap();
     applyCamera();
     camera.updateMatrixWorld();
+    placeLoupe();
   });
 
   // ── handles and labels: few and short, each pinned to what it names ──────────────────────────────────────
@@ -660,10 +720,29 @@ export function createApp(root, options = {}) {
       () => screenHandle.box(),
       () => rays.boxes(),
       () => action?.ringBox(),
+      () => (loupe.visible ? loupeBox() : OFF),
     ],
   });
   const shown = new Map();
   const pts = new Map();
+  const OFF = { left: -20, top: -20, right: -10, bottom: -10 };
+  const lb = { left: 0, top: 0, right: 0, bottom: 0 };
+  const ul = new THREE.Vector3();
+  function underLoupe(x, y) {
+    ul.set(x, y, 0).project(camera);
+    const c = loupe.center;
+    const r = loupe.diameter / 2 + 10;
+    return Math.hypot(((ul.x + 1) / 2) * stage.width - c.x, ((1 - ul.y) / 2) * stage.height - c.y) < r;
+  }
+  function loupeBox() {
+    const c = loupe.center;
+    const r = loupe.diameter / 2 + 4;
+    lb.left = c.x - r;
+    lb.right = c.x + r;
+    lb.top = c.y - r;
+    lb.bottom = c.y + r + 14;
+    return lb;
+  }
   /** A label pinned to a world point. `spots` are the places it may take, best first; key labels have no `optional`. */
   function label(id, on, text, x, y, z, color, spots, optional = false) {
     if (!on) {
@@ -755,13 +834,25 @@ export function createApp(root, options = {}) {
       { dx: 44, dy: 26 },
       { dx: 0, dy: 26 },
     ],
+    // beside the magnifier, outside its glass
+    imageFar: [
+      { dx: -150, dy: 40 },
+      { dx: -150, dy: -40 },
+      { dx: -150, dy: 80 },
+      { dx: 0, dy: 110 },
+      { dx: -120, dy: -90 },
+      { dx: -60, dy: -110 },
+    ],
     image: [
       { dx: 0, dy: 52 },
       { dx: -64, dy: 50 },
+      { dx: -30, dy: -66 },
+      { dx: -60, dy: -44 },
       { dx: 0, dy: -66 },
-      { dx: -44, dy: -72 },
       { dx: 56, dy: 50 },
       { dx: -96, dy: 22 },
+      { dx: -120, dy: 60 },
+      { dx: -130, dy: 26 },
       { dx: -110, dy: 64 },
       { dx: -40, dy: 92 },
       { dx: 0, dy: 84 },
@@ -781,11 +872,24 @@ export function createApp(root, options = {}) {
       { dx: 0, dy: 50 },
       { dx: 30, dy: -28 },
     ],
+    // under the ghost's foot, so that nothing covers the virtual image or X′
     imageVirtual: [
-      { dx: -60, dy: -40 },
-      { dx: -80, dy: 0 },
-      { dx: 60, dy: -50 },
-      { dx: -60, dy: 40 },
+      { dx: 20, dy: 52 },
+      { dx: 70, dy: 52 },
+      { dx: -30, dy: 64 },
+      { dx: 20, dy: 90 },
+    ],
+    source: [
+      { dx: -44, dy: 24 },
+      { dx: -44, dy: -26 },
+      { dx: 0, dy: 30 },
+    ],
+    oldImage: [
+      { dx: 0, dy: 34 },
+      { dx: 50, dy: 30 },
+      { dx: -50, dy: 30 },
+      { dx: 0, dy: 64 },
+      { dx: -40, dy: -50 },
     ],
     eye: [
       { dx: 0, dy: 28 },
@@ -793,9 +897,11 @@ export function createApp(root, options = {}) {
       { dx: 34, dy: 0 },
     ],
     tab: [
-      { dx: -40, dy: 0 },
-      { dx: -40, dy: 24 },
-      { dx: 40, dy: 0 },
+      { dx: -54, dy: 0 },
+      { dx: -54, dy: -34 },
+      { dx: -54, dy: 34 },
+      { dx: -54, dy: -64 },
+      { dx: -54, dy: 64 },
     ],
     old: [
       { dx: 0, dy: -40 },
@@ -818,6 +924,8 @@ export function createApp(root, options = {}) {
     const still = !s.busy;
     const st = s.stage;
     const named = !q || q.named;
+    // a question may show the letters of the axis (when they are not its answer)
+    const letters = named || !!q?.letters;
     const img = imageOf(V.u);
     const zone = zoneOf(V.u);
     const free = FREE.has(st);
@@ -835,11 +943,31 @@ export function createApp(root, options = {}) {
     const oName = !q && st === 'ray2';
     // on the smallest views the free steps keep only F′, O and the image's words
     const sparse = free && tiny;
-    label('f', still && V.showF >= 1 && named, fName ? `${t('l_f')} ${big('F′')}` : big('F′'), F0, AX, 0, INK.focus, SPOTS.down);
-    label('f2', still && V.showF2 >= 1 && named && !sparse, f2Name ? `${t('l_source')} ${big('F')}` : big('F'), -F0, AX, 0, INK.focus, SPOTS.down);
-    label('o', still && V.showO >= 1 && named && (oName || !free), oName ? `${t('l_o')} ${big('O')}` : big('O'), 0, AX, 0, INK.dark, SPOTS.o);
-    const twoOn = still && V.show2F >= 1 && named && !sparse;
-    label('2f', twoOn, big('2F′'), 2 * F0, AX, 0, INK.dark, SPOTS.down, true);
+    // a letter whose point lies under the magnifier is left out: the glass shows the enlarged picture there
+    const open = (x) => !loupe.visible || !underLoupe(x, AX);
+    label('f', still && V.showF >= 1 && letters && open(F0), fName ? `${t('l_f')} ${big('F′')}` : big('F′'), F0, AX, 0, INK.focus, SPOTS.down);
+    label(
+      'f2',
+      still && V.showF2 >= 1 && letters && !sparse,
+      f2Name ? `${t('l_source')} ${big('F')}` : big('F'),
+      -F0,
+      AX,
+      0,
+      INK.focus,
+      f2Name ? SPOTS.source : SPOTS.down,
+    );
+    label(
+      'o',
+      still && V.showO >= 1 && named && (oName || !free) && open(0),
+      oName ? `${t('l_o')} ${big('O')}` : big('O'),
+      0,
+      AX,
+      0,
+      INK.dark,
+      SPOTS.o,
+    );
+    const twoOn = still && V.show2F >= 1 && letters && !sparse;
+    label('2f', twoOn && open(2 * F0), big('2F′'), 2 * F0, AX, 0, INK.dark, SPOTS.down, true);
     label('2f2', twoOn, big('2F'), -2 * F0, AX, 0, INK.dark, SPOTS.down, true);
     label('fbar', still && !q && st === 'parallel', t('l_fbar', { f: F0 }), F0 / 2, AX - LENS.half - 2.2, 0, INK.focus, SPOTS.down);
     // this step's ray: its rule, on the ray
@@ -855,11 +983,12 @@ export function createApp(root, options = {}) {
     label('xi', imageOn && V.r2out >= 1 && !free, t('l_xi'), img.v, AX + img.tip, 0, INK.dark, img.kind === 'real' ? SPOTS.tip : SPOTS.tipUp);
     const chip = imageOn && !RAY_STEPS.has(st) && st !== 'table';
     const props = t(st === 'start' ? 'p_start' : PROPS[zone]);
-    const lengthOn = !tiny && img.kind === 'real' && free;
+    // the length line only where the view is wide enough for a two-line chip beside a small image
+    const lengthOn = !tiny && stage.width >= 420 && img.kind === 'real' && free;
     const words = chip ? (lengthOn ? `${props}<br>${t('l_length', { l: round(img.length, 1) })}` : props) : '';
     const small = img.kind === 'real' && img.length <= 8;
-    const beside = img.kind === 'virtual' ? SPOTS.imageVirtual : small ? SPOTS.image : SPOTS.imageLong;
-    const pin = img.kind === 'virtual' ? img.tip * 0.6 : small ? img.tip : img.tip * 0.5;
+    const beside = img.kind === 'virtual' ? SPOTS.imageVirtual : loupe.visible ? SPOTS.imageFar : small ? SPOTS.image : SPOTS.imageLong;
+    const pin = img.kind === 'virtual' ? 0 : small ? img.tip : img.tip * 0.5;
     label('image', chip, words, img.v, AX + pin, 0, INK.dark, beside);
     // at F there is no image: the one chip says so, on the rays
     const noneOn = still && !q && img.kind === 'none' && free;
@@ -869,11 +998,13 @@ export function createApp(root, options = {}) {
     // the screen and the point of light
     label('screen', still && !q && st === 'screen', t('l_screen'), V.s, CARD.top - 1, 0, INK.dark, SPOTS.paper);
     // the উদাহরণ: where the pencil was
-    const sw = s.swap;
-    label('old', still && !q && st === 'swap' && sw, t('l_old'), -(sw?.a ?? 0), AX, 0, INK.dark, SPOTS.old, true);
+    const was = rays.view.before;
+    label('old', still && !q && st === 'swap' && !!was, t('l_old'), -(was?.a ?? 0), AX + PENCIL, 0, INK.dark, SPOTS.old, true);
+    const oldTip = was ? -(PENCIL * was.b) / was.a : 0;
+    label('oldImage', still && !q && st === 'swap' && !!was, t('l_old_image'), was?.b ?? 0, AX + oldTip, 0, INK.dark, SPOTS.oldImage, true);
     // the image, if the frame has left it out: a few words, the number is in the panel
     const offBench = img.kind === 'real' ? img.v > SEE_V : img.kind === 'virtual' && -img.v > SEE_BEHIND;
-    const tabAt = img.kind === 'real' ? now.box.max.x - 8 : now.box.min.x + 8;
+    const tabAt = img.kind === 'real' ? now.box.max.x - 2 : now.box.min.x + 8;
     label(
       'tab',
       still && !q && free && offBench,
@@ -1329,17 +1460,18 @@ export function createApp(root, options = {}) {
       };
     },
     kind() {
-      const u = shuffle([50, 40, 22.5, 20, 10, 8])[0];
-      quizScene({ kind: 'kind' }, { u, frame: 'wide', change: { show2F: 1 } });
+      const u = shuffle([50, 40, 30, 22.5, 20, 9, 8])[0];
+      // the letters F, F′, 2F, 2F′ are shown (they are not the answer); the frame takes in the whole left side of the scale
+      quizScene({ kind: 'kind', letters: true }, { u, frame: 'wide', change: { show2F: 1 } });
       const z = zoneOf(u);
-      const answer = { far: 0, between: 1, inside: 2 }[z];
+      const answer = { far: 0, between: 1, inside: 2, two: 3 }[z];
       const wrong = [0, 1, 2, 3].filter((i) => i !== answer);
       return {
-        text: t('q_kind'),
+        text: t('q_kind', { f: F0 }),
         answer,
         wrong,
         label: (i) => t(`c_kind_${i}`),
-        notes: notesOf(wrong.map((i) => [i, t(i === 3 ? 'n_kind_two' : 'n_kind_side')])),
+        notes: notesOf(wrong.map((i) => [i, t(`n_kind_${i}`)])),
         reveal: t('a_kind', { why: t(`why_${z}`) }).replace('{nature}', t(NATURE[z])),
         after: { ...R1, ...R2, beam: 1, image: 1, eye: 1 },
         frame: 'cases',
@@ -1366,7 +1498,8 @@ export function createApp(root, options = {}) {
       };
     },
     screen() {
-      const u = 10;
+      // 9 cm: the virtual image is 22.5 cm away, not on 2F′, so no two choices name the same place
+      const u = 9;
       const v = Math.abs(imageOf(u).v);
       quizScene({ kind: 'screen' }, { u, frame: 'cases', change: { r1in: 1, r1out: 1, r2in: 1, r2out: 1 } });
       return {
@@ -1384,24 +1517,26 @@ export function createApp(root, options = {}) {
       };
     },
     swap() {
+      // the picture gives both places: the pencil on the scale, the sharp picture on the screen; the question prints neither
       const [a, b] = shuffle([
         [40, 24],
         [60, 20],
       ])[0];
-      quizScene({ kind: 'swap' }, { u: a, frame: 'cases', change: { ...R1, ...R2, image: 1, beam: 1, show2F: 1 } });
+      quizScene({ kind: 'swap', letters: true }, { u: a, frame: 'wide', change: { ...R1, ...R2, image: 1, beam: 1, screen: 1, show2F: 1 } });
       const wrong = [b, F0, 2 * F0];
       return {
-        text: t('q_swap', { a, b }),
+        text: t('q_swap'),
         answer: a,
         wrong,
-        label: (k) => t('c_cm', { x: k }),
+        label: (k) => t('c_swap', { x: k }),
         notes: notesOf([
           [b, t('n_swap_same')],
           [F0, t('n_swap_f')],
           [2 * F0, t('n_swap_two')],
         ]),
-        reveal: t('a_swap', { a }),
+        reveal: t('a_swap', { a, b }),
         slideTo: b,
+        frame: 'cases',
       };
     },
   };
@@ -1586,6 +1721,8 @@ export function createApp(root, options = {}) {
       v: finite ? round(img.v, 3) : null,
       m: finite ? round(img.m, 4) : null,
       imageLength: finite ? round(img.length, 3) : null,
+      imagePx: Math.round(imagePx()),
+      magnifier: loupe.visible,
       inverted: img.kind === 'real',
       formulaError: finite ? round(formulaError(s.u, img.v), 9) : null,
       rayMiss: round(Math.max(0, ...drawn.map((r) => missOf(r, s.u))), 9),
@@ -1633,6 +1770,7 @@ export function createApp(root, options = {}) {
 
   // ── start ───────────────────────────────────────────────────────────────────────────────────────────────
   jump(start);
+  if (FREE.has(start)) fixNext(); // opened in a case (a book link, the poster): the action goes on to the next case
   syncUI();
   setView(s.view);
   draw();

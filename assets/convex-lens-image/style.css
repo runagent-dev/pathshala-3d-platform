@@ -209,3 +209,29 @@ body.bg-transparent { background: transparent; }
   .pvc.lab .pvc-howto-item { white-space: normal; }
   .lab .pvc-learn:not(.lab-calm) .lab-lead { display: block; }
 }
+
+/* what the numbers of the row are */
+.lab .lab-ex-cap { flex: none; align-self: center; padding-right: 4px; color: var(--ink-3, #6b7480); font-size: 12px; line-height: 1.15; white-space: nowrap; }
+
+/* short side panels (a phone held sideways, 640 × 400): the graph and the table fit without scrolling. The how-to row steps
+   aside in those two steps (the handles still show on the view), the graph is lower, the rule two lines */
+@container pvc-panel (max-height: 560px) {
+  .lab .lab-graphed .pvc-howto, .lab .lab-tabled .pvc-howto { display: none; }
+}
+@container pvc-panel (max-height: 430px) {
+  .lab .pvc-learn { gap: 4px; }
+  /* the how-to row: the pill and the সামনে button say what they are, the handles keep their words */
+  .lab .pvc-howto { gap: 0 6px; }
+  .lab .pvc-howto-item:not(.pvc-howto-drag) .pvc-howto-word { display: none; }
+  .lab .pvc-examples button { min-height: 32px; }
+  .lab .pvc-act-row { min-height: 44px; }
+  .lab .pvc-outcome { font-size: 14px; line-height: 1.3; }
+  .lab .pvc-rule { font-size: 13px; line-height: 1.4; }
+  .lab .lab-graphed .lab-graph { height: 104px; }
+  .lab .lab-graphed .pvc-rule { font-size: 13px; line-height: 1.4; }
+  .lab .lab-tabled .lab-table { font-size: 11.5px; line-height: 1.2; }
+  .lab .lab-tabled .lab-table td, .lab .lab-tabled .lab-table th { padding: 1px 2px; }
+}
+@container pvc-panel (min-height: 431px) and (max-height: 560px) {
+  .lab .lab-graphed .lab-graph { height: 132px; }
+}

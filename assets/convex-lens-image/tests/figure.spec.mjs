@@ -27,7 +27,9 @@ test(`${ID}: the lens, the three rays and the screen, on one action`, async ({ p
   expect(st).toMatchObject({ stage: 'start', u: 30, v: 30, m: 1, rays: 0, image: true, kind: 'real', inverted: true });
   st = await act();
   expect(st).toMatchObject({ stage: 'parallel', bundle: 'parallel', image: false });
-  await expect(fig.frame.locator('.pvc-outcome')).toContainText('F′ বিন্দুতে');
+  // the book's নিজে করো: a screen at F′ catches the far light's picture
+  expect(st.screen).toMatchObject({ x: 15 });
+  await expect(fig.frame.locator('.pvc-rule')).toContainText('নিজে করো');
   st = await act();
   expect(st).toMatchObject({ stage: 'point', bundle: 'point' });
   st = await act();
@@ -60,7 +62,7 @@ test(`${ID}: the book's cases in its order, the উদাহরণ, the graph an
   await fig.call('set', { stage: 'screen', screen: 30, animate: false });
   await fig.advance(1500);
   let st = await act();
-  expect(st).toMatchObject({ stage: 'cases', u: 10, v: -30, m: 3, zone: 'inside', kind: 'virtual', inverted: false, eye: true });
+  expect(st).toMatchObject({ stage: 'cases', u: 9, v: -22.5, m: 2.5, zone: 'inside', kind: 'virtual', inverted: false, eye: true });
   expect(st.screen).toBeNull(); // nothing to catch: the paper has gone
   await expect(fig.frame.locator('.pvc-anno', { hasText: 'অবাস্তব' })).toHaveCount(1);
   st = await act();
@@ -71,6 +73,7 @@ test(`${ID}: the book's cases in its order, the উদাহরণ, the graph an
   st = await act();
   expect(st).toMatchObject({ u: 45, v: 22.5, m: 0.5, zone: 'far' });
   expect(st.screen).toMatchObject({ x: 22.5, sharp: true });
+  // a small image gets the magnifier
   st = await act();
   expect(st).toMatchObject({ stage: 'swap', u: 22.5, v: 45, swap: { a: 45, b: 22.5 } });
   await expect(fig.frame.locator('.pvc-rule')).toContainText('একটি অন্যটিতে');
@@ -84,6 +87,7 @@ test(`${ID}: the book's cases in its order, the উদাহরণ, the graph an
   await fig.frame.locator('[data-example="c0"]').click();
   await settled(fig);
   await expect(fig.frame.locator('.lab-table tr.on td').first()).toHaveText('F এর ভেতরে');
+  expect((await fig.call('get')).u).toBe(9);
   // the test is offered only now; the reset goes back to the beginning
   await expect(fig.frame.locator('.pvc-act').first()).toContainText('পরীক্ষা দাও');
   await fig.frame.locator('[data-act="home"]').first().click();
@@ -168,5 +172,28 @@ test(`${ID}: a tap on the view is not a turn of it; a move of the finger is`, as
   await page.mouse.up();
   await fig.advance(300);
   expect((await fig.call('get')).view).toBe('3d');
+  expect(log.errors).toEqual([]);
+});
+
+test(`${ID}: the উদাহরণ from 2F uses the book's pair, keeps both places in view, and no panel scrolls`, async ({ page }) => {
+  test.setTimeout(150_000);
+  await page.setViewportSize({ width: 844, height: 390 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, ID, { params: { stage: 'cases', u: '30' } });
+  await fig.call('set', { stage: 'swap' });
+  await settled(fig);
+  const st = await fig.call('get');
+  expect(st).toMatchObject({ stage: 'swap', u: 22.5, v: 45, swap: { a: 45, b: 22.5 } });
+  await expect(fig.frame.locator('.pvc-anno', { hasText: 'আগে পেনসিল' })).toHaveCount(1);
+  const fits = () => fig.frame.locator('.pvc-panel').evaluate((p) => p.scrollHeight - p.clientHeight);
+  expect(await fits()).toBeLessThanOrEqual(1);
+  for (const stage of ['graph', 'table', 'parallel']) {
+    await fig.call('set', { stage, u: 4, animate: false });
+    await fig.advance(800);
+    expect(await fits(), stage).toBeLessThanOrEqual(1);
+  }
+  await fig.call('set', { stage: 'cases', u: 45, animate: false });
+  await fig.advance(800);
+  expect((await fig.call('get')).magnifier).toBe(true);
   expect(log.errors).toEqual([]);
 });

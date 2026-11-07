@@ -77,6 +77,8 @@ export function createRays({ stage, host }) {
     iv: 30,
     eye: 0, // the eye that looks through the lens at a virtual image
     screenAt: null, // the x of the paper: the light stops there
+    before: null, // { a, b } the উদাহরণ's places before the swap
+    hole: null, // { x, y, r } canvas px: the magnifier's glass, kept clear of the drawing
   };
 
   const line = (x0, y0, x1, y1) => {
@@ -370,6 +372,14 @@ export function createRays({ stage, host }) {
   function paint() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    if (v.hole) {
+      // nothing is drawn over the magnifier: it shows the 3D enlarged, and the lines would not be
+      ctx.beginPath();
+      ctx.rect(0, 0, w, h);
+      ctx.arc(v.hole.x, v.hole.y, v.hole.r, 0, Math.PI * 2, true);
+      ctx.clip('evenodd');
+    }
     if (v.axis > 0) axis(v.axis);
     drop(F0, C.focusSoft, v.showF);
     drop(-F0, C.focusSoft, v.showF2);
@@ -382,7 +392,7 @@ export function createRays({ stage, host }) {
       const k = v.bundle.k;
       for (const r of v.bundle.rays) {
         ray(r.start, r.hit, Math.min(1, k * 2), 0.5, 1.8);
-        ray(r.hit, r.end, Math.max(0, k * 2 - 1), 0.45, 1.8);
+        ray(r.hit, endOfRay(r), Math.max(0, k * 2 - 1), 0.45, 1.8);
       }
     }
     v.rays.forEach((r, i) => {
@@ -406,6 +416,7 @@ export function createRays({ stage, host }) {
     dot(2 * F0, 0, C.ink, v.show2F, 3.8);
     dot(-2 * F0, 0, C.ink, v.show2F, 3.8);
     if (v.imageAt && v.imageK > 0) dot(v.imageAt.x, v.imageAt.y, '#ffd43b', v.imageK, 3.8);
+    ctx.restore();
   }
   stage.onResize(size);
   stage.onAfterRender(paint);
@@ -444,8 +455,18 @@ export function createRays({ stage, host }) {
     if (v.bundle && v.bundle.k >= 1) {
       for (const r of v.bundle.rays) {
         along(r.start, r.hit);
-        along(r.hit, r.end);
+        along(r.hit, endOfRay(r));
       }
+    }
+    // X′ itself: no label sits on the point it names
+    if (v.imageAt && v.imageK > 0 && used < pool.length) {
+      P(v.imageAt.x, v.imageAt.y);
+      const r = pool[used++];
+      r.left = sx - 12;
+      r.right = sx + 12;
+      r.top = sy - 12;
+      r.bottom = sy + 12;
+      out.push(r);
     }
     return out;
   }

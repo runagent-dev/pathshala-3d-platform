@@ -43,20 +43,26 @@ export const FRAMES = {
     const tall = aspect < 1.25;
     return { box: box(tall ? -22 : -28, 6, -2, tall ? 26 : 31, AXIS + 9.5, 2), az: -22, el: 10 };
   },
-  // the paper and the image on it, with the lens: the pencil may leave the frame
-  screen: ({ s, v }) => ({ box: box(-6, 4, -5, Math.max(s, v) + 4, AXIS + 8, 5), az: -30, el: 10 }),
-  // the pencil, the lens and wherever the image is
+  // the paper and the image on it, with the lens: the pencil may leave the frame; room on the right for the handle's words
+  screen: ({ s, v }) => ({ box: box(-6, 2.5, -5, Math.max(s, v) + 13, AXIS + 8, 5), az: -30, el: 10 }),
+  // the pencil, the lens and wherever the image is, tight round them (the rail stays in: the handles run along its front)
   cases: ({ u, img, aspect }) => {
     const tall = aspect < 1.25;
     const real = img.kind === 'real' && img.v <= SEE_V;
     const virt = img.kind === 'virtual' && -img.v <= SEE_BEHIND;
-    const left = Math.max(u, virt ? -img.v : 0) + (tall ? 3 : 6);
-    const right = real ? img.v + (tall ? 4 : 7) : img.kind === 'virtual' ? 30 : 34;
-    const top = AXIS + (virt ? Math.max(10, img.length + 2.5) : 10.5);
-    return { box: box(-left, tall ? AXIS - 13 : 1, -3, right, top, 3), az: tall ? -36 : -24, el: 10 };
+    const left = Math.max(u, virt ? -img.v : 0) + (tall ? 1 : 2.5);
+    const right = real ? img.v + (tall ? 1.5 : 3) : img.kind === 'virtual' ? 37 : 34;
+    const top = AXIS + (virt ? Math.max(9, img.length + 2) : PENCIL + 2.5);
+    return { box: box(-left, 2.2, -3, right, top, 3), az: tall ? -38 : -24, el: 10 };
+  },
+  // the উদাহরণ: both places of the pencil and of its image stay in view
+  swap: ({ swap, aspect }) => {
+    const tall = aspect < 1.25;
+    const far = Math.max(swap.a, swap.b);
+    return { box: box(-far - (tall ? 1 : 2.5), 2.2, -3, far + (tall ? 1.5 : 3), AXIS + PENCIL + 2.5, 3), az: tall ? -38 : -24, el: 10 };
   },
   // the whole scale from a little way off: the test reads the pencil's place here
-  wide: ({ u }) => ({ box: box(-Math.max(u, 20) - 6, 0.2, -6, 50, AXIS + 10, 6), az: -22, el: 10 }),
+  wide: ({ u }) => ({ box: box(-Math.max(u, 30) - 5, 0.2, -6, 50, AXIS + 10, 6), az: -22, el: 10 }),
 };
 
 /** The backdrop: a vertical gradient on a 4 × 256 canvas, made once. As the scene's background it fills the view from any angle. */
@@ -93,9 +99,16 @@ function glowTexture() {
   return t;
 }
 
+/** Where each printed row runs along the rail, cm: one 0 only, at the lens, in the middle of the right-hand row. */
+const ROWS = [
+  { from: -1.5, to: 80.5 },
+  { from: -70.5, to: -1.5 },
+];
+
 /**
- * The printed scale: two strips in one 1024 × 256 texture, 14 px to the centimetre. Row 0 runs 0 → 80 cm to the right of the lens
- * (toward the screen), row 1 runs 70 → 0 to its left (toward the pencil). Black on satin silver: a tick each cm, longer each 5, a number each 10.
+ * The printed scale: two rows in one 1024 × 256 texture, about 12 px to the centimetre along the rail and 49 px across it. Row 0
+ * runs from just left of the lens to 80 cm on the screen's side, row 1 from 70 cm on the pencil's side to just left of the lens: each
+ * mark is the distance from the lens. Black on satin silver: a tick each cm, longer each 5, a number each 10, one 0 at the lens.
  */
 function scaleTexture(t) {
   const W = 1024;
@@ -109,32 +122,31 @@ function scaleTexture(t) {
   g.strokeStyle = '#14181d';
   g.fillStyle = '#14181d';
   g.textBaseline = 'alphabetic';
-  const row = (y0, length, dir) => {
-    const px = (W - 8) / length;
-    const x0 = dir > 0 ? 4 : W - 4;
-    for (let i = 0; i <= length; i++) {
-      const x = x0 + dir * i * px;
+  g.textAlign = 'center';
+  ROWS.forEach(({ from, to }, r) => {
+    const y0 = r * 128;
+    const px = (W - 8) / (to - from);
+    for (let x = Math.ceil(from); x <= to; x++) {
+      const cx = 4 + (x - from) * px;
+      const i = Math.abs(x);
       const major = i % 10 === 0;
       const mid = i % 5 === 0;
       g.lineWidth = major ? 3.5 : 2;
       g.beginPath();
-      g.moveTo(x, y0 + 3);
-      g.lineTo(x, y0 + (major ? 40 : mid ? 28 : 18));
+      g.moveTo(cx, y0 + 3);
+      g.lineTo(cx, y0 + (major ? 38 : mid ? 27 : 17));
       g.stroke();
-      if (major) {
-        // the strip has more pixels to a centimetre across than along: the digits are drawn narrow to come out true
+      if (major && cx > 24 && cx < W - 24) {
+        // across the strip there are four times as many pixels to a centimetre as along it: the digits are drawn narrow
         g.save();
-        g.translate(x, y0 + 116);
-        g.scale(0.6, 1);
-        g.font = '700 84px "Noto Sans Bengali", sans-serif';
-        g.textAlign = i === 0 ? (dir > 0 ? 'left' : 'right') : 'center';
+        g.translate(cx, y0 + 121);
+        g.scale(0.42, 1);
+        g.font = '600 94px "Noto Sans Bengali", sans-serif';
         g.fillText(t.num(i), 0, 0);
         g.restore();
       }
     }
-  };
-  row(0, 80, 1);
-  row(128, 70, -1);
+  });
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
@@ -185,7 +197,6 @@ function createRail(t, { alu, black }) {
   const z0 = STRIP.z0 - inset * 0.8;
   const z1 = STRIP.z1 + inset * 0.8;
   const lift = 0.012;
-  const pad = 0.0078 * 80; // the 4 px at the ends of a row, in cm
   const pos2 = [];
   const uv = [];
   const idx = [];
@@ -195,8 +206,11 @@ function createRail(t, { alu, black }) {
     uv.push(0, v0, 1, v0, 1, v1, 0, v1);
     idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
   };
-  strip(-pad * (70 / 80), 80 + pad, 0.5, 1); // 0 → 80, the top row of the canvas
-  strip(-70 - pad * (70 / 80), pad * (70 / 80), 0, 0.5); // 70 → 0, its bottom row
+  // each row's 4 px of margin at its ends, in cm, so that a tick lands where its distance is
+  for (const [r, { from, to }] of ROWS.entries()) {
+    const m = (4 / 1016) * (to - from);
+    strip(from - m, to + m, r ? 0 : 0.5, r ? 0.5 : 1);
+  }
   const sg = new THREE.BufferGeometry();
   sg.setAttribute('position', new THREE.Float32BufferAttribute(pos2, 3));
   sg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
@@ -224,9 +238,16 @@ function createCarrier({ black, brass, steel }) {
   screw.rotation.x = Math.PI / 2;
   screw.position.set(2.1, H / 2, 6.2);
   root.add(screw);
-  const pointer = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 1.9), brass);
-  pointer.position.set(0, -0.32, 6.0);
-  pointer.rotation.x = 0.68;
+  // the brass pointer lies on the printed strip, its tip at the ticks (on the slope, 1 cm down from its top edge)
+  const SLOPE = Math.atan2(STRIP.y1 - STRIP.y0, STRIP.z0 - STRIP.z1);
+  const pointer = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 1.1), brass);
+  const along = 0.5;
+  pointer.position.set(
+    0,
+    STRIP.y1 - along * Math.sin(SLOPE) + 0.04 * Math.cos(SLOPE) - RAIL.top,
+    STRIP.z1 + along * Math.cos(SLOPE) + 0.04 * Math.sin(SLOPE),
+  );
+  pointer.rotation.x = SLOPE;
   root.add(pointer);
   return root;
 }
@@ -487,10 +508,21 @@ export function createSetting({ stage, shadow, t, transparent = false }) {
       opacity: 0.45,
       emissive: 0x6a5a3a,
       depthWrite: false,
-      side: THREE.DoubleSide,
     }),
   );
-  for (const m of [solid, ghost]) {
+  // the উদাহরণ: faint marks of where the pencil and its image were before they changed places
+  const was = new THREE.MeshStandardMaterial({
+    name: 'Before',
+    vertexColors: true,
+    roughness: 0.6,
+    transparent: true,
+    opacity: 0.3,
+    depthWrite: false,
+  });
+  const oldPencil = new THREE.Mesh(whole, was);
+  const oldImage = new THREE.Mesh(whole, was);
+  oldImage.rotation.x = Math.PI;
+  for (const m of [solid, ghost, oldPencil, oldImage]) {
     m.renderOrder = 6;
     m.visible = false;
     m.userData.noExport = true;
@@ -560,7 +592,16 @@ export function createSetting({ stage, shadow, t, transparent = false }) {
     tapTarget,
     glass,
     /** Parts of later steps, hidden at the start: the stage compiles their shaders ahead. */
-    later: [screen.root, solid, ghost, star, source],
+    later: [screen.root, solid, ghost, star, source, oldPencil, oldImage],
+    /** Where the pencil (at −a) and its image (at b, m times as long) stood before the swap, at strength k (0: gone). */
+    placeBefore(a, b, m, k) {
+      oldPencil.visible = oldImage.visible = k > 0.01;
+      if (k <= 0.01) return;
+      was.opacity = 0.3 * k;
+      oldPencil.position.set(-a, RAIL.axis, 0);
+      oldImage.position.set(b, RAIL.axis, 0);
+      oldImage.scale.set(Math.max(0.6, m), m, Math.max(0.6, m));
+    },
     placePencil(u) {
       pencil.position.x = -u;
     },

@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "cm",
-  "description": "Interactive 3D figure for the images in a convex lens, book pages 259–264, topic 9.4.2, next to চিত্র ৯.২১–৯.২৬. A glass biconvex lens (f = 15 cm) stands in its ring on an optical bench with a printed cm scale, the book's pencil XY on its left and a paper screen on its right. Parallel light gathers at the focus F′ and light from a point at F leaves parallel; the book's three rays from the pencil's tip meet at X′, where a screen catches a sharp, real, inverted image. The student moves the pencil through the book's cases (inside F: virtual, upright, bigger, seen by an eye through the lens; between F and 2F; at 2F; beyond 2F), sees the book's উদাহরণ (object and image change places), a live graph of image distance against object distance and a summary table, then takes a five-question test.",
+  "description": "Interactive 3D figure for the images in a convex lens, book pages 259–264, topic 9.4.2, next to চিত্র ৯.২১–৯.২৬. A glass biconvex lens (f = 15 cm) stands in its ring on an optical bench with a printed cm scale, the book's pencil XY on its left and a paper screen on its right. Parallel light from far away gathers at the focus F′ on a screen (the book's নিজে করো) and light from a point at F leaves parallel; the book's three rays from the pencil's tip meet at X′, where a screen catches a sharp, real, inverted image. The student moves the pencil through the book's cases (inside F: virtual, upright, bigger, seen by an eye through the lens; between F and 2F; at 2F; beyond 2F), sees the book's উদাহরণ (object and image change places), a live graph of image distance against object distance and a summary table, then takes a five-question test.",
   "tags": [
     "light",
     "refraction",
@@ -84,24 +84,19 @@
   ],
   "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
   "export": {
-    "poster": { "params": { "coach": "0", "stage": "ray3" } },
+    "poster": { "params": { "coach": "0", "stage": "cases", "u": "22.5" } },
     "glb": [{ "name": "default" }],
     "video": {
       "kind": "script",
-      "seconds": 60,
+      "seconds": 20,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
-        { "at": 1.5, "command": "set", "payload": { "stage": "parallel" } },
-        { "at": 7, "command": "set", "payload": { "stage": "point" } },
-        { "at": 12.5, "command": "set", "payload": { "stage": "ray1" } },
-        { "at": 17, "command": "set", "payload": { "stage": "ray2" } },
-        { "at": 22, "command": "set", "payload": { "stage": "ray3" } },
-        { "at": 27, "command": "set", "payload": { "stage": "cases", "u": 10 } },
-        { "at": 35, "command": "set", "payload": { "u": 22.5 } },
-        { "at": 40, "command": "set", "payload": { "u": 30 } },
-        { "at": 45, "command": "set", "payload": { "u": 45 } },
-        { "at": 50, "command": "set", "payload": { "stage": "swap" } }
+        { "at": 0.2, "command": "set", "payload": { "stage": "cases", "u": 30, "animate": false } },
+        { "at": 2, "command": "set", "payload": { "u": 9 } },
+        { "at": 7, "command": "set", "payload": { "u": 22.5 } },
+        { "at": 11, "command": "set", "payload": { "u": 30 } },
+        { "at": 15, "command": "set", "payload": { "u": 45 } }
       ]
     }
   }
