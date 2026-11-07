@@ -1,0 +1,92 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "mirage",
+  "title": "Mirage (মরীচিকা)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 251,
+  "topic": "9.2.2",
+  "placement": "Book page 251–252, topic 9.2.2 মরীচিকা, চিত্র ৯.১০.",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "A mirage (pages 251–252, topic 9.2.2, চিত্র ৯.১০). A strip of desert sand with a few pebbles floats in a calm deep-blue setting; a coconut palm stands on the right and a textbook eye on a thin stand looks at it from the left (no face). Five steps, one tap each, slow: (1) the eye sees the tree directly along a straight amber ray; (2) the sun heats the sand and the book's three layers of air appear as a thin tinted cross-section in the light's own plane, with one line at each interface (বিভেদতল), labelled উপরের স্তর · n বেশি, মাঝের স্তর, নিচের স্তর · n কম (the book's simplification); (3) a second ray leaves the tree's top downward, the camera flies in, and at the first interface the normal (লম্ব) and the angles i and r show the angle of refraction growing, while at the second the angle of incidence passes the critical angle (ক্রান্তি কোণ) and the ray is totally reflected (পূর্ণ অভ্যন্তরীণ প্রতিফলন); (4) it climbs to the eye, the eye's line is carried on dashed below the ground to a pale upside-down palm (প্রতিবিম্ব) over a sheet of blue 'water', and a small inset, চোখ যা দেখে, shows the view from the eye: the tree on the sand and its upside-down copy in the water; (5) the eye walks up to the tree: the ray has to come down steeply, its angle of incidence falls below the critical angle, it ends in the sand, the eye's line meets only sand (পানি নেই) and the image vanishes from the inset too (মরীচিকাকে দূর থেকে দেখা যায়, কাছে এলে দেখা যায় না). Then the student drags the eye near and far and watches the mirage come and go. Rays traced exactly with Snell's law at each interface; the index differences and the layers are exaggerated and say so. Calm intro card, one lead-in line, result and rule per step, the kit's how-to row, a five-question test. Phone-first, Bangla and English.",
+  "tags": ["mirage", "refraction", "total internal reflection", "critical angle", "light", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "What is shown",
+      "type": "select",
+      "options": [
+        ["intro", "the tree and the eye"],
+        ["direct", "seen directly"],
+        ["layers", "the three layers of air"],
+        ["bend", "the bent ray, total internal reflection"],
+        ["image", "the upside-down image"],
+        ["near", "up close: no mirage"]
+      ],
+      "default": "intro"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "direct", "animate": false } },
+    { "name": "set", "payload": { "step": "layers", "animate": false } },
+    { "name": "set", "payload": { "step": "bend", "animate": false } },
+    { "name": "set", "payload": { "step": "image", "animate": false } },
+    { "name": "set", "payload": { "step": "near", "animate": false } },
+    { "name": "set", "payload": { "eye": -1.6 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "step": "image" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 34,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "step": "direct" } },
+        { "at": 4, "command": "set", "payload": { "step": "layers" } },
+        { "at": 8, "command": "set", "payload": { "step": "bend" } },
+        { "at": 18, "command": "set", "payload": { "step": "image" } },
+        { "at": 27, "command": "set", "payload": { "step": "near" } }
+      ]
+    }
+  }
+}
