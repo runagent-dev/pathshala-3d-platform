@@ -1,0 +1,110 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "refraction-of-light",
+  "title": "Refraction of light (আলোর প্রতিসরণ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 243,
+  "topic": "9.1",
+  "placement": "Book page 243, topic 9.1 আলোর প্রতিসরণ, with চিত্র ৯.০১–৯.০২ and টেবিল ৯.০১; it carries the laws of refraction (9.1.1, চিত্র ৯.০৪–৯.০৫, pp. 244–247, but not the coin নিজে করো: that is coin-in-cup) and the relative refractive index (9.1.2, pp. 247–248).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Refraction of light (pages 243–248, topics 9.1, 9.1.1 and 9.1.2). A thick block of clear glass on a plain sand-coloured table against a calm deep-blue backdrop, and a small torch riding a graduated aluminium arc whose centre is the point of incidence, so it always shines there; the student turns it (drag or arrow keys) to set θ₁ from 0° to 80°. Five steps, one tap each, slow: (1) the light goes in, bends and slows: wavefronts march, closer together in the glass, and the panel shows the book's উদাহরণ (v = c/n for table ৯.০১) and n = c/v; (2) the normal (লম্ব) at the point of incidence and the angles, named as the book does (আপতন কোণ θ₁, প্রতিসরণ কোণ θ₂): into a denser medium the ray bends toward the normal (a θ₂–θ₁ graph), and a toggle shows the same path the other way, bending away; (3) the first law in true 3D: the upright plane through the incident ray and the normal stands at 90° to the surface, and the camera swings round to look along it, where the incident ray, the normal and the refracted ray fall on one line; (4) the second law: Measure at three angles fills a table (θ₁, θ₂, sin θ₁ ÷ sin θ₂) and leaves dots on a square sin θ₁–sin θ₂ graph, a straight line of steepness n₂ (n₁ sin θ₁ = n₂ sin θ₂); the medium can be water, glass or diamond, and earlier lines stay faint; (5) water poured over a glass slab: from water into glass sin θ₁ / sin θ₂ = 1.14, the refractive index of glass with respect to water (0.88 the other way). Rays traced exactly with Snell's law at each boundary; a faint reflected ray whose strength follows Fresnel. Test: five questions (speed in water, the first law, the book's two উদাহরণ, the relative index), every wrong choice with its own note. Phone-first, Bangla and English.",
+  "tags": [
+    "light",
+    "refraction",
+    "refractive index",
+    "snell",
+    "laws of refraction",
+    "relative refractive index",
+    "glass",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Start at step",
+      "type": "select",
+      "options": [
+        ["intro", "start"],
+        ["slow", "1 speed"],
+        ["bend", "2 bending"],
+        ["plane", "3 first law"],
+        ["law", "4 second law"],
+        ["relative", "5 relative index"]
+      ],
+      "default": "intro"
+    },
+    {
+      "name": "medium",
+      "label": "Second medium",
+      "type": "select",
+      "options": [["glass", "glass"], ["water", "water"], ["diamond", "diamond"]],
+      "default": "glass"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "bend", "animate": false } },
+    { "name": "set", "payload": { "angle": 30 } },
+    { "name": "set", "payload": { "medium": "water" } },
+    { "name": "set", "payload": { "step": "law", "measure": [30, 50, 70], "animate": false } },
+    { "name": "set", "payload": { "step": "relative", "animate": false } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "step": "bend" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 48,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1.5, "command": "set", "payload": { "step": "slow" } },
+        { "at": 9, "command": "set", "payload": { "step": "bend" } },
+        { "at": 14, "command": "set", "payload": { "angle": 25 } },
+        { "at": 16, "command": "set", "payload": { "angle": 70 } },
+        { "at": 18.5, "command": "set", "payload": { "step": "plane" } },
+        { "at": 29, "command": "set", "payload": { "step": "law" } },
+        { "at": 31, "command": "set", "payload": { "measure": [30, 50, 70] } },
+        { "at": 37, "command": "set", "payload": { "step": "relative" } }
+      ]
+    }
+  }
+}
