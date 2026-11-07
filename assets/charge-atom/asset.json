@@ -1,0 +1,80 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "charge-atom",
+  "title": "Charge (আধান বা চার্জ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 272,
+  "topic": "10.1",
+  "placement": "Book page 272, topic 10.1 আধান বা চার্জ, চিত্র ১০.০১ (the atom's electrons in shells, the argon example) (pp. 272–273).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Charge and the atom (page 272–273, topic 10.1). চিত্র ১০.০১ in 3D: a model of an argon atom over a plain round stand against a calm deep-blue backdrop: a nucleus of 18 protons (red balls with a white +) and 22 neutrons (grey, no sign), three thin orbits with 2, 8 and 8 electrons (blue balls with a white −); every ball turns to the viewer so its sign always shows. Four steps, one tap each, slow: (1) the camera flies into the nucleus: প্রোটন (+) and নিউট্রন (no charge); (2) back out, the 18 electrons come in one by one, filling one orbit before the next (2, 8, 8): as many electrons as protons, total charge 0 (বিদ্যুৎ নিরপেক্ষ বা নিস্তড়িৎ); (3) one outer electron is taken away and waits outside, leaving a dashed empty place: one positive charge, +1.6 × 10⁻¹⁹ C (আয়নিত বা আহিত); the student may tap more outer electrons (up to 3) or tap a taken one to bring it back, and inner ones shake (held tightly); (4) the other way round on a chlorine atom (2-8-7, the book's লবণ): a stray electron joins its free place and the total charge is negative, −1.6 × 10⁻¹⁹ C. The panel counts the charges as a row of + over a row of −, paired, with the sum (+18) + (−17) = +1. A calm intro card, then one lead-in line, the result and the rule per step; the kit's how-to row. Test tab: 5 questions (the unsigned balls, why the atom is neutral, which particles move, the charge after electrons are taken away, the charge with one extra electron in coulombs), each wrong choice with its own note. Phone-first, Bangla and English.",
+  "tags": ["charge", "atom", "electron", "proton", "ion", "static electricity", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "nucleus", "animate": false } },
+    { "name": "set", "payload": { "step": "shells", "animate": false } },
+    { "name": "set", "payload": { "step": "less", "animate": false } },
+    { "name": "set", "payload": { "step": "less", "removed": 2, "animate": false } },
+    { "name": "set", "payload": { "step": "more", "animate": false } },
+    { "name": "set", "payload": { "step": "more", "joined": false, "animate": false } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "step": "less", "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [] }],
+    "video": {
+      "kind": "script",
+      "seconds": 24,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1.5, "command": "set", "payload": { "step": "nucleus" } },
+        { "at": 5, "command": "set", "payload": { "step": "shells" } },
+        { "at": 12, "command": "set", "payload": { "step": "less" } },
+        { "at": 16, "command": "set", "payload": { "step": "more" } }
+      ]
+    }
+  }
+}
