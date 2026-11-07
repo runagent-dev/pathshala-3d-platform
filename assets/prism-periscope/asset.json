@@ -1,0 +1,80 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "prism-periscope",
+  "title": "Periscope and binoculars (পেরিস্কোপ ও বাইনোকুলার)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 254,
+  "topic": "9.3.3",
+  "placement": "Book page 254, topic 9.3.3 পেরিস্কোপ ও বাইনোকুলার, চিত্র ৯.১৩.",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Periscope and binoculars (page 254, topic 9.3.3, চিত্র ৯.১৩). On a plain sand table in a calm deep-blue setting: a low brick wall, a flower in a pot behind it, and on this side a demonstration periscope (aluminium frame, painted end walls, clear acrylic sides) with two 45°-45°-90° glass prisms and a textbook eye icon at its bottom window; beside it a pair of Porro-prism binoculars with the near barrel cut away. Four steps, one tap each, slow: (1) the flower's light, going straight toward the eye, is stopped by the wall; (2) the periscope's head rises above the wall (the student can drag it ↕; below the wall top the eye sees the bricks) and the flower's light runs in, turns down in the top prism, turns again in the bottom one and reaches the eye; (3) close to the top prism: the normal (লম্ব) and the angle of incidence on the hypotenuse face, 45° > the critical angle 41.8°, total internal reflection, a 90° turn; (4) inside the binoculars: four total internal reflections, numbered, fold the light back and forth, a 27 cm path in a 14 cm body. Every ray traced from reading.js. Calm intro card, a lead-in line, the result and the rule per step; the kit's how-to row; a 5-question test. Phone-first, Bangla and English.",
+  "tags": ["refraction", "total internal reflection", "prism", "periscope", "binoculars", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "wall", "animate": false } },
+    { "name": "set", "payload": { "step": "peri", "animate": false } },
+    { "name": "set", "payload": { "step": "prism", "animate": false } },
+    { "name": "set", "payload": { "step": "bino", "animate": false } },
+    { "name": "set", "payload": { "head": 0.5 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "set", "payload": { "azimuth": 180 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "step": "peri", "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "step": "peri", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 26,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "step": "wall" } },
+        { "at": 4, "command": "set", "payload": { "step": "peri" } },
+        { "at": 11, "command": "set", "payload": { "step": "prism" } },
+        { "at": 17, "command": "set", "payload": { "step": "bino" } }
+      ]
+    }
+  }
+}
