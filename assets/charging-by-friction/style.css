@@ -1,0 +1,114 @@
+/* Charging by rubbing: the page, the panel's calm first card and lead-in line, the row of what has been found (the
+   book's rule, a row per pair of charges), the labels on the picture (names in ink, the force in teal) and the test's
+   answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.cf { --c-force: #087f5b; --c-pos: #c92a2a; --c-neg: #1864ab; }
+
+/* the step words: each at least 40 px wide */
+.cf .pvc-examples button { min-width: 42px; }
+.cf .pvc-examples .pvc-ex-word { font-size: 15px; }
+/* the line before the action: what the next tap will show; on the first screen, a calm card that sets the scene */
+.cf .cf-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.5; min-height: 1.5em; }
+.cf .cf-lead.pvc-note { font-size: 15px; line-height: 1.6; min-height: 0; }
+.cf .cf-lead .cf-short { display: none; }
+.cf .pvc-learn.cf-calm .pvc-outcome,
+.cf .pvc-learn.cf-calm .pvc-rule { visibility: hidden; }
+
+/* a finished bring-near: the rod can still be dragged, but nothing on it calls for attention */
+.cf.cf-settled .pvc-dh-word, .cf.cf-settled .pvc-dh-track { display: none; }
+.cf.cf-settled .pvc-dh.pulse .pvc-dh-disc::after { animation: none; opacity: 0; }
+
+/* the result and the rule */
+.cf .pvc-outcome { font-size: 14.5px; line-height: 1.45; }
+.cf .pvc-outcome b { font-size: 1.08em; font-weight: 600; color: var(--ink); }
+.cf .pvc-outcome .cf-prog { font-weight: 600; color: var(--accent); white-space: nowrap; }
+.cf .pvc-rule { font-size: 14px; line-height: 1.55; }
+.cf .pvc-rule b { color: var(--ink); }
+
+/* what has been found: three pairs of signs, each with its force once seen (a "?" before) */
+.cf .cf-found { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px 12px; margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.cf .cf-found[data-off] { display: none; }
+.cf .cf-pair { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.cf .cf-pair.on { color: var(--c-force); font-weight: 600; }
+.cf .cf-pair.now { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+.cf .cf-sg { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; color: #fff; font-weight: 700; font-size: 13px; line-height: 1; }
+.cf .cf-sg.p { background: #e03131; }
+.cf .cf-sg.n { background: #1971c2; }
+.cf .cf-sg svg { width: 11px; height: 11px; }
+
+/* labels on the picture: short words in their colour on a white chip */
+.cf .pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.cf .pvc-anno-lines .k-force { display: none; }
+
+/* the test: answers in words */
+.cf .pvc-opt { font-size: 13.5px; line-height: 1.2; padding: 0 4px; }
+.cf-opt { display: block; white-space: normal; text-align: center; }
+.cf .pvc-q-text { font-size: 14.5px; }
+.cf .pvc-q-feedback { font-size: 13.5px; }
+
+/* narrow panels (a phone held upright, a phone's side panel): every line as low as it reads well */
+@container pvc (max-width: 560px) {
+  .cf .pvc-learn { gap: 5px; }
+  .cf .cf-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 6px 10px; }
+  .cf .pvc-examples .pvc-ex-word { font-size: 13.5px; }
+  .cf .pvc-outcome { font-size: 13.5px; }
+  .cf .pvc-rule { font-size: 13px; line-height: 1.45; }
+  .cf .cf-found { font-size: 12.5px; gap: 4px 9px; }
+  .cf .pvc-opt { height: 42px; font-size: 13px; }
+  .cf .pvc-q-text { font-size: 14px; --pvc-q-text-min: 3lh; }
+  .cf .pvc-q-feedback { font-size: 13px; --pvc-q-feedback-min: 3lh; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .cf .cf-lead .cf-long { display: none; }
+  .cf .cf-lead .cf-short { display: inline; }
+  .cf .pvc-outcome { font-size: 12.5px; line-height: 1.4; }
+  .cf .pvc-rule { font-size: 12px; line-height: 1.4; }
+  .cf .pvc-q-text { font-size: 13px; }
+  .cf .pvc-opt { font-size: 12px; height: 38px; }
+  .cf .pvc-anno-force { font-size: 12px; }
+}
+/* short and wide (a phone held sideways): the panel beside the scene; the how-to row goes (the view's ⟲ ৩৬০° pill and
+   the drag handles' words say the same) */
+@container pvc-panel (max-height: 460px) {
+  .cf .cf-lead .cf-long { display: none; }
+  .cf .cf-lead .cf-short { display: inline; }
+  .cf .cf-lead.pvc-note { font-size: 13.5px; line-height: 1.5; padding: 5px 10px; }
+  .cf .pvc-learn { gap: 5px; }
+  .cf .pvc-howto { display: none; }
+  .cf .pvc-examples button { min-height: 36px; }
+  .cf .pvc-outcome { font-size: 13px; line-height: 1.4; }
+  .cf .pvc-rule { font-size: 12.5px; line-height: 1.45; }
+  .cf .cf-found { font-size: 12px; gap: 3px 8px; }
+  .cf .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 13px; }
+  .cf .pvc-q-text { font-size: 13.5px; }
+  .cf .pvc-opt { font-size: 12.5px; height: 42px; }
+  .cf .pvc-anno-force { font-size: 12.5px; }
+}
+
+/* a phone held upright: the panel under the 3D has a fixed share of the height in every state and in the test, so the
+   3D view never changes size; no how-to row (the view's pill and the handles' words say the same) */
+@container pvc (max-aspect-ratio: 1/1) {
+  .cf.cf-stack .pvc-panel { height: 46cqh; box-sizing: border-box; overflow: hidden; gap: 4px; padding-top: 6px; padding-bottom: 6px; }
+  .cf.cf-stack .pvc-sheets { flex: 1 1 auto; min-height: 0; }
+  .cf.cf-stack .pvc-tabs button { height: 32px; }
+  .cf.cf-stack .pvc-learn { gap: 3px; }
+  .cf.cf-stack .pvc-howto { display: none; }
+  .cf.cf-stack .pvc-examples button { min-height: 32px; padding-top: 1px; padding-bottom: 2px; }
+  .cf.cf-stack .pvc-act-row { min-height: 40px; }
+  .cf.cf-stack .pvc-act { min-height: 40px; }
+  .cf.cf-stack .pvc-outcome { font-size: 12.5px; line-height: 1.42; --pvc-outcome-lines: 2; }
+  .cf.cf-stack .pvc-rule { font-size: 12px; line-height: 1.4; --pvc-rule-lines: 3; }
+  .cf.cf-stack .cf-lead.pvc-note { font-size: 13px; line-height: 1.45; padding: 4px 9px; }
+  .cf.cf-stack .pvc-q-text { --pvc-q-text-min: 2lh; }
+}
+/* a short phone embed (390 × 520): the step words go too (the action and the replay still walk the steps) */
+@container pvc (max-aspect-ratio: 1/1) and (max-height: 600px) {
+  .cf.cf-stack .pvc-panel { height: 56cqh; }
+  .cf.cf-stack .pvc-examples { display: none; }
+  .cf.cf-stack .pvc-rule { --pvc-rule-lines: 3; }
+  .cf.cf-stack .pvc-q-text { font-size: 13px; line-height: 1.4; --pvc-q-text-min: 2lh; }
+  .cf.cf-stack .pvc-q-feedback { font-size: 12.5px; line-height: 1.42; --pvc-q-feedback-min: 3lh; }
+}
