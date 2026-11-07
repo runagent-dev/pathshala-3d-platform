@@ -102,7 +102,7 @@ export const THETA_VIOLET = ANGLE.violet; // ≈ 40.6°
 // In one real drop the colours part by less than 2°: drawn exactly, they would lie on one line. The big drop is drawn
 // with the difference between the colours' indices made SPREAD times bigger (still traced with Snell's law), and the
 // panel says so; the angles the figure names (42°, 40°) are the true ones, from the true indices.
-export const SPREAD = 6;
+export const SPREAD = 12;
 export const N_MID = 1.3333;
 export const drawnIndex = (nm) => N_MID + SPREAD * (nWater(nm) - N_MID);
 /** One white ray aimed where the middle colour turns least. */
@@ -131,7 +131,7 @@ export function halfArcDeg(sunDeg, theta = THETA_RED) {
 }
 
 /** The sun's height the student can set (degrees). */
-export const SUN = Object.freeze({ min: 5, max: 60, start: 15, noon: 55 });
+export const SUN = Object.freeze({ min: 5, max: 70, start: 15, noon: 60 });
 export const clampSun = (deg) => Math.min(SUN.max, Math.max(SUN.min, Number.isFinite(+deg) ? +deg : SUN.start));
 
 /** Rounded to whole degrees, as the figure says them. */

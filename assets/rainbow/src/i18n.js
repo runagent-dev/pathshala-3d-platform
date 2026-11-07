@@ -29,10 +29,9 @@ export const STRINGS = {
 
     // how to use the view
     howto_label: 'কীভাবে নাড়াবে',
-    howto_orbit: 'ঘুরিয়ে দেখো',
-    howto_front: 'শুরুর দৃশ্যে ফেরো',
-    howto_tap: 'কণায় টোকা দাও',
-    howto_sun: 'টেনে সূর্য সরাও',
+    howto_orbit: 'ঘোরাও',
+    howto_front: 'শুরুর দৃশ্য',
+    howto_sun: 'সূর্য সরাও',
     drag_me: 'টেনে সরাও',
     drag_aria: 'সূর্যকে উপরে বা নিচে সরাও',
 
@@ -58,23 +57,24 @@ export const STRINGS = {
     intro_short: 'সূর্য পেছনে, সামনে বৃষ্টির কণা। সাদা রোদ থেকে রংধনুর রং আসে কীভাবে? চলো দেখি।',
 
     // the line before the action: what the next tap will show
+    lead_intro: 'প্রথমে একটি পানির কণার ভেতরে দেখি।',
     lead_in: 'এবার দেখো, আলো কণার পেছনে গিয়ে কী করে।',
-    lead_back: 'এবার দূর থেকে দেখি: অসংখ্য কণা মিলে কী তৈরি হয়?',
+    lead_back: 'এবার দূর থেকে দেখি: অসংখ্য কণা মিলে কী হয়?',
     lead_bow: 'দুপুরে সূর্য অনেক উপরে ওঠে। তখন রংধনুর কী হয়?',
-    lead_noon: 'সূর্যটি টেনে উপরে-নিচে সরিয়ে দেখো। তারপর নিজে যাচাই করো।',
+    lead_noon: 'সূর্য টেনে সরিয়ে দেখো, তারপর যাচাই করো।',
 
     // the result line
     out_in: 'সাদা আলো কণায় ঢুকেই বেঁকে গেল, আর <b>নানা রঙে</b> ভাগ হয়ে গেল।',
     out_back: 'কণার পেছন থেকে আলো <b>প্রতিফলিত</b> হয়ে ফিরে এল, বের হওয়ার সময় আবার বেঁকে গেল।',
-    out_bow: 'প্রায় <b>{r}°</b> কোণের কণা থেকে লাল আসে, প্রায় <b>{v}°</b> কোণের কণা থেকে বেগুনি: লাল বাইরে, বেগুনি ভেতরে।',
+    out_bow: 'প্রায় <b>{r}°</b> কোণে থাকা কণা থেকে লাল আলো আসে, প্রায় <b>{v}°</b> কোণে থাকা কণা থেকে বেগুনি।',
     out_noon_up: 'সূর্য <b>{a}°</b> উঁচুতে: রংধনুর চূড়া দিগন্ত থেকে <b>{b}°</b> উঁচুতে।',
-    out_noon_gone: 'সূর্য <b>{a}°</b> উঁচুতে: রংধনু <b>দিগন্তের নিচে</b>, দেখা যায় না।',
+    out_noon_gone: 'সূর্য অনেক উপরে (<b>{a}°</b>): রংধনু <b>দিগন্তের নিচে</b>, দেখা যায় না।',
 
     // the rule: the book's words, its term in bold
     rule_in: 'পানিতে ঢোকার সময় আলোর <b>প্রতিসরণ</b> হয়। ভিন্ন ভিন্ন রঙের আলো ভিন্ন ভিন্ন পরিমাণে বেঁকে যায়: বেগুনি সবচেয়ে বেশি, লাল সবচেয়ে কম।',
     rule_back: 'প্রিজমের মতোই পানির কণা সাদা আলোকে তার <b>রংগুলোতে ভাগ</b> করে দেয়। বের হয়ে লাল আলো একটু বেশি নিচের দিকে যায়, বেগুনি একটু কম।',
     rule_bow:
-      'অসংখ্য কণার আলোর রশ্মি দিয়ে রংধনুর ভিন্ন ভিন্ন রঙের <b>ব্যান্ড (Band)</b> তৈরি হয়। কোণ মাপা হয় সূর্যের বিপরীত দিক থেকে, তাই রংধনু সব সময়ই <b>সূর্যের বিপরীত আকাশে</b>।',
+      'কোণ মাপা হয় সূর্যের বিপরীত দিক থেকে: তাই লাল বাইরে, বেগুনি ভেতরে, আর রংধনু সব সময়ই <b>সূর্যের বিপরীত আকাশে</b>। অসংখ্য কণার রশ্মি দিয়েই রংধনুর ভিন্ন ভিন্ন রঙের <b>ব্যান্ড (Band)</b>।',
     rule_noon: 'সূর্য যত উপরে ওঠে, রংধনু তত নিচে নামে। সূর্য প্রায় {r}°-এর বেশি উঁচুতে থাকলে রংধনু দিগন্তের নিচে চলে যায়। তাই <b>ভরদুপুরে রংধনু দেখা যায় না</b>।',
 
     // the honest note in the corner of the view
@@ -85,7 +85,10 @@ export const STRINGS = {
     lbl_sun: 'সূর্য',
     lbl_eye: 'চোখ',
     lbl_rain: 'পানির কণা',
-    lbl_drop: 'পানির কণা',
+    lbl_beam: 'সূর্যের আলো',
+    lbl_normal: 'লম্ব',
+    lbl_through: 'কিছু আলো বেরিয়ে যায়',
+    lbl_deg: '{d}°',
     lbl_white: 'সাদা আলো',
     lbl_refract: 'প্রতিসরণ',
     lbl_reflect: 'প্রতিফলন',
@@ -120,8 +123,8 @@ export const STRINGS = {
     c_wh_sun: 'সূর্যের দিকে',
     c_wh_top: 'ঠিক মাথার উপরে',
     c_wh_any: 'যেকোনো দিকে',
-    why_where: '<b>সূর্যের বিপরীত দিকে</b>। কণা থেকে রঙিন আলো ফিরে আসে সূর্যের দিকেই, তাই রংধনু সব সময় সূর্যের বিপরীত আকাশে।',
-    mis_wh_sun: 'সূর্যের দিকে তাকালে কণা থেকে ফেরা আলো চোখে আসে না।',
+    why_where: '<b>সূর্যের বিপরীত দিকে</b>। কণা রঙিন আলো সূর্যের দিকেই ফেরত পাঠায়।',
+    mis_wh_sun: 'সূর্যের দিকে কণা থেকে ফেরা আলো চোখে আসে না।',
     mis_wh_top: 'রংধনু সূর্যের বিপরীত দিক থেকে প্রায় {r}° দূরে, মাথার উপরে নয়।',
     mis_wh_any: 'দিকটি সূর্যের অবস্থান ঠিক করে দেয়।',
 
@@ -135,7 +138,7 @@ export const STRINGS = {
     mis_be_green: 'সবুজ মাঝামাঝি বেঁকে যায়।',
     mis_be_same: 'সব রং সমান বেঁকে গেলে রং আলাদা হতো না, রংধনুও হতো না।',
 
-    q_outer: 'চোখ থেকে প্রায় {r}° কোণে কণা ‘ক’, প্রায় {v}° কোণে কণা ‘খ’। কণা ‘ক’ থেকে কোন রঙের আলো চোখে আসে?',
+    q_outer: 'সূর্যের বিপরীত দিক থেকে প্রায় {r}° কোণে কণা ‘ক’, প্রায় {v}° কোণে কণা ‘খ’। কণা ‘ক’ থেকে কোন রঙের আলো চোখে আসে?',
     c_ou_right: 'লাল',
     c_ou_violet: 'বেগুনি',
     c_ou_green: 'সবুজ',
@@ -145,15 +148,15 @@ export const STRINGS = {
     mis_ou_green: 'সবুজ আসে এ দুটির মাঝের কণা থেকে।',
     mis_ou_white: 'কণা সাদা আলোকে রঙে ভাগ করে; এক দিকে একটিই রং আসে।',
 
-    q_noon: 'ভরদুপুর: সূর্য {a}° উঁচুতে, সামনে বৃষ্টি। তবু রংধনু দেখা যায় না কেন?',
+    q_noon: 'ভরদুপুর: সূর্য অনেক উপরে ({a}°), সামনে বৃষ্টি। তবু রংধনু দেখা যায় না কেন?',
     c_no_right: 'রংধনু দিগন্তের নিচে চলে যায়',
-    c_no_bright: 'বেশি রোদে রং মুছে যায়',
-    c_no_enter: 'দুপুরে আলো কণায় ঢোকে না',
-    c_no_heat: 'গরমে কণা থেকে আলো ফেরে না',
-    why_noon: '<b>রংধনু দিগন্তের নিচে চলে যায়</b>। রংধনুর চূড়া থাকে সূর্যের বিপরীত দিক থেকে প্রায় {r}° উপরে; সূর্য {a}° উঁচুতে থাকলে সেটি দিগন্তের নিচে পড়ে।',
-    mis_no_bright: 'রোদ বেশি হলে রংধনু আরও উজ্জ্বল হওয়ার কথা।',
-    mis_no_enter: 'দুপুরেও আলো কণায় ঢোকে এবং ভাগ হয়, শুধু রংধনুটি দিগন্তের নিচে।',
-    mis_no_heat: 'কণায় প্রতিফলন গরমের ওপর নির্ভর করে না।',
+    c_no_bright: 'রংধনু মাথার ঠিক উপরে ওঠে',
+    c_no_enter: 'রংধনু সূর্যের পাশে সরে যায়',
+    c_no_heat: 'রংধনু হয়, রোদে মিলিয়ে যায়',
+    why_noon: '<b>রংধনু দিগন্তের নিচে চলে যায়</b>। চূড়া থাকে দিগন্ত থেকে {r}° − {a}° উঁচুতে, যা এখন শূন্যের কম।',
+    mis_no_bright: 'সূর্য যত উপরে ওঠে, রংধনু তত নিচে নামে, উপরে নয়।',
+    mis_no_enter: 'রংধনু সব সময় সূর্যের বিপরীত দিকে থাকে, পাশে নয়।',
+    mis_no_heat: 'রোদ বেশি হলে রংধনু আরও উজ্জ্বল হওয়ার কথা; সমস্যা তার জায়গায়।',
 
     q_height: 'বিকেলে সূর্য {a}° উঁচুতে। রংধনুর চূড়া দিগন্ত থেকে প্রায় কত ডিগ্রি উঁচুতে দেখা যাবে?',
     why_height: '<b>প্রায় {b}°</b>। চূড়া সূর্যের বিপরীত দিক থেকে প্রায় {r}° উপরে, আর সেই দিক দিগন্তের {a}° নিচে: {r}° − {a}° = {b}°।',
@@ -180,10 +183,9 @@ export const STRINGS = {
       'The sky after rain: the sun behind, water drops in the air in front, an eye between them. One drop can be shown big and cut open, with the path of the light inside. The up and down arrows raise and lower the sun.',
 
     howto_label: 'How to move it',
-    howto_orbit: 'Turn the view',
-    howto_front: 'Back to the start view',
-    howto_tap: 'Tap the drop',
-    howto_sun: 'Drag the sun',
+    howto_orbit: 'Turn',
+    howto_front: 'Start view',
+    howto_sun: 'Move the sun',
     drag_me: 'Drag me',
     drag_aria: 'Move the sun up or down',
 
@@ -205,22 +207,23 @@ export const STRINGS = {
       'Right after rain, if the sun comes out, we see a rainbow. The sun is behind you, countless water drops in the air in front. Where do so many colours come from in white sunlight? Let us see what happens inside one drop.',
     intro_short: 'The sun behind, rain in front. How does white sunlight make a rainbow’s colours? Let us see.',
 
+    lead_intro: 'First, a look inside one water drop.',
     lead_in: 'Now see what the light does at the back of the drop.',
-    lead_back: 'Now look from afar: what do countless drops make together?',
+    lead_back: 'Now from afar: what do countless drops make?',
     lead_bow: 'At midday the sun is high. What happens to the rainbow then?',
-    lead_noon: 'Drag the sun up and down. Then test yourself.',
+    lead_noon: 'Drag the sun, then test yourself.',
 
     out_in: 'The white light bent as it went into the drop, and split into <b>colours</b>.',
     out_back: 'The light was <b>reflected</b> from the back of the drop, and bent again on the way out.',
-    out_bow: 'Drops about <b>{r}°</b> away send red, drops about <b>{v}°</b> away violet: red outside, violet inside.',
+    out_bow: 'Drops about <b>{r}°</b> away send red light to the eye; drops about <b>{v}°</b> away send violet.',
     out_noon_up: 'The sun is <b>{a}°</b> high: the top of the rainbow is <b>{b}°</b> above the horizon.',
-    out_noon_gone: 'The sun is <b>{a}°</b> high: the rainbow is <b>below the horizon</b>, not seen.',
+    out_noon_gone: 'The sun is very high (<b>{a}°</b>): the rainbow is <b>below the horizon</b>, not seen.',
 
     rule_in: 'Going into water, light is <b>refracted</b>. Different colours bend by different amounts: violet the most, red the least.',
     rule_back:
       'Like a prism, a water drop <b>splits white light into its colours</b>. Red light leaves the drop a little more steeply downward, violet a little less.',
     rule_bow:
-      'The rays of countless drops make the rainbow’s different coloured <b>bands</b>. The angle is from the direction opposite the sun, so a rainbow is always seen <b>in the sky opposite the sun</b>.',
+      'The angle is from the point opposite the sun: so red is outside, violet inside, and a rainbow is always <b>in the sky opposite the sun</b>. Countless drops make its coloured <b>bands</b>.',
     rule_noon:
       'The higher the sun, the lower the rainbow. With the sun higher than about {r}°, the whole rainbow is below the horizon. That is why <b>there is no rainbow at midday</b>.',
 
@@ -230,7 +233,10 @@ export const STRINGS = {
     lbl_sun: 'Sun',
     lbl_eye: 'Eye',
     lbl_rain: 'Water drops',
-    lbl_drop: 'Water drop',
+    lbl_beam: 'Sunlight',
+    lbl_normal: 'Normal',
+    lbl_through: 'Some light goes out',
+    lbl_deg: '{d}°',
     lbl_white: 'White light',
     lbl_refract: 'Refraction',
     lbl_reflect: 'Reflection',
@@ -264,9 +270,8 @@ export const STRINGS = {
     c_wh_sun: 'Toward the sun',
     c_wh_top: 'Straight overhead',
     c_wh_any: 'In any direction',
-    why_where:
-      '<b>Opposite the sun</b>. The drops send the coloured light back toward the sun’s side, so a rainbow is always in the sky opposite the sun.',
-    mis_wh_sun: 'Looking toward the sun, the light the drops send back does not reach your eye.',
+    why_where: '<b>Opposite the sun</b>. The drops send the coloured light back toward the sun.',
+    mis_wh_sun: 'Toward the sun, the light the drops send back does not reach the eye.',
     mis_wh_top: 'The rainbow is about {r}° from the point opposite the sun, not overhead.',
     mis_wh_any: 'Where the sun is decides the direction.',
 
@@ -280,7 +285,7 @@ export const STRINGS = {
     mis_be_green: 'Green bends a middle amount.',
     mis_be_same: 'If all bent the same, the colours would not part and there would be no rainbow.',
 
-    q_outer: 'Drop A is about {r}° from the eye, drop B about {v}°. Which colour reaches the eye from drop A?',
+    q_outer: 'From the point opposite the sun, drop A is about {r}° away, drop B about {v}°. Which colour reaches the eye from drop A?',
     c_ou_right: 'Red',
     c_ou_violet: 'Violet',
     c_ou_green: 'Green',
@@ -290,16 +295,15 @@ export const STRINGS = {
     mis_ou_green: 'Green comes from a drop between these two.',
     mis_ou_white: 'A drop splits white light into colours; in one direction only one colour comes.',
 
-    q_noon: 'Midday: the sun is {a}° high, rain in front. Why is there no rainbow?',
+    q_noon: 'Midday: the sun is very high ({a}°), rain in front. Why is there no rainbow?',
     c_no_right: 'The rainbow is below the horizon',
-    c_no_bright: 'Strong sun washes out the colours',
-    c_no_enter: 'At midday light does not enter the drops',
-    c_no_heat: 'In the heat drops send no light back',
-    why_noon:
-      '<b>The rainbow is below the horizon</b>. Its top is about {r}° above the point opposite the sun; with the sun {a}° high, that is below the horizon.',
-    mis_no_bright: 'Stronger sunlight would make a brighter rainbow.',
-    mis_no_enter: 'At midday light still goes into the drops and splits; only the rainbow is below the horizon.',
-    mis_no_heat: 'The reflection in a drop does not depend on heat.',
+    c_no_bright: 'The rainbow rises overhead',
+    c_no_enter: 'The rainbow moves beside the sun',
+    c_no_heat: 'It forms but fades in the sun',
+    why_noon: '<b>The rainbow is below the horizon</b>. Its top stands {r}° − {a}° above the horizon, now less than zero.',
+    mis_no_bright: 'The higher the sun, the lower the rainbow, not higher.',
+    mis_no_enter: 'A rainbow is always opposite the sun, never beside it.',
+    mis_no_heat: 'Stronger sun would make it brighter; the trouble is where it is.',
 
     q_height: 'In the afternoon the sun is {a}° high. About how many degrees above the horizon is the top of the rainbow?',
     why_height:

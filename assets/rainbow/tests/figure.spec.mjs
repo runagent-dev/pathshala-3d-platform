@@ -15,7 +15,7 @@ test('rainbow: into one drop, back out to the sky, the sun up', async ({ page })
   const frame = frameOf(page);
   expect(await fig.call('get')).toMatchObject({ step: 'intro', scene: 'sky', sun: 15, next: 'in', red: 42.4, violet: 40.7 });
   expect(await frame.locator('[data-example]').count()).toBe(4);
-  expect(await frame.locator('.rb-lead.pvc-note').count()).toBe(1);
+  expect(await frame.locator('.pvc-learn.rb-calm .rb-card').count()).toBe(1);
 
   // one tap: the camera flies into the drop and the white light goes in
   await frame.locator('.pvc-act').click();
@@ -59,7 +59,7 @@ test('rainbow: the test, answered all right, scores five of five', async ({ page
     [plain(t('q_where'))]: t('c_wh_right'),
     [plain(t('q_bend'))]: t('c_be_right'),
     [plain(t('q_outer', qv))]: t('c_ou_right'),
-    [plain(t('q_noon', { ...qv, a: 60 }))]: t('c_no_right'),
+    [plain(t('q_noon', { ...qv, a: 65 }))]: t('c_no_right'),
     [plain(t('q_height', { ...qv, a: 20 }))]: `${t.num(22)}°`,
   };
   await fig.call('practice');

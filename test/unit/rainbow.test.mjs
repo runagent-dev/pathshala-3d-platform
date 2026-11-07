@@ -80,8 +80,8 @@ describe('rainbow: the sky', () => {
     assert.ok(r.halfArcDeg(20) < 90 && r.halfArcDeg(20) > 0);
     assert.equal(r.halfArcDeg(50), 0);
   });
-  it('the sun stays between 5° and 60°', () => {
-    assert.equal(r.clampSun(80), 60);
+  it('the sun stays between 5° and 70°', () => {
+    assert.equal(r.clampSun(80), 70);
     assert.equal(r.clampSun(-3), 5);
     assert.equal(r.clampSun('x'), r.SUN.start);
   });

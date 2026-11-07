@@ -3,13 +3,18 @@
 // Nothing else. World units are "sky units": the drops of the bow stand ARC units from the eye, the sun is drawn
 // much closer than it is (not to scale; the panel says so). The eye looks along +z; the sun is behind it (−z).
 import * as THREE from 'three';
-import { COLOURS, halfArcDeg, toRad } from './reading.js';
+import { ANGLE, COLOURS, halfArcDeg, toRad } from './reading.js';
 
 export const BG = ['#0b2a5b', '#123d7a'];
-export const EYE = new THREE.Vector3(0, 1.05, 0); // the eye, on its stand
+export const EYE = new THREE.Vector3(0, 1.35, 0); // the eye, on its stand
+export const EYE_R = 0.62;
 export const ARC = 10; // how far the drops of the bow are from the eye
-export const SUN_D = 5.5; // how far the sun is drawn from the eye
-export const GROUND_R = 11.5;
+export const SUN_D = 6.5; // how far the sun is drawn from the eye
+export const GROUND_R = 4.2;
+/** The two drops the figure follows: the red one on the outer edge of the bow, the violet one on the inner, either side of the top. */
+export const KEY_PHI = 20;
+/** The radii of the angles drawn at the eye (red outside, violet inside). */
+export const ARC_R = { red: 2.8, violet: 2.2 };
 
 /** The backdrop: a vertical gradient, light at the bottom (a power-of-two canvas, made once). */
 export function backdrop() {
@@ -50,69 +55,82 @@ export function bowPoint(sunDeg, theta, phi, d = ARC, out = new THREE.Vector3())
   const uu = s * Math.cos(ph);
   return out.set(EYE.x + d * ux, EYE.y + d * (-c * Math.sin(a) + uu * Math.cos(a)), EYE.z + d * (c * Math.cos(a) + uu * Math.sin(a)));
 }
+/** One of the two drops the figure follows ('red' or 'violet'). */
+export function keyDrop(which, sunDeg, out = new THREE.Vector3()) {
+  return which === 'red' ? bowPoint(sunDeg, ANGLE.red, KEY_PHI, ARC, out) : bowPoint(sunDeg, ANGLE.violet, -KEY_PHI, ARC, out);
+}
 export function sunPoint(sunDeg, out = new THREE.Vector3()) {
   const a = toRad(sunDeg);
   return out.set(EYE.x, EYE.y + SUN_D * Math.sin(a), EYE.z - SUN_D * Math.cos(a));
 }
 
 // ── the ground ─────────────────────────────────────────────────────────────────────────────────────────────────
+/** A small round patch of light sand to stand on: the observer's place, not a landscape. */
 export function createGround() {
   const root = new THREE.Group();
   root.name = 'Ground';
   root.userData.noExport = true;
   const top = new THREE.Mesh(
-    new THREE.CylinderGeometry(GROUND_R, GROUND_R, 0.12, 96),
+    new THREE.CylinderGeometry(GROUND_R, GROUND_R, 0.12, 64),
     new THREE.MeshStandardMaterial({ name: 'Sand', color: '#b3a284', roughness: 0.92, metalness: 0 }),
   );
-  top.position.set(0, -0.06, 4.5);
+  top.position.set(0, -0.06, 0.6);
   top.receiveShadow = true;
   const edge = new THREE.Mesh(
-    new THREE.CylinderGeometry(GROUND_R + 0.02, GROUND_R - 0.15, 0.4, 96, 1, true),
+    new THREE.CylinderGeometry(GROUND_R + 0.02, GROUND_R - 0.1, 0.3, 64, 1, true),
     new THREE.MeshStandardMaterial({ name: 'SandEdge', color: '#8a7a60', roughness: 0.95 }),
   );
-  edge.position.set(0, -0.32, 4.5);
+  edge.position.set(0, -0.27, 0.6);
   root.add(top, edge);
-  return { root };
+  return { root, top, edge };
 }
 
 // ── the eye on a slim stand ────────────────────────────────────────────────────────────────────────────────────
-/** The observer: an eye (white, an iris and a pupil, an upper lid) looking toward +z, on a slim dark stand. */
+/**
+ * The observer: a big eye (no face): the white, a brown iris and a black pupil, an upper and a lower lid making the
+ * almond opening, turned to look at a point (`lookAt`), on a slim dark stand.
+ */
 export function createEye() {
   const root = new THREE.Group();
   root.name = 'Eye';
-  const look = new THREE.Group(); // turns to look up at the bow
+  const look = new THREE.Group(); // turns to look at the bow
   look.position.copy(EYE);
-  const R = 0.42;
+  const R = EYE_R;
   const white = new THREE.Mesh(
     new THREE.SphereGeometry(R, 40, 24),
-    new THREE.MeshStandardMaterial({ name: 'EyeWhite', color: '#f4f1ea', roughness: 0.35 }),
+    new THREE.MeshStandardMaterial({ name: 'EyeWhite', color: '#f6f3ec', roughness: 0.3 }),
   );
   white.castShadow = true;
-  const irisMat = new THREE.MeshStandardMaterial({ name: 'Iris', color: '#5a3a1e', roughness: 0.5 });
-  const iris = new THREE.Mesh(new THREE.SphereGeometry(R * 1.002, 32, 8, 0, Math.PI * 2, 0, 0.62), irisMat);
-  iris.rotation.x = Math.PI / 2; // its cap faces +z
+  // the iris and the pupil: caps round the +y pole, turned to face +z (the way the eye looks)
+  const iris = new THREE.Mesh(
+    new THREE.SphereGeometry(R * 1.004, 32, 8, 0, Math.PI * 2, 0, 0.6),
+    new THREE.MeshStandardMaterial({ name: 'Iris', color: '#6b4220', roughness: 0.45 }),
+  );
+  iris.rotation.x = Math.PI / 2;
   const pupil = new THREE.Mesh(
-    new THREE.SphereGeometry(R * 1.004, 24, 4, 0, Math.PI * 2, 0, 0.3),
-    new THREE.MeshStandardMaterial({ name: 'Pupil', color: '#0d0d0d', roughness: 0.3 }),
+    new THREE.SphereGeometry(R * 1.008, 24, 4, 0, Math.PI * 2, 0, 0.27),
+    new THREE.MeshStandardMaterial({ name: 'Pupil', color: '#0b0b0b', roughness: 0.2 }),
   );
   pupil.rotation.x = Math.PI / 2;
-  const lidMat = new THREE.MeshStandardMaterial({ name: 'Lid', color: '#c98f6b', roughness: 0.7, side: THREE.DoubleSide });
-  const lid = new THREE.Mesh(new THREE.SphereGeometry(R * 1.08, 40, 12, 0, Math.PI * 2, 0, 1.05), lidMat);
-  lid.rotation.x = -0.35; // the upper lid, a little open toward the front
-  lid.castShadow = true;
-  look.add(white, iris, pupil, lid);
-  look.rotation.x = -0.32; // looking up toward the bow
-  const stem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.035, 0.045, EYE.y - R * 0.9, 16),
-    new THREE.MeshStandardMaterial({ name: 'Stand', color: '#39424e', roughness: 0.5, metalness: 0.4 }),
-  );
-  stem.position.set(EYE.x, (EYE.y - R * 0.9) / 2, EYE.z);
+  const lidMat = new THREE.MeshStandardMaterial({ name: 'Lid', color: '#c68b66', roughness: 0.7, side: THREE.DoubleSide });
+  const upper = new THREE.Mesh(new THREE.SphereGeometry(R * 1.07, 40, 12, 0, Math.PI * 2, 0, 1.2), lidMat);
+  upper.rotation.x = -0.42; // over the top and the back, open in front
+  const lower = new THREE.Mesh(new THREE.SphereGeometry(R * 1.06, 40, 10, 0, Math.PI * 2, Math.PI - 0.95, 0.95), lidMat);
+  lower.rotation.x = 0.42;
+  upper.castShadow = true;
+  look.add(white, iris, pupil, upper, lower);
+  const stemH = EYE.y - R * 0.95;
+  const stand = new THREE.MeshStandardMaterial({ name: 'Stand', color: '#39424e', roughness: 0.5, metalness: 0.4 });
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, stemH, 16), stand);
+  stem.position.set(EYE.x, stemH / 2, EYE.z);
   stem.castShadow = true;
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.05, 32), stem.material);
-  base.position.set(EYE.x, 0.025, EYE.z);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 0.06, 32), stand);
+  base.position.set(EYE.x, 0.03, EYE.z);
   base.castShadow = true;
   root.add(look, stem, base);
-  return { root, body: white };
+  /** The eye looks at a world point (the top of the bow). */
+  const lookAt = (p) => look.lookAt(p);
+  return { root, body: white, lookAt };
 }
 
 // ── the sun (drawn near, not to scale) ─────────────────────────────────────────────────────────────────────────
@@ -147,31 +165,33 @@ export function createSun() {
 }
 
 // ── the falling drops ──────────────────────────────────────────────────────────────────────────────────────────
-/** A light curtain of rain in front of the eye: one instanced mesh, placed once (its own fixed sequence, so every load is the same). */
-export function createRain(count = 420) {
+/**
+ * A light curtain of rain in front of the eye: short pale streaks (one draw of line segments, no triangles), denser
+ * round the distance of the bow; placed once, with its own fixed sequence, so every load is the same.
+ */
+export function createRain(count = 520) {
   let seed = 7;
   const rnd = () => {
     seed = (seed * 16807) % 2147483647;
     return (seed - 1) / 2147483646;
   };
-  const geo = new THREE.SphereGeometry(0.045, 8, 6);
-  geo.scale(1, 1.9, 1);
-  const mat = new THREE.MeshStandardMaterial({ name: 'Rain', color: '#cfe6ff', roughness: 0.15, metalness: 0, transparent: true, opacity: 0.55 });
-  const mesh = new THREE.InstancedMesh(geo, mat, count);
+  const pos = new Float32Array(count * 6);
+  for (let i = 0; i < count; i++) {
+    // most of the drops near the bow's distance, a few nearer and further
+    const d = i < count * 0.7 ? ARC + (rnd() + rnd() - 1) * 2.2 : 5 + rnd() * 9;
+    const ang = (rnd() * 2 - 1) * 0.95; // radians either side of straight ahead
+    const x = Math.sin(ang) * d;
+    const z = Math.cos(ang) * d;
+    const y = 0.4 + rnd() * 8.4;
+    const len = 0.16 + rnd() * 0.16;
+    pos.set([x, y, z, x - 0.02, y - len, z], i * 6);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.LineBasicMaterial({ name: 'Rain', color: '#bcd8f2', transparent: true, opacity: 0.4, depthWrite: false });
+  const mesh = new THREE.LineSegments(geo, mat);
   mesh.name = 'Rain';
   mesh.userData.noExport = true;
-  const m = new THREE.Matrix4();
-  const p = new THREE.Vector3();
-  for (let i = 0; i < count; i++) {
-    // a slab of rain 6 … 13 in front, wider than the bow
-    const z = 5 + rnd() * 8;
-    const x = (rnd() * 2 - 1) * 10;
-    const y = 0.3 + rnd() * 8.5;
-    p.set(x, y, z);
-    m.makeTranslation(p.x, p.y, p.z);
-    mesh.setMatrixAt(i, m);
-  }
-  mesh.instanceMatrix.needsUpdate = true;
   mesh.frustumCulled = false;
   return { mesh };
 }

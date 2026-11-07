@@ -13,12 +13,17 @@ body.bg-transparent { background: transparent; }
 .pvc[data-mode="quiz"] .rb-note { display: none; }
 
 /* the line before the action: what the next tap will show; on the first screen, a calm card that sets the scene */
-.rb .rb-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
-.rb .rb-lead:empty { display: none; }
-.rb .rb-lead.pvc-note { font-size: 15px; line-height: 1.6; }
-.rb .rb-lead .rb-short { display: none; }
-.rb .pvc-learn.rb-calm .pvc-outcome,
-.rb .pvc-learn.rb-calm .pvc-rule { display: none; }
+.rb .rb-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; min-height: calc(2 * 1.55em); }
+/* the calm card of the first screen and the result with the rule take turns in one place, so the sheet keeps its height */
+.rb .rb-body { display: grid; }
+.rb .rb-body > * { grid-area: 1 / 1; min-width: 0; }
+.rb .rb-text { display: flex; flex-direction: column; gap: 8px; }
+.rb .rb-card { margin: 0; align-self: start; font-size: 15px; line-height: 1.6; }
+.rb .rb-card .rb-short { display: none; }
+.rb .pvc-learn.rb-calm .rb-text,
+.rb .pvc-learn:not(.rb-calm) .rb-card { visibility: hidden; }
+/* the how-to row keeps its place in the (hidden) শেখো sheet during the test, so the panel does not change height */
+.rb.pvc[data-mode='quiz'] .pvc-howto { display: flex; visibility: hidden; }
 
 /* the result and the rule */
 .rb .pvc-outcome { font-size: 15px; line-height: 1.5; }
@@ -46,8 +51,8 @@ body.bg-transparent { background: transparent; }
   .rb .pvc-learn { gap: 6px; }
 }
 @container pvc (max-width: 560px) and (max-height: 600px) {
-  .rb .rb-lead .rb-long { display: none; }
-  .rb .rb-lead .rb-short { display: inline; }
+  .rb .rb-card .rb-long { display: none; }
+  .rb .rb-card .rb-short { display: inline; }
   .rb .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
   .rb .pvc-rule { font-size: 13.5px; line-height: 1.5; --pvc-rule-lines: 4; }
   .rb .pvc-q-text { font-size: 13.5px; }
@@ -56,10 +61,10 @@ body.bg-transparent { background: transparent; }
 }
 /* short and wide (a phone held sideways): the panel is beside the scene */
 @container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
-  .rb .rb-lead .rb-long { display: none; }
-  .rb .rb-lead .rb-short { display: inline; }
+  .rb .rb-card .rb-long { display: none; }
+  .rb .rb-card .rb-short { display: inline; }
   .rb .rb-lead { font-size: 13.5px; line-height: 1.45; }
-  .rb .rb-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 5px 10px; }
+  .rb .rb-card { font-size: 14px; line-height: 1.5; padding: 5px 10px; }
   .rb .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
   .rb .pvc-rule { font-size: 13.5px; line-height: 1.5; --pvc-rule-lines: 4; }
   .rb .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
@@ -70,4 +75,11 @@ body.bg-transparent { background: transparent; }
 }
 @container pvc-panel (max-width: 330px) {
   .rb .pvc-rule { --pvc-rule-lines: 5; }
+}
+/* a small phone held upright: the picture needs the height more than the how-to row (the view still turns) */
+@media (orientation: portrait) {
+  .rb .rb-lead { min-height: 1.55em; }
+}
+@media (orientation: portrait) and (max-height: 600px) {
+  .rb .pvc-howto, .rb.pvc[data-mode='quiz'] .pvc-howto { display: none; }
 }

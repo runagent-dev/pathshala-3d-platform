@@ -23,9 +23,23 @@ import { fitPose } from './camera.js';
 import { createDrop, dropModel } from './drop.js';
 import { createI18n } from './i18n.js';
 import { createRays } from './rays.js';
-import { bowVisible, clampSun, heightChoices, SUN, THETA_RED, THETA_VIOLET, topDeg, wholeDeg } from './reading.js';
-import { ARC, along, backdrop, bowPoint, createBand, createEye, createGround, createRain, createSun, EYE, sunPoint, upOf } from './sky.js';
-import { ANGLE } from './reading.js';
+import { ANGLE, bowVisible, clampSun, heightChoices, SUN, THETA_RED, THETA_VIOLET, topDeg, wholeDeg } from './reading.js';
+import {
+  ARC,
+  ARC_R,
+  along,
+  backdrop,
+  bowPoint,
+  createBand,
+  createEye,
+  createGround,
+  createRain,
+  createSun,
+  EYE,
+  keyDrop,
+  sunPoint,
+  upOf,
+} from './sky.js';
 
 export const DEFAULTS = {
   view: 'front',
@@ -47,12 +61,14 @@ const MARGIN = { top: 50, bottom: 14, side: 12 };
 // how long things take (s): slow enough to follow
 const T = { fly: 2.4, inK: 2.2, outK: 2.6, out: 2.6, axis: 1.2, lines: 2.4, arcs: 1.1, fade: 1, sun: 3, back: 1.6, cam: 1.2 };
 /** Where each step ends. zoom: 1 the sky, 0 the big drop. */
+// bow: the band (GHOST: faint, on the first screen, to show what we will explain); beam: the parallel sunlight
+const GHOST = 0.32;
 const TARGET = {
-  intro: { zoom: 1, inK: 0, outK: 0, axis: 0, lines: 0, arcs: 0, bow: 0, sunArc: 0, sun: SUN.start },
-  in: { zoom: 0, inK: 1, outK: 0, axis: 0, lines: 0, arcs: 0, bow: 0, sunArc: 0, sun: SUN.start },
-  back: { zoom: 0, inK: 1, outK: 1, axis: 0, lines: 0, arcs: 0, bow: 0, sunArc: 0, sun: SUN.start },
-  bow: { zoom: 1, inK: 1, outK: 1, axis: 1, lines: 1, arcs: 1, bow: 1, sunArc: 0, sun: SUN.start },
-  noon: { zoom: 1, inK: 1, outK: 1, axis: 1, lines: 0, arcs: 0, bow: 1, sunArc: 1, sun: SUN.noon },
+  intro: { zoom: 1, inK: 0, outK: 0, beam: 1, axis: 0, lines: 0, arcs: 0, bow: GHOST, sunArc: 0, sun: SUN.start },
+  in: { zoom: 0, inK: 1, outK: 0, beam: 0, axis: 0, lines: 0, arcs: 0, bow: GHOST, sunArc: 0, sun: SUN.start },
+  back: { zoom: 0, inK: 1, outK: 1, beam: 0, axis: 0, lines: 0, arcs: 0, bow: GHOST, sunArc: 0, sun: SUN.start },
+  bow: { zoom: 1, inK: 1, outK: 1, beam: 1, axis: 1, lines: 1, arcs: 1, bow: 1, sunArc: 0, sun: SUN.start },
+  noon: { zoom: 1, inK: 1, outK: 1, beam: 1, axis: 1, lines: 0, arcs: 0, bow: 1, sunArc: 1, sun: SUN.noon },
 };
 const KEYS = Object.keys(TARGET.intro);
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
@@ -84,6 +100,18 @@ export function createApp(root, options = {}) {
   const lead = document.createElement('p');
   lead.className = 'rb-lead';
   $('.pvc-act-row').before(lead);
+  // the result and the rule share one place with the first screen's calm card: the sheet keeps one height in every step
+  const body = document.createElement('div');
+  body.className = 'rb-body';
+  const text = document.createElement('div');
+  text.className = 'rb-text';
+  const card = document.createElement('p');
+  card.className = 'rb-card pvc-note';
+  card.innerHTML = `<span class="rb-long">${t('intro')}</span><span class="rb-short">${t('intro_short')}</span>`;
+  const outcomeEl = $('.pvc-outcome');
+  outcomeEl.before(body);
+  text.append(outcomeEl, $('.pvc-rule'));
+  body.append(text, card);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   const note = document.createElement('div');
   note.className = 'rb-note';
@@ -169,7 +197,7 @@ export function createApp(root, options = {}) {
     drop.root.quaternion.setFromRotationMatrix(M);
     bowPoint(v.sun, THETA_MID, 0, ARC, drop.root.position);
     drop.root.scale.setScalar(dropScale(v.zoom));
-    drop.root.visible = v.zoom < 0.995 || s.step === 'intro' || s.quiz === 'where';
+    drop.root.visible = v.zoom < 0.995 || s.step === 'intro';
     drop.root.updateMatrixWorld();
     // the sun and its light
     sunPoint(v.sun, sun.root.position);
@@ -178,16 +206,21 @@ export function createApp(root, options = {}) {
     // the sky's drops fade as the camera goes into one; the bow
     const sky = smooth(Math.min(1, Math.max(0, (v.zoom - 0.35) / 0.65)));
     rain.mesh.visible = sky > 0.02;
-    rain.mesh.material.opacity = 0.5 * sky;
+    rain.mesh.material.opacity = 0.4 * sky;
+    // close to the drop the view looks up into the blue: the patch of sand and the eye are not wanted there
+    ground.root.visible = v.zoom > 0.25;
+    eye.root.visible = v.zoom > 0.25;
+    eye.lookAt(bowPoint(v.sun, THETA_MID, 0, ARC, P0));
     band.setSun(v.sun);
-    band.mesh.visible = v.bow > 0.01 && bowVisible(v.sun);
-    band.mesh.material.opacity = 0.92 * v.bow;
+    band.mesh.visible = v.bow > 0.01 && bowVisible(v.sun) && sky > 0.02;
+    band.mesh.material.opacity = 0.92 * v.bow * sky;
     // the light, drawn over the view
     const rv = rays.view;
     rv.drop = 1 - smooth(Math.min(1, v.zoom / 0.4));
     rv.inK = v.inK;
     rv.outK = v.outK;
     rv.sun = v.sun;
+    rv.beam = v.beam * sky;
     rv.axis = v.axis * sky;
     rv.lines = v.lines * sky;
     rv.arcs = v.arcs * sky;
@@ -224,18 +257,47 @@ export function createApp(root, options = {}) {
   const near = () => s.v.zoom < 0.05;
   const far = () => s.v.zoom > 0.95;
   const COL = { ink: '#1d2733', red: '#c92a2a', violet: '#6a2fd0', sun: '#b35c00' };
+  const wTmp = V();
+  /** A point on the angle drawn at the eye for the red or the violet drop (k: how far round, r: the radius). */
+  const onArc = (which, k = 0.62) => {
+    const a = along(s.v.sun, local);
+    const d = keyDrop(which, s.v.sun, wTmp).sub(EYE);
+    d.addScaledVector(a, -d.dot(a)).normalize();
+    const th = ((which === 'red' ? THETA_RED : THETA_VIOLET) * Math.PI * k) / 180;
+    const r = which === 'red' ? ARC_R.red + 0.35 : ARC_R.violet - 0.45;
+    return EYE.clone()
+      .addScaledVector(a, r * Math.cos(th))
+      .addScaledVector(d, r * Math.sin(th));
+  };
+  const scr = V();
+  /** Is the red drop to the left of the violet one on the screen now? (Their labels go on their outer sides.) */
+  const redLeft = () => {
+    const xr = keyDrop('red', s.v.sun, scr).project(camera).x;
+    const xv = keyDrop('violet', s.v.sun, scr).project(camera).x;
+    return xr < xv;
+  };
+  const OUTER_L = [spot(-28, -12), spot(-20, -26), spot(-34, 4)];
+  const OUTER_R = [spot(28, -12), spot(20, -26), spot(34, 4)];
+  const centre = () => EYE.clone().addScaledVector(along(s.v.sun, local), ARC * Math.cos((THETA_MID * Math.PI) / 180));
   const LABELS = {
     sun: {
       text: () => t('lbl_sun'),
-      point: () => sun.root.position.clone().add(V(0, 0.6, 0)),
-      spots: [...ABOVE, ...RIGHT_OF],
+      point: () => sun.root.position.clone().add(V(0, 0.7, 0)),
+      spots: [spot(0, -30), spot(30, -26), spot(-30, -26), spot(0, -46)],
       optional: true,
       show: () => far(),
     },
+    beam: {
+      text: () => t('lbl_beam'),
+      point: () => sun.root.position.clone().addScaledVector(upOf(s.v.sun, local), 4.6).addScaledVector(along(s.v.sun, wTmp), 4),
+      spots: [...ABOVE, ...RIGHT_OF, ...LEFT_OF],
+      optional: true,
+      show: () => far() && s.v.beam > 0.9 && (s.step === 'intro' || s.step === 'bow') && s.mode !== 'quiz',
+    },
     eye: {
       text: () => t('lbl_eye'),
-      point: () => EYE.clone().add(V(0, -0.15, 0)),
-      spots: [spot(0, 44), spot(-46, 36), spot(46, 36), spot(-56, 0)],
+      point: () => EYE.clone().add(V(0, -0.5, 0)),
+      spots: [spot(0, 30), spot(-40, 30), spot(40, 30), spot(-50, 0)],
       optional: true,
       show: () => far(),
     },
@@ -247,14 +309,43 @@ export function createApp(root, options = {}) {
       show: () => far() && s.step === 'intro' && !s.busy && s.mode !== 'quiz',
     },
     white: { text: () => t('lbl_white'), point: inDrop('in'), spots: [...ABOVE, ...BELOW], show: () => near() && s.v.inK > 0.4 },
+    normal: {
+      text: () => t('lbl_normal'),
+      point: inDrop('normal'),
+      color: '#495057',
+      spots: [...LEFT_OF, ...ABOVE],
+      optional: true,
+      show: () => near() && s.v.inK > 0.6 && s.v.outK < 0.05,
+    },
     refract: {
       text: () => t('lbl_refract'),
       point: inDrop('enter'),
-      spots: [...ABOVE, ...LEFT_OF],
+      spots: [spot(24, -20), spot(30, -34), ...ABOVE],
       optional: true,
       show: () => near() && s.v.inK > 0.95 && s.v.outK < 0.05 && s.mode !== 'quiz',
     },
+    redIn: {
+      text: () => t('lbl_red'),
+      point: inDrop('redIn'),
+      color: COL.red,
+      spots: [spot(34, -16), spot(40, -30), ...ABOVE],
+      show: () => near() && s.v.inK > 0.95 && s.v.outK < 0.05,
+    },
+    violetIn: {
+      text: () => t('lbl_violet'),
+      point: inDrop('violetIn'),
+      color: COL.violet,
+      spots: [spot(36, 18), spot(40, 32), ...BELOW],
+      show: () => near() && s.v.inK > 0.95 && s.v.outK < 0.05,
+    },
     reflect: { text: () => t('lbl_reflect'), point: inDrop('back'), spots: [...RIGHT_OF, ...ABOVE], show: () => near() && s.v.outK > 0.5 },
+    through: {
+      text: () => t('lbl_through'),
+      point: inDrop('through'),
+      spots: [spot(16, 26), spot(24, 34), ...BELOW, ...RIGHT_OF],
+      optional: true,
+      show: () => near() && s.v.outK > 0.95,
+    },
     red: { text: () => t('lbl_red'), point: inDrop('red'), color: COL.red, spots: [...LEFT_OF, ...BELOW], show: () => near() && s.v.outK > 0.95 },
     violet: {
       text: () => t('lbl_violet'),
@@ -265,66 +356,89 @@ export function createApp(root, options = {}) {
     },
     anti: {
       text: () => t('lbl_anti'),
-      point: () => EYE.clone().addScaledVector(along(s.v.sun, local), ARC * 0.62),
+      point: centre,
       spots: [...BELOW, ...RIGHT_OF, ...LEFT_OF],
       optional: true,
       show: () => far() && s.v.axis > 0.9 && s.quiz !== 'height',
     },
     redDeg: {
-      text: () => t('lbl_red_deg', { d: RED_DEG }),
-      point: () => bowPoint(s.v.sun, THETA_RED, 0, ARC, local).clone(),
-      color: COL.red,
-      spots: [spot(0, -22), spot(24, -22), spot(-24, -22), ...RIGHT_OF],
-      show: () => far() && s.v.lines > 0.95 && !s.quiz,
+      text: () => t(s.quiz ? 'lbl_deg' : 'lbl_red_deg', { d: RED_DEG }),
+      point: () => onArc('red'),
+      spots: () => (redLeft() ? OUTER_L : OUTER_R),
+      get color() {
+        return s.quiz ? COL.ink : COL.red;
+      },
+      show: () => far() && s.v.arcs > 0.95,
     },
     violetDeg: {
-      text: () => t('lbl_violet_deg', { d: VIOLET_DEG }),
-      point: () => bowPoint(s.v.sun, THETA_VIOLET, 0, ARC, local).clone(),
-      color: COL.violet,
-      spots: [spot(0, 24), spot(26, 22), spot(-26, 22), ...RIGHT_OF],
-      show: () => far() && s.v.lines > 0.95 && !s.quiz,
+      text: () => t(s.quiz ? 'lbl_deg' : 'lbl_violet_deg', { d: VIOLET_DEG }),
+      point: () => onArc('violet'),
+      spots: () => (redLeft() ? OUTER_R : OUTER_L),
+      get color() {
+        return s.quiz ? COL.ink : COL.violet;
+      },
+      show: () => far() && s.v.arcs > 0.95,
     },
     k: {
       text: () => t('lbl_k'),
-      point: () => bowPoint(s.v.sun, THETA_RED, 0, ARC, local).clone(),
-      spots: [spot(0, -22), ...RIGHT_OF],
+      point: () => keyDrop('red', s.v.sun, local).clone(),
+      spots: () => (redLeft() ? OUTER_L : OUTER_R),
       show: () => s.quiz === 'outer',
     },
     kh: {
       text: () => t('lbl_kh'),
-      point: () => bowPoint(s.v.sun, THETA_VIOLET, 0, ARC, local).clone(),
-      spots: [spot(0, 24), ...RIGHT_OF],
+      point: () => keyDrop('violet', s.v.sun, local).clone(),
+      spots: () => (redLeft() ? OUTER_R : OUTER_L),
       show: () => s.quiz === 'outer',
     },
     sunDeg: {
       text: () => t('lbl_sun_deg', { d: Math.round(s.v.sun) }),
       point: () => {
         const h = (s.v.sun * Math.PI) / 360;
-        return EYE.clone().add(V(0, Math.sin(h) * 1.9, -Math.cos(h) * 1.9));
+        return EYE.clone().add(V(0, Math.sin(h) * 3.5, -Math.cos(h) * 3.5));
       },
       color: COL.sun,
-      spots: [...LEFT_OF, ...ABOVE],
+      spots: [spot(-26, 0), spot(-30, 16), spot(-30, -16), ...BELOW],
       show: () => far() && s.v.sunArc > 0.9,
     },
   };
   const placed = new Set();
+  let sunDegText = '';
+  /** Every label put again from scratch (a question of the test sets up its own picture). */
+  function clearLabels() {
+    for (const id of placed) anno.remove(id);
+    placed.clear();
+  }
   function syncLabels() {
     for (const [id, L] of Object.entries(LABELS)) {
       const want = L.show();
       if (want && !placed.has(id)) {
-        anno.add(id, { text: L.text(), point: L.point, kind: 'chip', color: L.color || COL.ink, spots: L.spots, optional: Boolean(L.optional) });
+        anno.add(id, {
+          text: L.text(),
+          point: L.point,
+          kind: 'chip',
+          color: L.color || COL.ink,
+          spots: typeof L.spots === 'function' ? L.spots() : L.spots,
+          optional: Boolean(L.optional),
+        });
         placed.add(id);
       } else if (!want && placed.has(id)) {
         anno.remove(id);
         placed.delete(id);
-      } else if (want && id === 'sunDeg') anno.setText(id, L.text());
+      } else if (want && id === 'sunDeg') {
+        const text = L.text();
+        if (text !== sunDegText) {
+          sunDegText = text;
+          anno.setText(id, text);
+        }
+      }
     }
   }
 
   // ── camera: a gentle three-quarter view of the sky; it flies into the drop and back ──
-  const DIR_SKY = V(-0.5, 0.22, -0.84).normalize();
-  const DIR_DROP = V(-1, 0.3, 0.38).normalize();
-  const skyBox = new THREE.Box3(V(-6.4, 0, -4.2), V(6.4, 5.6, 10));
+  const DIR_SKY = V(-0.74, 0.26, -0.7).normalize(); // about 47° round from behind the eye
+  const DIR_DROP = V(-1, -0.16, 0.36).normalize(); // a little from below: the drop against the blue sky
+  const skyBox = new THREE.Box3(V(-3.4, 0.4, -6.4), V(3.6, 6.9, 9.8));
   const dropBox = new THREE.Box3();
   const corners = [V(-1.35, -1.6, -0.2), V(1.12, 1.12, 0.2)];
   function fitDropBox() {
@@ -592,17 +706,12 @@ export function createApp(root, options = {}) {
     if (s.mode === 'quiz') return;
     const calm = s.step === 'intro';
     const ph = s.busy ? 'busy' : s.step;
-    const leadHtml = calm
-      ? `<span class="rb-long">${t('intro')}</span><span class="rb-short">${t('intro_short')}</span>`
-      : s.busy
-        ? steady.lead
-        : t(`lead_${s.step}`);
+    const leadHtml = calm ? t('lead_intro') : s.busy ? steady.lead : t(`lead_${s.step}`);
     if (steady.lead !== leadHtml) {
       steady.lead = leadHtml;
       lead.innerHTML = leadHtml;
-      lead.classList.toggle('pvc-note', calm);
-      ui.learn.classList.toggle('rb-calm', calm);
     }
+    ui.learn.classList.toggle('rb-calm', calm);
     const noonish = s.step === 'noon' && (!s.busy || s.dragging);
     sheet.outcome(calm || (s.busy && !noonish) ? '' : s.step === 'noon' ? noonOutcome() : t(`out_${s.step}`, vars()));
     sheet.rule(calm || (s.busy && !noonish) ? '' : t(`rule_${s.step}`, vars()));
@@ -829,7 +938,7 @@ export function createApp(root, options = {}) {
     where: ['intro', SUN.start],
     bend: ['in', SUN.start],
     outer: ['bow', SUN.start],
-    noon: ['noon', 60],
+    noon: ['noon', 65],
     height: ['noon', 20],
   };
   let learnSaved = null;
@@ -843,7 +952,7 @@ export function createApp(root, options = {}) {
     emit,
     audio,
     questions: KINDS.length,
-    lines: { text: 3, feedback: 3 },
+    lines: { text: 3, feedback: 4 },
     action,
     hooks: {
       enter() {
@@ -857,6 +966,7 @@ export function createApp(root, options = {}) {
         s.mode = 'explore';
         s.locked = false;
         s.quiz = '';
+        clearLabels();
         syncUI();
         go(learnSaved?.step || 'intro', { animate: false, sun: learnSaved?.step === 'noon' ? learnSaved.sun : null });
       },
@@ -865,6 +975,7 @@ export function createApp(root, options = {}) {
         const kind = KINDS[i % KINDS.length];
         const [scene, sunDeg] = SCENES[kind];
         s.quiz = kind;
+        clearLabels();
         await go(scene, { animate: false, sun: sunDeg });
         if (kind === 'height') Object.assign(s.v, { bow: 0 });
         if (kind === 'outer') Object.assign(s.v, { bow: 0 });
