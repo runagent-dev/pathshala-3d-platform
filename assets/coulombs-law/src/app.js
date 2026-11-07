@@ -21,7 +21,7 @@ import { createQuiz } from '@shared/student/quiz.js';
 import { createRotateCue } from '@shared/student/rotatecue.js';
 import { bindCleanSheet, buildStudentShell, cleanSheet } from '@shared/student/shell.js';
 import { createTweener, ease } from '@shared/tween.js';
-import { CHARGE_COLORS, createApparatus, H, R_BIG, R_SMALL } from './apparatus.js';
+import { CHARGE_COLORS, createApparatus, END_K, H, R_BIG, R_SMALL } from './apparatus.js';
 import { boldArrow } from './arrows.js';
 import { fitPose } from './camera.js';
 import { createGraph } from './graph.js';
@@ -58,27 +58,29 @@ export const DEFAULTS = {
 
 /** One colour per meaning: the force (teal, outlined), its words in the panel (a darker teal), ink. */
 const COLORS = { force: '#0ca678', forceText: '#087f5b', ink: '#1d2733', ghost: '#0ca678' };
-const ARROW_R = 0.002; // the arrows' shaft (m), thickened to a few pixels by thick()
-const PAIR_Y = H + R_BIG + 0.032; // the pair's arrows run over the spheres, as in the book's চিত্র ১০.১০ (a)
-const THIRD_Y = H + R_SMALL + 0.03;
-const GHOST_UP = 0.014; // the ghost of step ③ runs a little over the arrow now, so both show
-/** Arrow length (m) per newton: the pair's (9 × 10¹¹ N is 10 cm) and the third charge's (its balance, 4.4 × 10¹¹ N, is 12 cm). */
-const SCALE = { pair: 0.1 / 9e11, third: 0.12 / forcesOnQ(balanceX()).f1 };
-const MAX_LEN = { pair: 0.3, third: 0.3 };
+const ARROW_R = 0.0017; // the arrows' shaft (m), thickened to a few pixels by thick()
+/** The arrows' scales, written on the view as a map's scale ("তীর: ১ cm = ৪ × ১০¹¹ N"): N per cm of arrow. ①②④: two
+ *  pulls of 9 × 10¹¹ N (2.25 cm each) fit between the spheres at 10 cm; ③: larger, so the quarter reads beside the ghost;
+ *  ⑤: the third charge's (its balance, 4.4 × 10¹¹ N, is 8.8 cm). Each arrow starts on its sphere's surface, on the line of
+ *  the charges, and never reaches the next sphere (it is drawn shorter then, and the note says so). */
+const PER_CM = { near: 4e11, far: 1.5e11, third: 0.5e11 };
+const MAX_OUT = 0.07; // m: a push on the pair is drawn at most this long (outward, the frame's room)
+const GAP = 0.005; // m kept free between an arrow's head and the next sphere (or the other head)
+const DIM_Y = H + R_BIG * END_K + 0.04; // step ⑤: x and 1 − x drawn over the spheres, as in চিত্র ১০.১০ (b)
 const X0 = balanceX(); // 0.4286 m: the book's x = 0.43
 const SNAP = 0.012; // m: the third charge lands on the balance when this close
 const DOUBLE_TAP = 420; // ms
-const MARGIN = { top: 50, bottom: 14, side: 10 };
+const MARGIN = { top: 50, bottom: 14, side: 32 }; // the side room keeps the end spheres clear of the panel's tab
 // how long things take (s): slow enough to follow
 const T = { grow: 1.5, shrink: 0.8, slide: 2.2, fly: 1.6, back: 1.6, third: 1.2, find: 2.4, jump: 1.2 };
 /** What each step shows: the charges (C), the distance (m), the third charge (shown, where), the camera's frame. */
 const TARGET = {
-  intro: { q1: 0, q2: 0, r: 0.1, third: 0, xq: 0.2, frame: 'pair' },
-  attract: { q1: 1, q2: -1, r: 0.1, third: 0, xq: 0.2, frame: 'pair' },
-  repel: { q1: 1, q2: 1, r: 0.1, third: 0, xq: 0.2, frame: 'pair' },
-  distance: { q1: 1, q2: 1, r: 0.2, third: 0, xq: 0.2, frame: 'distance' },
-  law: { q1: EX_A.q1, q2: EX_A.q2, r: EX_A.r, third: 0, xq: 0.2, frame: 'law' },
-  balance: { q1: EX_B.qa, q2: EX_B.qb, r: EX_B.d, third: 1, xq: 0.2, frame: 'balance' },
+  intro: { q1: 0, q2: 0, r: 0.1, third: 0, big: 0, xq: 0.2, frame: 'pair' },
+  attract: { q1: 1, q2: -1, r: 0.1, third: 0, big: 0, xq: 0.2, frame: 'pair' },
+  repel: { q1: 1, q2: 1, r: 0.1, third: 0, big: 0, xq: 0.2, frame: 'pair' },
+  distance: { q1: 1, q2: 1, r: 0.2, third: 0, big: 0, xq: 0.2, frame: 'distance' },
+  law: { q1: EX_A.q1, q2: EX_A.q2, r: EX_A.r, third: 0, big: 0, xq: 0.2, frame: 'law' },
+  balance: { q1: EX_B.qa, q2: EX_B.qb, r: EX_B.d, third: 1, big: 1, xq: 0.2, frame: 'balance' },
 };
 const ORDER = ['intro', ...STEPS];
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
@@ -124,7 +126,7 @@ export function createApp(root, options = {}) {
   const graph = createGraph(/** @type {HTMLElement} */ (box.querySelector('.cl-graph')), {
     t,
     N,
-    colors: { force: COLORS.force, text: COLORS.forceText },
+    colors: { force: COLORS.force, text: COLORS.forceText, pos: CHARGE_COLORS.pos, neg: CHARGE_COLORS.neg },
   });
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   // a short note on the view: the arrows are drawn to scale
@@ -170,38 +172,52 @@ export function createApp(root, options = {}) {
   const arrow1 = boldArrow('ForceOnOne', COLORS.force, ARROW_R);
   const arrow2 = boldArrow('ForceOnTwo', COLORS.force, ARROW_R);
   const ghost = boldArrow('ForceBefore', COLORS.ghost, ARROW_R, { order: 20 });
-  ghost.setOpacity(0.32);
+  ghost.setOpacity(0.4);
   const arrowF1 = boldArrow('ForceFromNine', COLORS.force, ARROW_R);
   const arrowF2 = boldArrow('ForceFromSixteen', COLORS.force, ARROW_R);
   for (const a of [arrow1, arrow2, ghost, arrowF1, arrowF2]) scene.add(a.root);
 
-  // ── the dimension lines in front of the rule: r for the pair; x and 1 − x for the third charge ──
+  // ── the dimension lines: r in front of the rule (the pair); x and 1 − x over the charges (step ⑤, as চিত্র ১০.১০ b).
+  // Each is one instanced mesh (one draw): the bar and its two end ticks.
   const dimMat = new THREE.MeshBasicMaterial({ name: 'DimensionInk', color: COLORS.ink });
   const dimZ = RULE.z + RULE.width / 2 + 0.014;
-  function makeDim(name) {
-    const g = new THREE.Group();
-    g.name = name;
-    g.userData.noExport = true;
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(1, 0.0012, 0.0022), dimMat);
-    const a = new THREE.Mesh(new THREE.BoxGeometry(0.0022, 0.0012, 0.016), dimMat);
-    const b = a.clone();
-    g.add(bar, a, b);
-    g.visible = false;
-    scene.add(g);
+  const unitBox = new THREE.BoxGeometry(1, 1, 1);
+  const M4 = new THREE.Matrix4();
+  const PQ = new THREE.Quaternion();
+  const PS = V(1, 1, 1);
+  const PV = V(0, 0, 0);
+  function makeDim(name, { over = false } = {}) {
+    const mesh = new THREE.InstancedMesh(unitBox, dimMat, 3);
+    mesh.name = name;
+    mesh.userData.noExport = true;
+    mesh.frustumCulled = false;
+    mesh.visible = false;
+    scene.add(mesh);
+    const put = (i, x, y, z, sx, sy, sz) => {
+      mesh.setMatrixAt(i, M4.compose(PV.set(x, y, z), PQ, PS.set(sx, sy, sz)));
+    };
     return {
-      g,
+      g: mesh,
       set(x0, x1) {
         const len = Math.max(1e-4, x1 - x0);
-        bar.scale.x = len;
-        bar.position.set((x0 + x1) / 2, 0.0006, dimZ);
-        a.position.set(x0, 0.0006, dimZ);
-        b.position.set(x1, 0.0006, dimZ);
+        if (over) {
+          // over the charges: a bar with upright ticks
+          put(0, (x0 + x1) / 2, DIM_Y, 0, len, 0.0022, 0.0022);
+          put(1, x0, DIM_Y, 0, 0.0022, 0.024, 0.0022);
+          put(2, x1, DIM_Y, 0, 0.0022, 0.024, 0.0022);
+        } else {
+          put(0, (x0 + x1) / 2, 0.0006, dimZ, len, 0.0012, 0.0022);
+          put(1, x0, 0.0006, dimZ, 0.0022, 0.0012, 0.016);
+          put(2, x1, 0.0006, dimZ, 0.0022, 0.0012, 0.016);
+        }
+        mesh.instanceMatrix.needsUpdate = true;
       },
     };
   }
   const dimR = makeDim('DimR');
-  const dimX = makeDim('DimX');
-  const dimRest = makeDim('DimRest');
+  const dimX = makeDim('DimX', { over: true });
+  const dimRest = makeDim('DimRest', { over: true });
+  const dimD = makeDim('DimD', { over: true }); // the test's distance between two big charges
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -221,6 +237,8 @@ export function createApp(root, options = {}) {
     r: 0.1,
     xq: 0.2,
     third: 0, // 0 … 1: the third charge coming in
+    big: 0, // 0 … 1: the pair grows to the end charges of step ⑤
+    scale: 'near', // the pair's arrow scale: 'near' (①②④) or 'far' (③ and the test)
     arrowK: 0, // 0 … 1: the arrows growing in
     ghostK: 0, // the ghost of the first arrow (step ③)
     frame: 'pair',
@@ -246,70 +264,79 @@ export function createApp(root, options = {}) {
   }
   const thick = () => Math.min(3, Math.max(1, (2.4 * perPixel()) / ARROW_R));
   const pairF = () => coulomb(s.q1, s.q2, s.r);
-  const lenOf = (F, kind) => Math.min(MAX_LEN[kind], Math.abs(F) * SCALE[kind]);
   const clamped = { on: false };
+  /** An arrow's length for a force F, cut to `room` (m); a cut sets the note's "drawn shorter". */
+  const lenOf = (F, kind, room, on) => {
+    const want = (Math.abs(F) / PER_CM[kind === 'third' ? 'third' : s.scale]) * 0.01;
+    const len = Math.max(0, Math.min(want, room));
+    if (on && want > len + 1e-6) clamped.on = true;
+    return len;
+  };
   const P0 = V(0, 0, 0);
   function syncScene() {
     const k = thick();
     one.setX(0);
     two.setX(s.r);
     third.setX(s.xq);
-    one.setCharge(s.q1);
-    two.setCharge(s.q2);
+    one.setCharge(s.hideQ ? 0 : s.q1);
+    two.setCharge(s.hideQ ? 0 : s.q2);
     third.root.visible = s.third > 0.01;
     third.root.scale.setScalar(Math.max(0.01, s.third));
+    const kEnd = 1 + (END_K - 1) * s.big;
+    one.setSize(kEnd);
+    two.setSize(kEnd);
     for (const st of [one, two, third]) st.faceCamera(camera);
     clamped.on = false;
-    // the pair: equal and opposite, over the spheres; pulling in, the head ends over the sphere (the book's picture);
-    // pushing apart, the tail starts over it
+    // the pair: equal and opposite, on the line of the charges, each starting on its own sphere's surface: toward the
+    // other sphere for a pull (both fit in the gap), away from it for a push
     const F = pairF();
+    const R1 = R_BIG * kEnd;
     const pairOn = s.third < 0.5 && s.arrowK > 0.001 && F !== 0;
-    const L = lenOf(F, 'pair') * s.arrowK;
-    if (pairOn && Math.abs(F) * SCALE.pair > MAX_LEN.pair) clamped.on = true;
+    const room = F < 0 ? (s.r - 2 * R1) / 2 - GAP : MAX_OUT;
+    const L = lenOf(F, 'pair', room, pairOn) * s.arrowK;
     for (const [a, x, sign] of [
       [arrow1, 0, 1],
       [arrow2, s.r, -1],
     ]) {
       a.root.visible = pairOn && L > 1e-4;
       if (!a.root.visible) continue;
-      // the force on this sphere points toward the other (attraction) or away from it (repulsion)
+      // sign: +1 for the left sphere (the other is to its right); a pull points to the other, a push away
       const dir = (F < 0 ? sign : -sign) > 0 ? RIGHT : LEFT;
-      if (F < 0) P0.set(x - dir.x * L, PAIR_Y, 0);
-      else P0.set(x, PAIR_Y, 0);
+      P0.set(x + dir.x * R1, H, 0);
       a.set(P0, dir, L);
       a.scale(k);
     }
-    // the ghost: the first sphere's arrow as it was at 10 cm, faint, just over the arrow now
-    const Lg = lenOf(coulomb(1, 1, 0.1), 'pair') * s.ghostK;
-    ghost.root.visible = pairOn && s.ghostK > 0.01 && Lg > 1e-4;
+    // the ghost (step ③): the first sphere's arrow as it was at 10 cm, faint, on the same sphere and the same line
+    const Lg = Math.min((coulomb(1, 1, 0.1) / PER_CM[s.scale]) * 0.01, MAX_OUT) * s.ghostK;
+    ghost.root.visible = pairOn && F > 0 && s.ghostK > 0.01 && Lg > 1e-4;
     if (ghost.root.visible) {
-      const dirG = F < 0 ? RIGHT : LEFT;
-      if (F < 0) P0.set(-Lg, PAIR_Y + GHOST_UP, 0);
-      else P0.set(0, PAIR_Y + GHOST_UP, 0);
-      ghost.set(P0, dirG, Lg);
+      P0.set(-R1, H, 0);
+      ghost.set(P0, LEFT, Lg);
       ghost.scale(k);
     }
-    // the third charge: pushed right by +9 C (F₁) and left by +16 C (F₂), both from its top
+    // the third charge: pushed right by +9 C (F₁, on its right) and left by +16 C (F₂, on its left): ⟵ ● ⟶
     const f = forcesOnQ(s.xq);
     const thirdOn = s.third > 0.5 && s.arrowK > 0.001;
-    for (const [a, F3, dir] of [
-      [arrowF1, f.f1, RIGHT],
-      [arrowF2, f.f2, LEFT],
+    const Rq = R_SMALL * s.third;
+    for (const [a, F3, dir, rm] of [
+      [arrowF1, f.f1, RIGHT, s.r - R1 - (s.xq + Rq) - 2 * GAP],
+      [arrowF2, f.f2, LEFT, s.xq - Rq - R1 - 2 * GAP],
     ]) {
-      const len = lenOf(F3, 'third') * s.arrowK * s.third;
-      if (thirdOn && Math.abs(F3) * SCALE.third > MAX_LEN.third) clamped.on = true;
+      const len = lenOf(F3, 'third', rm, thirdOn) * s.arrowK * s.third;
       a.root.visible = thirdOn && len > 1e-4;
       if (!a.root.visible) continue;
-      P0.set(s.xq, THIRD_Y, 0);
+      P0.set(s.xq + dir.x * Rq, H, 0);
       a.set(P0, dir, len);
       a.scale(k);
     }
     // the dimensions
-    const showR = s.third < 0.5 && s.step !== 'intro' && (s.step !== 'attract' && s.step !== 'repel' ? true : s.mode === 'quiz');
+    const showR = s.third < 0.5 && s.big < 0.5 && s.step !== 'intro' && (s.step !== 'attract' && s.step !== 'repel' ? true : s.mode === 'quiz');
     dimR.g.visible = showR;
     if (showR) dimR.set(0, s.r);
     dimX.g.visible = s.third > 0.5;
     dimRest.g.visible = s.third > 0.5;
+    dimD.g.visible = s.quizKind === 'point' && s.mode === 'quiz';
+    if (dimD.g.visible) dimD.set(0, s.r);
     if (s.third > 0.5) {
       dimX.set(0, s.xq);
       dimRest.set(s.xq, s.r);
@@ -336,7 +363,7 @@ export function createApp(root, options = {}) {
     if (!st.root.visible) return null;
     st.sphere.getWorldPosition(tmp);
     toScreen(tmp, A0);
-    const rp = (st.R * st.root.scale.x) / perPixel();
+    const rp = st.radius / perPixel();
     return { left: A0.x - rp - 2, top: A0.y - rp - 2, right: A0.x + rp + 2, bottom: A0.y + rp + 2 };
   };
   const sphereBoxes = () => [one, two, third].map(sphereBox).filter(Boolean);
@@ -383,57 +410,80 @@ export function createApp(root, options = {}) {
     return `<span class="cl-sci">${mm}&nbsp;×&nbsp;${N(10)}<sup>${N(e)}</sup>${unit ? '&nbsp;N' : ''}</span>`;
   }
   const arrowMid = (a) => tmp.copy(a.root.position).add(a.tip).multiplyScalar(0.5).clone();
-  /** Near an arrow's head (a little back from it), where its label goes: the label then names the arrow it points with. */
-  const arrowHead = (a) => tmp.copy(a.root.position).lerp(a.tip, 0.8).clone();
+  const sphereLow = (st, x) => V(x, H - st.radius * 0.7, 0);
+  const atBalance = () => s.found && Math.abs(s.xq - X0) < 1e-9;
   const LABELS = {
     q1: {
-      text: () => (s.third > 0.5 ? qText(s.q1) : `${sub('q', 1)} = ${qText(s.q1)}`),
-      point: () => V(0, H - R_BIG * 0.6, 0),
+      text: () => (s.big > 0.5 ? qText(s.q1) : `${sub('q', 1)} = ${qText(s.q1)}`),
+      point: () => sphereLow(one, 0),
       color: () => (s.q1 > 0 ? CHARGE_COLORS.pos : CHARGE_COLORS.neg),
-      spots: [...SIDE_L, ...LOW_L, ...BELOW],
-      show: () => s.q1 !== 0 && !s.busyFlip,
+      spots: [...LOW_L, ...BELOW, ...SIDE_L],
+      show: () => s.q1 !== 0 && !s.busyFlip && !s.hideQ,
     },
     q2: {
-      text: () => (s.third > 0.5 ? qText(s.q2) : `${sub('q', 2)} = ${qText(s.q2)}`),
-      point: () => V(s.r, H - R_BIG * 0.6, 0),
+      text: () => (s.big > 0.5 ? qText(s.q2) : `${sub('q', 2)} = ${qText(s.q2)}`),
+      point: () => sphereLow(two, s.r),
       color: () => (s.q2 > 0 ? CHARGE_COLORS.pos : CHARGE_COLORS.neg),
-      spots: [...SIDE_R, ...LOW_R, ...LOW_L, ...BELOW],
-      show: () => s.q2 !== 0 && !s.busyFlip,
+      spots: [...LOW_R, ...BELOW, ...SIDE_R, ...LOW_L],
+      show: () => s.q2 !== 0 && !s.busyFlip && !s.hideQ,
+    },
+    // the test's charges whose signs are unknown: only their names
+    n1: {
+      text: () => sub('q', 1),
+      point: () => sphereLow(one, 0),
+      color: () => COLORS.ink,
+      spots: [...LOW_L, ...BELOW],
+      show: () => Boolean(s.hideQ),
+    },
+    n2: {
+      text: () => sub('q', 2),
+      point: () => sphereLow(two, s.r),
+      color: () => COLORS.ink,
+      spots: [...LOW_R, ...BELOW],
+      show: () => Boolean(s.hideQ),
     },
     q3: {
       text: () => t('lbl_q3'),
-      point: () => V(s.xq, H - R_SMALL * 0.6, 0),
+      point: () => sphereLow(third, s.xq),
       color: () => CHARGE_COLORS.pos,
-      spots: [...SIDE_R, ...SIDE_L, ...BELOW],
+      spots: [...LOW_R, ...LOW_L, ...SIDE_R],
       show: () => s.third > 0.95,
     },
     F1: {
       text: () => (s.quizValues ? `F = ${force(Math.abs(pairF()), { digits: 3 })}` : t('lbl_F')),
       point: () => arrowMid(arrow1),
       color: () => COLORS.forceText,
-      spots: ABOVE,
+      spots: [...ABOVE, ...BELOW],
       show: () => arrow1.root.visible && s.arrowK > 0.9 && (!s.busy || s.dragging),
     },
     F2: {
       text: () => t('lbl_F'),
       point: () => arrowMid(arrow2),
       color: () => COLORS.forceText,
-      spots: ABOVE,
+      spots: [...ABOVE, ...BELOW],
       show: () => arrow2.root.visible && s.arrowK > 0.9 && (!s.busy || s.dragging) && !s.quizValues,
     },
     Fa: {
-      text: () => sub('F', 1),
-      point: () => arrowHead(arrowF1),
+      text: () => (atBalance() ? `${sub('F', 1)} = ${force(forcesOnQ(s.xq).f1, { digits: 2 })}` : sub('F', 1)),
+      point: () => arrowMid(arrowF1),
       color: () => COLORS.forceText,
-      spots: [spot(0, -20), spot(16, -22), spot(26, -6), spot(0, 22)],
+      spots: [spot(10, 24), spot(26, 22), spot(0, -22), spot(14, -26)], // under F₁, so F₂'s (over) never meets it
       show: () => arrowF1.root.visible && s.arrowK > 0.9 && s.third > 0.95,
     },
     Fb: {
-      text: () => sub('F', 2),
-      point: () => arrowHead(arrowF2),
+      text: () => (atBalance() ? `${sub('F', 2)} = ${force(forcesOnQ(s.xq).f2, { digits: 2 })}` : sub('F', 2)),
+      point: () => arrowMid(arrowF2),
       color: () => COLORS.forceText,
-      spots: [spot(0, -20), spot(-16, -22), spot(-26, -6), spot(0, 22)],
+      spots: [spot(-10, -22), spot(-26, -24), spot(0, 24), spot(-24, 24)],
       show: () => arrowF2.root.visible && s.arrowK > 0.9 && s.third > 0.95,
+    },
+    // the ghost names itself: the force at 10 cm, before the sphere moved
+    ghost: {
+      text: () => t('lbl_before'),
+      point: () => tmp.copy(ghost.root.position).lerp(ghost.tip, 0.7).clone(),
+      color: () => COLORS.forceText,
+      spots: [spot(0, 22), spot(-14, 26), spot(0, -22)],
+      show: () => ghost.root.visible && s.ghostK > 0.9 && !s.busy,
     },
     r: {
       text: () => t('lbl_r', { r: round(s.r * 100, 0) }),
@@ -444,18 +494,24 @@ export function createApp(root, options = {}) {
     },
     x: {
       text: () => t('lbl_x', { x: s.xq.toFixed(2) }),
-      point: () => V(s.xq / 2, 0, dimZ + 0.006),
+      point: () => V(s.xq / 2, DIM_Y, 0),
       color: () => COLORS.ink,
-      spots: BELOW,
+      spots: [spot(0, -16), spot(0, -30), spot(-20, -16), spot(20, -16)],
       show: () => dimX.g.visible && s.third > 0.95,
     },
     rest: {
-      text: () => t('lbl_rest'),
-      point: () => V((s.xq + s.r) / 2, 0, dimZ + 0.006),
+      text: () => t('lbl_rest', { v: (s.r - s.xq).toFixed(2) }),
+      point: () => V((s.xq + s.r) / 2, DIM_Y, 0),
       color: () => COLORS.ink,
-      spots: BELOW,
-      optional: true,
+      spots: [spot(0, -16), spot(0, -30), spot(-20, -16), spot(20, -16)],
       show: () => dimRest.g.visible && s.third > 0.95,
+    },
+    d: {
+      text: () => t('lbl_d', { d: s.r.toFixed(1) }),
+      point: () => V(s.r / 2, DIM_Y, 0),
+      color: () => COLORS.ink,
+      spots: [spot(0, -16), spot(0, -30)],
+      show: () => dimD.g.visible,
     },
   };
   const shownText = new Map();
@@ -481,14 +537,17 @@ export function createApp(root, options = {}) {
 
   // ── camera: a gentle three-quarter view, framed per step ─────────────────────
   const FRAMES = {
-    pair: new THREE.Box3(V(-0.13, 0, -0.04), V(0.23, PAIR_Y + 0.03, 0.1)),
-    distance: new THREE.Box3(V(-0.13, 0, -0.04), V(0.33, PAIR_Y + 0.03, 0.1)),
-    law: new THREE.Box3(V(-0.14, 0, -0.04), V(0.52, PAIR_Y + 0.02, 0.1)),
-    balance: new THREE.Box3(V(-0.05, 0, -0.04), V(1.05, THIRD_Y + 0.03, 0.1)),
+    // the pair, with room for the arrows on the line of the charges and the r line in front; the law's frame is the
+    // drag's whole range (10–30 cm); step ⑤ is the line of the three charges and the x, 1 − x lines over it (the
+    // stands' feet run off the bottom, so the charges are big)
+    pair: new THREE.Box3(V(-0.065, 0, -0.03), V(0.165, H + 0.045, 0.1)),
+    distance: new THREE.Box3(V(-0.095, 0, -0.03), V(0.265, H + 0.045, 0.1)),
+    law: new THREE.Box3(V(-0.05, 0, -0.03), V(0.35, H + 0.045, 0.1)),
+    balance: new THREE.Box3(V(-0.07, H - 0.075, -0.06), V(1.07, DIM_Y + 0.03, 0.06)),
   };
   const DIR = V(0.36, 0.38, 0.85).normalize();
   // the metre-long example (b) is seen more from the front, so its far end is not much smaller than its near one
-  const DIR_LONG = V(0.16, 0.36, 0.92).normalize();
+  const DIR_LONG = V(0.22, 0.3, 0.93).normalize();
   const poses = {};
   function fitPoses() {
     for (const [id, b] of Object.entries(FRAMES)) {
@@ -599,7 +658,14 @@ export function createApp(root, options = {}) {
     syncNote();
     graphSync();
   });
+  // the panel under the 3D (a phone held upright) or beside it: the figure's portrait rules apply only under it
+  const panelEl = /** @type {HTMLElement} */ ($('.pvc-panel'));
+  function syncLayout() {
+    const stack = panelEl.getBoundingClientRect().top > root.getBoundingClientRect().top + 20;
+    root.classList.toggle('cl-stack', stack);
+  }
   stage.onResize(() => {
+    syncLayout();
     fitPoses();
     syncScene();
     refresh();
@@ -656,8 +722,11 @@ export function createApp(root, options = {}) {
       return tweenTo({ arrowK: 1 }, T.grow, my);
     }
     if (from === 'repel' && to === 'distance') {
+      // the arrows go, come back on the larger scale (the note says so), the faint copy stays: then the sphere moves
       const fly = flyTo(g.frame, T.fly);
-      if (!(await tweenTo({ ghostK: 1 }, 0.6, my))) return false;
+      if (!(await tweenTo({ arrowK: 0 }, T.shrink, my))) return false;
+      s.scale = 'far';
+      if (!(await tweenTo({ arrowK: 1, ghostK: 1 }, T.grow, my))) return false;
       await fly;
       if (my !== s.run) return false;
       return tweenTo({ r: g.r }, T.slide, my);
@@ -665,6 +734,7 @@ export function createApp(root, options = {}) {
     if (from === 'distance' && to === 'law') {
       const fly = flyTo(g.frame, T.fly);
       if (!(await tweenTo({ arrowK: 0, ghostK: 0 }, T.shrink, my))) return false;
+      s.scale = 'near';
       setCharges(g.q1, g.q2);
       audio.pop?.();
       if (!(await tweenTo({ r: g.r }, T.back, my))) return false;
@@ -676,7 +746,7 @@ export function createApp(root, options = {}) {
       if (!(await tweenTo({ arrowK: 0 }, T.shrink, my))) return false;
       setCharges(g.q1, g.q2);
       const fly = flyTo(g.frame, T.slide);
-      if (!(await tweenTo({ r: g.r }, T.slide, my))) return false;
+      if (!(await tweenTo({ r: g.r, big: 1 }, T.slide, my))) return false;
       await fly;
       if (my !== s.run) return false;
       s.xq = g.xq;
@@ -686,9 +756,10 @@ export function createApp(root, options = {}) {
     // a jump (a step word, back, several at once): the arrows out, everything to its place, the arrows in
     const fly = flyTo(g.frame, T.jump);
     if (s.arrowK > 0 && !(await tweenTo({ arrowK: 0 }, 0.4, my))) return false;
+    s.scale = to === 'distance' ? 'far' : 'near';
     setCharges(g.q1, g.q2);
     s.xq = g.xq;
-    if (!(await tweenTo({ r: g.r, third: g.third, ghostK: to === 'distance' ? 1 : 0 }, T.jump, my))) return false;
+    if (!(await tweenTo({ r: g.r, third: g.third, big: g.big, ghostK: to === 'distance' ? 1 : 0 }, T.jump, my))) return false;
     await fly;
     if (my !== s.run) return false;
     if (to === 'intro') return true;
@@ -700,6 +771,9 @@ export function createApp(root, options = {}) {
     s.r = g.r;
     s.xq = g.xq;
     s.third = g.third;
+    s.big = g.big;
+    s.hideQ = false;
+    s.scale = step === 'distance' ? 'far' : 'near';
     s.arrowK = step === 'intro' ? 0 : 1;
     s.ghostK = step === 'distance' ? 1 : 0;
   }
@@ -808,8 +882,13 @@ export function createApp(root, options = {}) {
    *  adds that the book's charges are far bigger than real ones. Run after syncScene, which knows whether one was cut. */
   function syncNote() {
     const arrows = s.arrowK > 0.01;
-    const noteKey = s.step === 'intro' || s.step === 'attract' || s.step === 'repel' || !arrows ? '' : clamped.on ? 'note_clamp' : 'note_arrow';
-    const noteHtml = noteKey ? `${t(noteKey)}${s.step === 'law' ? `<span class="cl-long"> · ${t('note_book')}</span>` : ''}` : '';
+    // the arrows' scale, as on a map; "drawn shorter" when one is cut
+    const per = s.third > 0.5 ? PER_CM.third : PER_CM[s.scale];
+    const { m, e } = sci(per, 2);
+    const scaleHtml = arrows && s.step !== 'intro' ? t('note_scale', { v: `${N(m)}&nbsp;×&nbsp;${N(10)}<sup>${N(e)}</sup>` }) : '';
+    const noteHtml = scaleHtml
+      ? `${scaleHtml}${clamped.on ? `; ${t('note_cut')}` : ''}${s.step === 'law' ? `<span class="cl-long"> · ${t('note_book')}</span>` : ''}`
+      : '';
     if (steady.note !== noteHtml) {
       steady.note = noteHtml;
       note.innerHTML = noteHtml;
@@ -844,7 +923,8 @@ export function createApp(root, options = {}) {
       action.set({ label: word, step, enabled, icon });
     }
     if (action) {
-      const ringed = enabled && s.mode === 'explore' && ['intro', 'attract', 'repel', 'balance'].includes(ph);
+      // the ring marks what to tap; in step ⑤ +q carries only its drag handle (one cue on it)
+      const ringed = enabled && s.mode === 'explore' && ['intro', 'attract', 'repel'].includes(ph);
       if (ringed) action.show('scene');
       else action.hide('scene');
     }
@@ -873,12 +953,19 @@ export function createApp(root, options = {}) {
   // the graph: empty until the distance changes; F against r for the pair; the net force on the third charge against x
   function graphArgs() {
     if (s.third > 0.5) return { kind: 'x', x: round(s.xq, 4), x0: X0, found: s.found, aria: t('g_aria_x', { x: s.xq.toFixed(2) }) };
-    const shows = ['distance', 'law'].includes(s.step) || (s.mode === 'quiz' && s.quizKind === 'far');
+    // before the distance changes: the book's sign rule, the row of the spheres now marked
+    if (['intro', 'attract', 'repel'].includes(s.step) && s.mode !== 'quiz') {
+      const p = s.q1 * s.q2;
+      const row = p === 0 ? -1 : p < 0 ? 2 : s.q1 > 0 ? 0 : 1;
+      return { kind: 'signs', row, aria: t('t_aria') };
+    }
+    const shows = ['distance', 'law'].includes(s.step);
     if (!shows) return { kind: 'empty', aria: t('g_aria_empty') };
     const prod = Math.abs(s.q1 * s.q2);
     const was = s.step === 'distance' && s.ghostK > 0.5 ? { r: 0.1, F: coulomb(1, 1, 0.1) } : null;
     return {
       kind: 'r',
+      top: s.step === 'law' && !s.busy ? steppers.offsetHeight + 4 : 0,
       prod,
       r: round(s.r, 4),
       was,
@@ -947,7 +1034,7 @@ export function createApp(root, options = {}) {
     when: () => !s.busy && s.mode === 'explore' && movable() === 'two',
   });
   thirdHandle = createDragHandle(stage, {
-    point: () => railPoint(s.xq),
+    point: () => V(s.xq, 0.062, 0), // low on the rod under +q, clear of the sphere and its arrows
     axis: 'x',
     track: { from: () => railPoint(X_RANGE[0]), to: () => railPoint(X_RANGE[1]) },
     label: o.coach ? t('drag_third') : '',
@@ -1157,13 +1244,16 @@ export function createApp(root, options = {}) {
     };
   }
   /** A question's scene: everything set at once; the force's value on the arrow where the question reads it. */
-  function quizScene({ q1, q2, r, arrows = true, values = false, third = 0, xq = 0.2, frame = 'law' }) {
+  function quizScene({ q1, q2, r, arrows = true, values = false, third = 0, big = 0, hideQ = false, xq = 0.2, frame = 'law' }) {
     stopAll();
     cancelDrag();
     s.step = third ? 'balance' : 'law';
     setCharges(q1, q2);
     s.r = r;
     s.third = third;
+    s.big = big;
+    s.hideQ = hideQ;
+    s.scale = 'far';
     s.xq = xq;
     s.arrowK = arrows ? 1 : 0;
     s.ghostK = 0;
@@ -1194,6 +1284,7 @@ export function createApp(root, options = {}) {
         s.locked = false;
         s.quizKind = '';
         s.quizValues = false;
+        s.hideQ = false;
         syncUI();
         go(learnSaved || 'intro', { animate: false });
       },
@@ -1202,15 +1293,27 @@ export function createApp(root, options = {}) {
         const kind = KINDS[i % KINDS.length];
         s.quizKind = kind;
         question = { kind };
-        if (kind === 'dir') quizScene({ q1: -1, q2: -1, r: 0.15, arrows: false });
-        else if (kind === 'far') quizScene({ q1: 2, q2: 1, r: 0.15, values: true });
+        // the question is read off the picture: the signs (any pair), the force and the distance, the charges and their
+        // distance; the sign question hides the signs (its picture must not give the answer away)
+        if (kind === 'dir') {
+          const pair = [
+            [1, 1],
+            [-1, -1],
+            [1, -1],
+            [-1, 1],
+          ][Math.floor(Math.random() * 4)];
+          question.like = pair[0] === pair[1];
+          quizScene({ q1: pair[0], q2: pair[1], r: 0.15, arrows: false });
+        } else if (kind === 'far') quizScene({ q1: 2, q2: 1, r: 0.15, values: true });
         else if (kind === 'charge') quizScene({ q1: 1, q2: -1, r: 0.2, values: true });
-        else if (kind === 'sign') quizScene({ q1: 2, q2: -1, r: 0.2, arrows: false });
-        else quizScene({ q1: 4, q2: 1, r: 0.9, arrows: false, frame: 'balance' });
+        else if (kind === 'sign') quizScene({ q1: 2, q2: -1, r: 0.2, arrows: false, hideQ: true });
+        else quizScene({ q1: 4, q2: 1, r: 0.9, arrows: false, big: 1, frame: 'balance' });
         await tweener.animate({ key: 'qwait', duration: 0.3 }).finished;
         if (!alive()) return null;
-        if (kind === 'dir')
-          return { text: t('q_dir'), ...choicesOf(words(['c_dir_right', 'c_dir_attract', 'c_dir_none', 'c_dir_one']), kind, (x) => t(x.key)) };
+        if (kind === 'dir') {
+          const keys = question.like ? ['c_dir_right', 'c_dir_attract'] : ['c_dir_attract', 'c_dir_right'];
+          return { text: t('q_dir'), ...choicesOf(words([...keys, 'c_dir_none', 'c_dir_one']), kind, (x) => t(x.key)) };
+        }
         if (kind === 'sign') {
           const F = pairF();
           question.F = F;
@@ -1230,7 +1333,11 @@ export function createApp(root, options = {}) {
         const wrongKey = correct ? null : q.list?.[picked]?.key;
         const note2 = (prefix, vars) => (wrongKey && wrongKey !== 'right' ? ` ${t(`mis_${prefix}_${wrongKey.replace(/^c_\w+?_/, '')}`, vars)}` : '');
         const right = q.list?.find((x) => x.key === 'right' || /_right$/.test(x.key));
-        if (k === 'dir') return t('why_dir') + note2('dir');
+        if (k === 'dir') {
+          if (question.like) return t('why_dir') + note2('dir');
+          const wk = wrongKey?.replace(/^c_dir_/, '');
+          return t('why_dir_unlike') + (wk ? ` ${t(wk === 'right' ? 'mis_dir_apart' : `mis_dir_${wk}`)}` : '');
+        }
         if (k === 'sign') return t('why_sign') + note2('sign', { m: plain(Math.abs(question.F)) });
         if (k === 'far' || k === 'charge') return t(`why_${k}`, { v: force(right.v) }) + note2(k);
         return t('why_point', { v: `${N(right.v.toFixed(2))}&nbsp;m` }) + note2('point');
@@ -1344,6 +1451,8 @@ export function createApp(root, options = {}) {
   });
 
   // ── start ───────────────────────────────────────────────────────────────────
+  syncLayout();
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(syncLayout).observe(root);
   fitPoses();
   syncUI();
   landAt('intro');
@@ -1351,7 +1460,9 @@ export function createApp(root, options = {}) {
   syncScene();
   refresh();
   // the parts of later steps are compiled now (hidden), so the first tap draws without a freeze
-  stage.warmUp({ show: [third.root, arrow1.root, arrow2.root, ghost.root, arrowF1.root, arrowF2.root, dimR.g, dimX.g, dimRest.g, two.sphere] });
+  stage.warmUp({
+    show: [third.root, arrow1.root, arrow2.root, ghost.root, arrowF1.root, arrowF2.root, dimR.g, dimX.g, dimRest.g, dimD.g, two.sphere],
+  });
   const ready = (async () => {
     if (o.mode === 'quiz') quiz.start();
   })();
@@ -1365,7 +1476,7 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /** Change any of: step ('intro' | 'attract' | 'repel' | 'distance' | 'law' | 'balance'); then, in the law's step,
-     *  q1, q2 (C, −2 … 2) and r (m, 0.1 … 0.4); in the last step x (m from +9 C, 0.15 … 0.85) or find: true (the third
+     *  q1, q2 (C, −2 … 2) and r (m, 0.1 … 0.3); in the last step x (m from +9 C, 0.15 … 0.85) or find: true (the third
      *  charge slides to where it feels no force); view ('front' | '3d').
      *  animate: false lands at once. */
     async set(p = {}) {

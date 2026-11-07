@@ -9,7 +9,7 @@ import { coulomb, forcesOnQ, niceCeil } from './reading.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const UNIT = 1e11; // the force axis counts in 10¹¹ N
-export const R_AXIS = 40; // cm on the distance axis
+export const R_AXIS = 30; // cm on the distance axis: the drag's range
 const X_LO = 0.12; // m: the 'x' curve runs between the two spheres' surfaces
 const X_HI = 0.88;
 const NET_MAX = 10; // the 'x' graph's force axis: −10 … +10 (× 10¹¹ N)
@@ -17,7 +17,7 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
 /**
  * @param {HTMLElement} el
- * @param {{ t: (key: string, vars?: object) => string, N: (x: number | string) => string, colors: { force: string, text: string } }} o
+ * @param {{ t: (key: string, vars?: object) => string, N: (x: number | string) => string, colors: { force: string, text: string, pos: string, neg: string } }} o
  */
 export function createGraph(el, { t, N, colors }) {
   const svg = document.createElementNS(NS, 'svg');
@@ -39,7 +39,8 @@ export function createGraph(el, { t, N, colors }) {
   };
 
   /**
-   * kind 'empty' | 'r' | 'x'.
+   * kind 'signs' | 'empty' | 'r' | 'x'.
+   * 'signs': { row: 0 | 1 | 2 | -1 } the book's sign rule as a small table, the row of the spheres now marked
    * 'r': { prod: |q₁q₂| (C²), r: m, was: { r, F } | null (the point before "twice as far"), dot: boolean }
    * 'x': { x: m (the third charge now), x0: m (where the forces balance), found: boolean }
    */
@@ -54,11 +55,14 @@ export function createGraph(el, { t, N, colors }) {
     const lw = Math.min(4, Math.max(2.5, H / 50));
     const x0 = f * 2.3;
     const x1 = W - f * 0.9;
-    const y1 = f * 1.45; // room over the plot for the force axis's name
+    // room over the plot for the force axis's name; the force–distance graph names its axes inside the plot and keeps
+    // only the room the figure asks for (the law's steppers) over it
+    const y1 = args.kind === 'r' ? Math.max(f * 0.6, args.top || 0) : f * 1.45;
     const y0 = H - f * 1.4;
     // the curves are clipped to the plot (a curve off the top is cut, never drawn flat along it)
     let out = `<defs><clipPath id="${clipId}"><rect x="${x0}" y="${y1 - 2}" width="${x1 - x0 + 2}" height="${y0 - y1 + 4}"/></clipPath></defs>`;
-    if (args.kind === 'x') out += drawX(args, { W, H, f, lw, x0, x1, y0, y1 });
+    if (args.kind === 'signs') out = drawSigns(args, { W, H });
+    else if (args.kind === 'x') out += drawX(args, { W, H, f, lw, x0, x1, y0, y1 });
     else out += drawR(args, { W, H, f, lw, x0, x1, y0, y1 });
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     svg.setAttribute('aria-label', args.aria || '');
@@ -86,13 +90,11 @@ export function createGraph(el, { t, N, colors }) {
         out += `<text class="g-num" x="${x0 - f * 0.35}" y="${Y(v) + f * 0.35}" text-anchor="end" font-size="${f}">${fmt(v)}</text>`;
     }
     out += `<path class="axis g-axis" d="M${x0} ${y1 - f * 0.3}V${y0}H${x1}"/>`;
-    // the distance's name over the axis at the right, high enough to clear the curve's tail (under 16 % of the top there)
-    out += `<text class="g-name" x="${x1}" y="${y0 - Math.max(f * 1.5, (y0 - y1) * 0.24)}" text-anchor="end" font-size="${f}">${esc(t('g_r'))}</text>`;
-    out += `<text class="g-name" x="${x0 - f * 1.9}" y="${f * 0.95}" font-size="${f}">${unitText(t('g_F'), f)}</text>`;
-    if (a.kind !== 'r') {
-      out += `<text class="g-hint" x="${(x0 + x1) / 2}" y="${(y0 + y1) / 2 + f * 0.4}" text-anchor="middle" font-size="${f}">${esc(t('g_hint'))}</text>`;
-      return out;
-    }
+    // both axes named in the plot's top right corner, where the 1/r² curve never goes (it is under a quarter of the
+    // top beyond 20 cm)
+    out += `<text class="g-name" x="${x1 - f * 0.3}" y="${y1 + f * 1.1}" text-anchor="end" font-size="${f}">${unitText(t('g_F'), f)}</text>`;
+    out += `<text class="g-name" x="${x1 - f * 0.3}" y="${y1 + f * 2.35}" text-anchor="end" font-size="${f}">${esc(t('g_r'))}</text>`;
+    if (a.kind !== 'r') return out;
     // the curve, from where it enters the plot to the end of the axis
     if (prod > 0) {
       const rMin = Math.max(1, 100 * Math.sqrt((9e9 * prod) / (top * UNIT)));
@@ -143,6 +145,8 @@ export function createGraph(el, { t, N, colors }) {
     out += `<line class="g-zero" x1="${x0}" x2="${x1}" y1="${Y(0)}" y2="${Y(0)}"/>`;
     out += `<text class="g-name" x="${x1}" y="${y0 - f * 0.45}" text-anchor="end" font-size="${f}">${esc(t('g_x'))}</text>`;
     out += `<text class="g-name" x="${x0 - f * 1.9}" y="${f * 0.95}" font-size="${f}">${unitText(t('g_net'), f)}</text>`;
+    // the book leaves +q open: the graph takes +1 C (where the curve crosses zero does not depend on it)
+    out += `<text class="g-side" x="${x1}" y="${f * 0.95}" text-anchor="end" font-size="${f * 0.92}">${esc(t('g_qone'))}</text>`;
     // the two halves: above zero the net force pushes q to the right (toward +16 C), below to the left
     out += `<text class="g-side" x="${X(0.97)}" y="${Y(NET_MAX * 0.55)}" text-anchor="end" font-size="${f * 0.92}">${esc(t('g_right'))}</text>`;
     out += `<text class="g-side" x="${X(0.03)}" y="${Y(-NET_MAX * 0.62)}" font-size="${f * 0.92}">${esc(t('g_left'))}</text>`;
@@ -158,14 +162,53 @@ export function createGraph(el, { t, N, colors }) {
       out += `<path class="g-guide" d="M${X(a.x0)} ${Y(0)}V${y0}"/>`;
       out += `<text class="g-tag" x="${X(a.x0) + f * 0.3}" y="${Y(0) + f * 1.2}" font-size="${f}" fill="${colors.text}">${esc(N(a.x0.toFixed(2)))}</text>`;
     }
-    // the dot: on the curve, or a small arrowhead on the plot's edge when the force is off the scale
+    // the dot: on the curve, or, when the force is off the scale, an arrowhead inside the plot's edge pointing out of it
     const Fn = forcesOnQ(a.x).net / UNIT;
     if (Math.abs(Fn) <= NET_MAX) out += `<circle class="g-dot" cx="${X(a.x)}" cy="${Y(Fn)}" r="${f * 0.42}" fill="${colors.force}"/>`;
     else {
-      const ye = Fn > 0 ? y1 : y0;
-      const k = Fn > 0 ? -1 : 1;
-      out += `<path class="g-off" d="M${X(a.x) - f * 0.45} ${ye - k * f * 0.1}L${X(a.x) + f * 0.45} ${ye - k * f * 0.1}L${X(a.x)} ${ye + k * f * 0.6}Z" fill="${colors.force}"/>`;
+      const tip = Fn > 0 ? y1 + 2 : y0 - 2;
+      const k = Fn > 0 ? 1 : -1;
+      out += `<path class="g-off" d="M${X(a.x)} ${tip}L${X(a.x) + f * 0.5} ${tip + k * f * 0.75}L${X(a.x) - f * 0.5} ${tip + k * f * 0.75}Z" fill="${colors.force}"/>`;
     }
+    return out;
+  }
+
+  /** The book's sign rule (p.280): both positive or both negative → F positive, repulsion; one of each → F negative,
+   *  attraction. Signs drawn as shapes in the charges' colours (white + and −); the row of the spheres now is marked. */
+  function drawSigns(a, { W, H }) {
+    const f = Math.min(15, Math.max(12.5, H / 8));
+    const rows = [
+      [1, 1, 'pos', 'repel'],
+      [-1, -1, 'pos', 'repel'],
+      [1, -1, 'neg', 'attract'],
+    ];
+    const head = f * 1.6;
+    const rh = Math.min(f * 2.3, (H - head - 2) / 3);
+    const cr = Math.min(rh * 0.36, f * 0.75);
+    const c1 = cr + 4;
+    const c2 = W * 0.47;
+    const c3 = W * 0.8;
+    let out = '';
+    out += `<text class="g-name" x="${c1 - cr}" y="${f * 1.1}" font-size="${f}">${esc(t('t_head'))}</text>`;
+    out += `<text class="g-name" x="${c2}" y="${f * 1.1}" text-anchor="middle" font-size="${f}">${esc(t('t_F'))}</text>`;
+    out += `<text class="g-name" x="${c3}" y="${f * 1.1}" text-anchor="middle" font-size="${f}">${esc(t('t_force'))}</text>`;
+    out += `<line class="grid" x1="0" x2="${W}" y1="${head}" y2="${head}"/>`;
+    const sign = (x, y, q) => {
+      const w = cr * 1.1;
+      const h = cr * 0.3;
+      let g = `<circle cx="${x}" cy="${y}" r="${cr}" fill="${q > 0 ? colors.pos : colors.neg}"/>`;
+      g += `<rect x="${x - w / 2}" y="${y - h / 2}" width="${w}" height="${h}" fill="#fff"/>`;
+      if (q > 0) g += `<rect x="${x - h / 2}" y="${y - w / 2}" width="${h}" height="${w}" fill="#fff"/>`;
+      return g;
+    };
+    rows.forEach(([q1, q2, F, kind], i) => {
+      const y = head + rh * (i + 0.5);
+      if (i === a.row) out += `<rect class="g-row" x="0" y="${y - rh / 2 + 1}" width="${W}" height="${rh - 2}" rx="5"/>`;
+      out += sign(c1, y, q1) + sign(c1 + cr * 2.5, y, q2);
+      const on = i === a.row ? ' g-on' : '';
+      out += `<text class="g-cell${on}" x="${c2}" y="${y + f * 0.35}" text-anchor="middle" font-size="${f}">${esc(t(`t_${F}`))}</text>`;
+      out += `<text class="g-cell${on}" x="${c3}" y="${y + f * 0.35}" text-anchor="middle" font-size="${f}">${esc(t(`t_${kind}`))}</text>`;
+    });
     return out;
   }
 

@@ -15,7 +15,7 @@ export const EX_A = { q1: 1, q2: -1, r: 0.1 };
 export const EX_B = { qa: 9, qb: 16, d: 1 };
 /** The charges the student may set (C), and the distances (m) the second sphere may be dragged to. */
 export const Q_RANGE = [-2, 2];
-export const R_RANGE = [0.1, 0.4];
+export const R_RANGE = [0.1, 0.3];
 /** Where the third charge may be dragged (m from +9 C), and the third charge itself (C): the book's +q, taken as +1 C. */
 export const X_RANGE = [0.15, 0.85];
 export const Q_TEST = 1;

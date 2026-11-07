@@ -3,12 +3,15 @@
 // colour (positive red #e03131, negative blue #1971c2, none: plain steel) and always its sign: a white "+" or "−" that
 // faces the camera, so colour is never the only cue. All in metres; the bench top is y = 0, the spheres' centres at H.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RULE } from './setting.js';
 
-/** The centres' height above the bench (m), and the spheres' radii (m): the two big ones, the third (the book's +q). */
+/** The centres' height above the bench (m), and the spheres' radii (m): the pair (small, as the book's বিন্দু চার্জ, so the
+ *  force arrows fit between them at 10 cm), the third (the book's +q in step ⑤). In step ⑤ the pair grows to END_K × R. */
 export const H = 0.15;
-export const R_BIG = 0.03;
-export const R_SMALL = 0.026;
+export const R_BIG = 0.02;
+export const R_SMALL = 0.04;
+export const END_K = 3;
 const BASE_R = 0.034;
 const BASE_H = 0.02;
 const ROD_R = 0.0055;
@@ -77,9 +80,13 @@ export function createApparatus() {
     ],
     40,
   );
-  const ferruleGeo = new THREE.CylinderGeometry(ROD_R * 1.7, ROD_R * 1.9, 0.012, 24);
-  const collarGeo = new THREE.CylinderGeometry(ROD_R * 1.25, ROD_R * 1.6, 0.008, 24);
-  const bigGeo = new THREE.SphereGeometry(R_BIG, 48, 32);
+  // the ferrule at the foot of the rod and the collar under the sphere: one mesh (one draw) per stand
+  const ferruleGeo = new THREE.CylinderGeometry(ROD_R * 1.7, ROD_R * 1.9, 0.012, 20);
+  const collarFor = (R) => {
+    const c = new THREE.CylinderGeometry(ROD_R * 1.25, ROD_R * 1.6, 0.008, 20).translate(0, H - R - 0.001, 0);
+    return mergeGeometries([ferruleGeo.clone().translate(0, BASE_H + 0.006, 0), c]);
+  };
+  const bigGeo = new THREE.SphereGeometry(R_BIG, 40, 28);
   const smallGeo = new THREE.SphereGeometry(R_SMALL, 40, 28);
   const signGeo = new THREE.PlaneGeometry(1, 1);
   // the index line: from the base's front edge to just over the rule's back edge
@@ -100,10 +107,7 @@ export function createApparatus() {
     const rod = new THREE.Mesh(new THREE.CylinderGeometry(ROD_R, ROD_R, rodLen, 20), mats.rod);
     rod.position.y = BASE_H + rodLen / 2;
     rod.castShadow = true;
-    const ferrule = new THREE.Mesh(ferruleGeo, mats.collar);
-    ferrule.position.y = BASE_H + 0.006;
-    const collar = new THREE.Mesh(collarGeo, mats.collar);
-    collar.position.y = H - R - 0.001;
+    const collar = new THREE.Mesh(collarFor(R), mats.collar);
     const sphere = new THREE.Mesh(big ? bigGeo : smallGeo, mats.steel);
     sphere.name = `${name}Sphere`;
     sphere.position.y = H;
@@ -120,8 +124,9 @@ export function createApparatus() {
     const hit = new THREE.Mesh(hitGeo, mats.hit);
     hit.position.y = (H + 0.06) / 2;
     hit.userData.noExport = true;
-    root.add(base, rod, ferrule, collar, sphere, index, sign, hit);
+    root.add(base, rod, collar, sphere, index, sign, hit);
     let q = 0;
+    let k = 1;
     const toCam = new THREE.Vector3();
     const centre = new THREE.Vector3();
     return {
@@ -129,6 +134,16 @@ export function createApparatus() {
       sphere,
       hit,
       R,
+      /** The sphere's radius now (m). */
+      get radius() {
+        return R * k * root.scale.x;
+      },
+      /** Grows the sphere (not the stand): k = 1 is its own size. */
+      setSize(size) {
+        k = size;
+        sphere.scale.setScalar(k);
+        sign.scale.setScalar(R * k * 1.05);
+      },
       get q() {
         return q;
       },
@@ -144,7 +159,7 @@ export function createApparatus() {
         if (!sign.visible) return;
         sphere.getWorldPosition(centre);
         toCam.copy(camera.position).sub(centre).normalize();
-        sign.position.set(0, H, 0).addScaledVector(toCam, R * 1.02);
+        sign.position.set(0, H, 0).addScaledVector(toCam, R * k * 1.02);
         sign.quaternion.copy(camera.quaternion);
       },
       setX(x) {

@@ -18,32 +18,41 @@ Two charges push apart (like) or pull together (unlike) with equal and opposite 
 with each charge and falls as the square of the distance (twice as far → a quarter of the force).
 
 ## How the figure works
-- Scene (metres): two polished metal spheres (r = 3 cm) on clear acrylic rods (বিদ্যুৎ অপরিবাহী স্ট্যান্ড, the 10.3 term) on
+- Scene (metres): two polished metal spheres (r = 2 cm, the book's বিন্দু চার্জ; in step ⑤ the end charges grow to 6 cm and
+  +q is 4 cm, so they read on a phone) on clear acrylic rods (বিদ্যুৎ অপরিবাহী স্ট্যান্ড, the 10.3 term) on
   heavy round bases, each base with an index line to a wooden metre rule printed in cm (0–100, Bangla digits), on a
   plain sand bench in the calm deep-blue setting. A charge is the sphere's colour (positive red #e03131, negative blue
   #1971c2, none: steel) and always its white "+" or "−" (drawn shapes, facing the camera).
-- Forces: teal #0ca678 arrows, white outline and dark edge, over the spheres as in চিত্র ১০.১০ (a): pulling in, the
-  head ends over its sphere; pushing apart, the tail starts over it. Length in proportion to F (9 × 10¹¹ N = 10 cm;
-  the third charge's: its balance force, 4.4 × 10¹¹ N, = 12 cm), cut at 30 cm (the note on the view then says so).
+- Forces: teal #0ca678 arrows, white outline and dark edge, on the line of the charges at the centres' height, each
+  starting on its own sphere's surface: toward the other sphere for a pull, away for a push (round one: they floated
+  over the spheres, as in চিত্র ১০.১০ a, and did not read as belonging to a sphere). Length in proportion to F, the scale
+  written on the view like a map's: ①②④ 1 cm = 4 × 10¹¹ N (two pulls of 9 × 10¹¹ N fit in the 6 cm between the spheres
+  at 10 cm); ③ 1 cm = 1.5 × 10¹¹ N (the arrows go out and come back on it before the sphere moves, so the quarter
+  reads beside the faint copy of the old arrow); ⑤ 1 cm = 0.5 × 10¹¹ N. An arrow never reaches the next sphere: it is
+  drawn shorter then, and the note says so.
 - Steps (one tap each, slow, never auto-advancing; each step word jumps there):
   ① charge them: +1 C and −1 C at 10 cm (example a): two equal and opposite arrows, আকর্ষণ;
   ② the right sphere becomes positive: the arrows shrink, turn and grow back, বিকর্ষণ;
   ③ twice the distance: the right sphere slides from 10 to 20 cm, the arrows shrink to a quarter beside a faint ghost
      of the old one; the panel's F–r graph appears with the 1/r² curve, the old point as a ring, the new as a dot
-     ("১/৪ গুণ"); the sphere can now be dragged (10–40 cm, 1 cm steps; the arrow keys too);
+     ("১/৪ গুণ"); the sphere can now be dragged (10–30 cm, 1 cm steps; the arrow keys too; the camera frames that range);
   ④ the law: back to the book's example, the formula worked live (F = 9×10⁹ × (+1) × (−1)/(0.10)² N = −9 × 10¹¹ N),
      steppers for q₁ and q₂ (−2 … +2 C, in the graph's corner) and the drag;
-  ⑤ example (b): +9 C and +16 C 1 m apart, a third charge +q at 0.2 m with its two pushes F₁ (from +9 C, right) and
-     F₂ (from +16 C, left); the student drags +q (or taps the action, which slides it) until they balance at
+  ⑤ example (b): +9 C and +16 C 1 m apart, a third charge +q at 0.2 m with its two pushes F₁ (from +9 C, on its
+     right, pointing right) and F₂ (from +16 C, on its left, pointing left); only the drag handle marks +q; the student drags +q (or taps the action, which slides it) until they balance at
      x = 0.43 m (it snaps within 1.2 cm); the graph shows the net force on +q against x, crossing zero there (the
-     crossing is marked only once found). Dimension lines x and 1 − x on the bench, as in the book's picture.
-- Panel: a calm intro card; per step the action, the result (while a step plays, its question), the graph, the rule
-  in the book's words. The lead-in line before the action shows on tall side panels only; on phones the action's
+     crossing is marked only once found; "+q = +১ C ধরে" beside its title). Dimension lines x and 1 − x = … m over the
+     charges, as in the book's picture; at the balance the arrows read F₁ = F₂ = 4.4 × 10¹¹ N.
+- Panel: a calm intro card; per step the action, the result (while a step plays, its question), the graph (in the
+  intro, ① and ②: the book's sign rule as a three-row table, the spheres' row marked), the rule in the book's words.
+  A phone held upright: the panel takes 47 % of the height (the 3D 53 %), no how-to row (the view's pill and the drag
+  handles' words say the same); at 390 × 520 the step words go too. A phone held sideways (panel ≤ 460 px tall): no
+  how-to row either. The lead-in line before the action shows on tall side panels only; on phones the action's
   words carry it (room). Kit 1.9.0: createDragHandle on both draggable parts, createRotateCue, createHowTo (collapse:
   only the drag that applies), shader warm-up of every later part.
-- Test (5): like charges (−,−: which way?), twice as far (reads F = 8 × 10¹¹ N and r = 15 cm off the picture),
-  three times the charge (reads F), the meaning of F's minus sign (+2 C and −1 C, F = −4.5 × 10¹¹ N), the no-force
-  point between +4 C and +1 C 0.9 m apart (0.6 m). Every wrong choice has its own note. The graph shows empty axes
+- Test (5): a random pair of signs read off the picture (which way?), twice as far (reads F = 8 × 10¹¹ N and r = 15 cm off the picture),
+  three times the charge (reads F), the meaning of a negative F (the signs hidden, F = −4.5 × 10¹¹ N), the no-force
+  point between +4 C and +1 C, their distance (0.9 m) read off the picture (0.6 m). Every wrong choice has its own note. The graph shows empty axes
   in the test (it would give answers away), except for the last question, which it does not touch.
 
 ## Decisions and honesty
@@ -63,15 +72,16 @@ with each charge and falls as the square of the distance (twice as far → a qua
 কুলম্ব (C), দূরত্ব r, "কোনো বল অনুভব না করে", চার্জদ্বয়ের মধ্যবর্তী রেখাংশ; from 10.3: ধাতব গোলক, বিদ্যুৎ অপরিবাহী স্ট্যান্ড.
 
 ## Performance (2026-11-07, 844 × 390, shadows on, headless Chromium with software WebGL)
-- Heaviest view (step ⑤, three stands and two arrows): a live frame that redraws the shadow map, 53 draw calls and
-  21,840 triangles; a `capture` (the ch7 perf.mjs count, which draws more passes) 141 draws and 45,456 triangles, the same
-  from four azimuths 90° apart. Step ④: 40 draws and 16,000 triangles live.
-- JS per animated frame under 6× CPU throttling (step ④ → ⑤ playing): median 0.9 ms, 90th percentile 2.1 ms.
+- Heaviest view (step ⑤, three stands and two arrows): a live frame that redraws the shadow map, 46 draw calls and
+  18,480 triangles; a `capture` (the ch7 perf.mjs count, which draws more passes) 120 draws and 38,640 triangles, the same
+  from four azimuths 90° apart (round one: 53 / 141; each stand's ferrule and collar are one mesh now, and each
+  dimension line one instanced mesh). Step ③: 41 draws and 13,000 triangles live.
+- JS per animated frame under 6× CPU throttling (step ④ → ⑤ playing): median 0.9 ms, 90th percentile 2.0 ms.
 - Idle: 0 draws; after an orbit, 0 once the damping settles. Ready in about 2.3 s.
 - Textures: the rule's two 1024 × 64 canvases, the 4 × 256 backdrop, two 128 × 128 signs; geometry and materials shared
   by the three stands; the later steps' parts are made at load and compiled by `stage.warmUp`.
 - GLB (the two spheres on their stands and the metre rule): 146 KB, 4,000 triangles.
 
 ## Open questions
-- Should step ⑤ show the book's x = −3 root ("নিজেরা চিন্তা করে বের করো")? Left to the student, as the book does.
-- "বর্গের ব্যস্তানুপাতিক" is not on page 280; the book team may prefer only the formula.
+- "বর্গের ব্যস্তানুপাতিক" (bold once, in step ③'s rule) is not on page 280; the usual NCTB words: the book team to confirm.
+- The book's x = −3 root is left out (the test stays on the one idea).

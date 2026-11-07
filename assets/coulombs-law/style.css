@@ -10,6 +10,8 @@ body.bg-transparent { background: transparent; }
 .cl sub, .cl sup { font-size: 0.72em; line-height: 0; }
 .cl .cl-sci { white-space: nowrap; }
 
+/* the step words: each at least 40 px wide */
+.cl .pvc-examples button { min-width: 42px; }
 /* the line before the action: what the next tap will show; on the first screen, a calm card that sets the scene */
 .cl .cl-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.5; min-height: 1.5em; }
 .cl .cl-lead.pvc-note { font-size: 15px; line-height: 1.6; min-height: 0; }
@@ -26,16 +28,17 @@ body.bg-transparent { background: transparent; }
 .cl .pvc-rule b { color: var(--ink); }
 
 /* the graph box: the graph takes the free height; in the law's step the charges' steppers sit in its top right corner */
-.cl .cl-graphbox { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-.cl .cl-steppers { display: flex; justify-content: space-between; gap: 6px; padding: 1px 0 3px; }
+.cl .cl-graphbox { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+/* the law's steppers sit over the graph's top row (the graph keeps that row free for them) */
+.cl .cl-steppers { position: absolute; top: 0; left: 0; right: 0; z-index: 1; display: flex; justify-content: space-between; gap: 6px; }
 .cl .cl-steppers[hidden] { display: none; }
 .cl .cl-q { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; font-size: 13.5px; color: var(--ink-2); }
 .cl .cl-q-name { font-style: italic; margin-right: 2px; }
-.cl .cl-q-val { min-width: 3.2em; text-align: center; font-weight: 600; font-size: 14px; color: var(--ink); }
-.cl .cl-step { display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--line-2); border-radius: 6px; background: var(--panel); color: var(--ink); cursor: pointer; }
+.cl .cl-q-val { min-width: 2.7em; text-align: center; font-weight: 600; font-size: 13.5px; color: var(--ink); }
+.cl .cl-step { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--line-2); border-radius: 6px; background: var(--panel); color: var(--ink); cursor: pointer; }
 .cl .cl-step svg { width: 16px; height: 16px; }
 .cl .cl-step:disabled { opacity: 0.35; cursor: default; }
-.cl .cl-graph { position: relative; flex: 1 1 auto; min-height: 110px; }
+.cl .cl-graph { position: relative; flex: 1 1 auto; min-height: 0; }
 .cl .pvc-sheets { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); }
 .cl .pvc-learn { min-height: 0; }
 .cl .cl-graph .cl-graph-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; font-family: inherit; }
@@ -52,6 +55,9 @@ body.bg-transparent { background: transparent; }
 .cl-graph-svg .g-was { fill: #fff; stroke-width: 2.5; }
 .cl-graph-svg .g-dot { stroke: #fff; stroke-width: 2; }
 .cl-graph-svg .g-tag { font-weight: 600; }
+.cl-graph-svg .g-row { fill: #e3f5ee; }
+.cl-graph-svg .g-cell { fill: #4a5966; }
+.cl-graph-svg .g-cell.g-on { fill: var(--c-force); font-weight: 600; }
 
 /* labels on the picture: short words in their colour on a white chip */
 .cl .pvc-anno-force { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
@@ -73,9 +79,9 @@ body.bg-transparent { background: transparent; }
   /* the action's words say what the next tap does: the lead-in line only on the first screen */
   .cl .cl-lead:not(.pvc-note) { display: none; }
   .cl .cl-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 6px 10px; }
+  .cl .pvc-examples .pvc-ex-word { font-size: 14px; }
   .cl .pvc-outcome { font-size: 13.5px; }
   .cl .pvc-rule { font-size: 13px; line-height: 1.45; }
-  .cl .cl-graph { min-height: 84px; }
   .cl .cl-q { font-size: 13px; }
   .cl .pvc-opt { height: 40px; font-size: 13px; }
   .cl .pvc-q-text { font-size: 14px; --pvc-q-text-min: 3lh; }
@@ -87,48 +93,52 @@ body.bg-transparent { background: transparent; }
   .cl .cl-lead { font-size: 12.5px; min-height: 0; }
   .cl .pvc-outcome { font-size: 12.5px; line-height: 1.4; }
   .cl .pvc-rule { font-size: 12px; line-height: 1.4; }
-  .cl .cl-graph { min-height: 64px; }
   .cl .pvc-q-text { font-size: 13px; }
   .cl .pvc-opt { font-size: 12px; height: 36px; }
   .cl .pvc-anno-force { font-size: 12px; }
 }
-/* short and wide (a phone held sideways): the panel is beside the scene */
-@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+/* short and wide (a phone held sideways): the panel is beside the scene; the how-to row gives its line to the graph
+   (the view's own ⟲ ৩৬০° pill and the drag handles' words say the same) */
+@container pvc-panel (max-height: 460px) {
   .cl .cl-lead .cl-long { display: none; }
   .cl .cl-lead .cl-short { display: inline; }
   .cl .cl-lead.pvc-note { font-size: 13.5px; line-height: 1.5; padding: 5px 10px; }
   .cl .pvc-learn { gap: 5px; }
+  .cl .pvc-howto { display: none; }
   .cl .pvc-outcome { font-size: 13px; line-height: 1.4; }
   .cl .pvc-rule { font-size: 12.5px; line-height: 1.45; }
-  .cl .cl-graph { min-height: 70px; }
   .cl .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 13px; }
   .cl .pvc-q-text { font-size: 13.5px; }
   .cl .pvc-opt { font-size: 12.5px; height: 44px; }
   .cl .pvc-anno-force { font-size: 12.5px; }
 }
 
-/* a phone held upright: the panel under the 3D has a fixed share of the height in every state and in the test (the graph
-   takes what is left), so the 3D view never changes size */
+/* a phone held upright: the panel under the 3D has a fixed share of the height (the 3D about 55 %) in every state and
+   in the test, the graph taking what is left, so the 3D view never changes size; every line as low as it reads well,
+   and no how-to row (the view's pill and the handles' words say the same) */
 @container pvc (max-aspect-ratio: 1/1) {
-  .cl .pvc-panel { height: 55cqh; box-sizing: border-box; overflow: hidden; gap: 6px; padding-top: 8px; }
-  .cl .cl-note .cl-long { display: none; }
-  .cl .pvc-learn { gap: 4px; }
-  .cl .pvc-examples button { min-height: 38px; }
-  .cl .pvc-rule { font-size: 12.5px; line-height: 1.42; }
-  .cl .cl-graph { min-height: 56px; }
-  /* one line of how-to: the pills say ৩৬০° and সামনে themselves; the drag keeps its words */
-  .cl .pvc-howto-item:not(.pvc-howto-drag):not(.pvc-howto-tap) .pvc-howto-word { display: none; }
+  .cl.cl-stack .pvc-panel { height: 47cqh; box-sizing: border-box; overflow: hidden; gap: 4px; padding-top: 6px; padding-bottom: 6px; }
+  .cl.cl-stack .pvc-tabs button { height: 32px; }
+  .cl.cl-stack .cl-note .cl-long { display: none; }
+  .cl.cl-stack .pvc-learn { gap: 3px; }
+  .cl.cl-stack .pvc-howto { display: none; }
+  .cl.cl-stack .pvc-examples button { min-height: 32px; padding-top: 1px; padding-bottom: 2px; }
+  .cl.cl-stack .pvc-act-row { min-height: 40px; }
+  .cl.cl-stack .pvc-outcome { --pvc-outcome-lines: 2; }
+  .cl.cl-stack .pvc-act { min-height: 40px; }
+  .cl.cl-stack .pvc-outcome { font-size: 12.5px; line-height: 1.42; }
+  .cl.cl-stack .pvc-rule { font-size: 12px; line-height: 1.4; --pvc-rule-lines: 2; }
+  .cl.cl-stack .cl-lead.pvc-note { font-size: 13px; line-height: 1.45; padding: 4px 9px; }
+  .cl.cl-stack .cl-steppers { padding: 0; }
 }
+/* a short phone embed (390 × 520): the step words go too (the action and the reset still walk the steps) */
 @container pvc (max-aspect-ratio: 1/1) and (max-height: 600px) {
-  .cl .pvc-panel { height: 64cqh; padding-top: 6px; padding-bottom: 6px; gap: 5px; }
-  .cl .pvc-examples button { min-height: 34px; padding-top: 1px; padding-bottom: 2px; }
-  .cl .pvc-act { min-height: 40px; }
-  .cl .pvc-act-row { min-height: 40px; }
-  .cl .cl-graph { min-height: 48px; }
+  .cl.cl-stack .pvc-panel { height: 56cqh; }
+  .cl.cl-stack .pvc-examples { display: none; }
 }
 /* the lead-in line in a tall side panel (a laptop, a tablet), where there is room for it */
 @container pvc-panel (min-height: 560px) {
-  .cl .cl-lead:not(.pvc-note) { display: block; }
+  .cl .cl-lead:not(.pvc-note) { display: block; margin-top: 4px; }
   .cl .cl-graphbox { flex: 0 1 auto; }
   .cl .cl-graph { flex: none; height: 300px; }
 }
