@@ -146,7 +146,11 @@ export const netCharge = (electronsOn) => SITES - electronsOn;
 // ── the comb and the paper (চিত্র ১০.০৫): one timeline, seconds ─────────────────────────────────────────────────
 /** The comb comes down; the paper's near part turns +, far part −; the bits jump up, stick, turn −, and fall away. */
 export const COMB = { lower: [0, 1.8], polar: [1.8, 2.8], jump: [2.8, 3.6], stick: [3.6, 4.6], fall: [4.6, 6.0], end: 6.2 };
-/** 0…1 progress of `t` through [a, b]. */
+/**
+ * 0…1 progress of `t` through [a, b].
+ * @param {number} t
+ * @param {number[]} range
+ */
 export const seg = (t, [a, b]) => Math.max(0, Math.min(1, (t - a) / (b - a)));
 /** What the comb scene shows at time t: the comb's height (0 up, 1 down), the paper's charges, the bits' flight. */
 export function combPhase(t) {
