@@ -37,7 +37,6 @@ import {
   rad,
   sightLine,
   tenth,
-  threshold,
   trace,
   whole,
   ZP,
@@ -58,6 +57,7 @@ export const DEFAULTS = {
 export const STEPS = ['hidden', 'pour', 'angles', 'image'];
 const DOUBLE_TAP = 420; // ms
 const MARGIN = { top: 50, bottom: 14, side: 10 };
+const MARGIN_TIGHT = { top: 40, bottom: 4, side: 6 };
 // how long things take (s): slow enough to follow
 const T = {
   cut: 1.8,
@@ -96,8 +96,7 @@ const COLORS = {
 };
 const V = (x, y, z = ZP) => new THREE.Vector3(x, y, z);
 const dirOf = (az, el) => V(Math.sin(rad(az)) * Math.cos(rad(el)), Math.sin(rad(el)), Math.cos(rad(az)) * Math.cos(rad(el))).normalize();
-const EDGE_LEVEL = threshold({ x0: COIN.r }); // the far edge of the coin peeks out from here
-const DRAG_X = 3.6; // where the level's handle sits on the water's cut face
+const DRAG_X = 4.4; // where the level's handle sits on the water's cut face
 
 export function createApp(root, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -128,6 +127,26 @@ export function createApp(root, options = {}) {
   const lead = document.createElement('p');
   lead.className = 'cc-lead';
   $('.pvc-act-row').before(lead);
+  const probe = document.createElement('p');
+  probe.className = 'cc-lead cc-probe';
+  probe.setAttribute('aria-hidden', 'true');
+  probe.textContent = '.';
+  ui.learn.appendChild(probe);
+  const outcomeEl = /** @type {HTMLElement} */ ($('.pvc-outcome'));
+  const ruleEl = /** @type {HTMLElement} */ ($('.pvc-rule'));
+  /** The calm card takes the room the steps' lead-in, result and rule take, so nothing moves at the first tap. */
+  function fitCalm() {
+    if (!ui.learn.classList.contains('cc-calm')) {
+      if (lead.style.minHeight) lead.style.minHeight = '';
+      return;
+    }
+    const gap = parseFloat(getComputedStyle(ui.learn).rowGap) || 0;
+    const leadH = probe.offsetHeight;
+    const h = leadH + outcomeEl.offsetHeight + ruleEl.offsetHeight + gap * (leadH > 0 ? 2 : 1);
+    const want = `${Math.round(h)}px`;
+    if (lead.style.minHeight !== want) lead.style.minHeight = want;
+  }
+  new ResizeObserver(() => fitCalm()).observe(ui.learn);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
   // the live graph under the rule (last step, on tall panels beside the 3D)
   const graph = createGraph({ t });
@@ -135,7 +154,7 @@ export function createApp(root, options = {}) {
   // an honest note on the picture: the cup is cut open to show the inside
   const note = document.createElement('div');
   note.className = 'cc-note';
-  note.textContent = t('note_cut');
+  note.innerHTML = `<span class="cc-long">${t('note_cut')}</span><span class="cc-short">${t('note_cut_short')}</span>`;
   note.hidden = true;
   ui.stage.appendChild(note);
 
@@ -200,6 +219,8 @@ export function createApp(root, options = {}) {
     drag: null,
     geo: trace(LEVEL.empty),
     seen: false,
+    edgeSeen: false,
+    edgeGeo: null,
   };
   const now = () => performance.now();
   let lastAct = Number.NEGATIVE_INFINITY;
@@ -217,10 +238,15 @@ export function createApp(root, options = {}) {
     water.set(v.level);
     jug.set({ show: v.jug, tilt: v.tilt, flow: v.flow }, v.level);
     const geo = trace(v.level);
-    const was = s.seen;
+    const edgeGeo = trace(v.level, { x0: COIN.r });
+    const wasSeen = s.seen;
+    const wasEdge = s.edgeSeen;
     s.geo = geo;
+    s.edgeGeo = edgeGeo;
     s.seen = geo.visible && v.ray >= 0.999;
-    if (s.seen && !was && s.busy) arrive();
+    // only the coin's far edge (ধার) reaches the eye: its light is drawn too, thin
+    s.edgeSeen = !geo.visible && edgeGeo.visible && v.ray >= 0.999;
+    if (s.busy && ((s.seen && !wasSeen) || (s.edgeSeen && !wasEdge && !wasSeen))) arrive();
     rv.geo = geo;
     rv.sight = v.sight;
     rv.ray = v.ray;
@@ -228,7 +254,9 @@ export function createApp(root, options = {}) {
     rv.arcs = geo.surface ? v.arcs : 0;
     rv.showT2 = !(s.quizKind === 'angle' && !s.revealed);
     rv.back = geo.visible ? v.back : 0;
-    rv.lit = s.seen ? 1 : 0;
+    rv.lit = s.seen || s.edgeSeen ? 1 : 0;
+    rv.edgeGeo = edgeGeo;
+    rv.edge = s.edgeSeen ? 1 : 0;
     ghost.set(geo.visible && geo.image ? v.ghost : 0, geo.image ? geo.image.y : 0);
   }
   /** The light has just reached the eye: a moment's glow. */
@@ -260,9 +288,19 @@ export function createApp(root, options = {}) {
       () => action?.box(),
       () => action?.ringBox(),
       () => boxOf(rotateEl),
-      () => levelHandle?.box() ?? [],
+      handleDisc, // the handle's disc only: its faint dashed track may pass behind a label
     ],
   });
+  const discBox = { left: 0, top: 0, right: 0, bottom: 0 };
+  function handleDisc() {
+    if (!levelHandle?.visible) return null;
+    const p = rays.toScreen({ x: DRAG_X, y: s.v.level, z: 0.05 });
+    discBox.left = p.x - 26;
+    discBox.right = p.x + 26;
+    discBox.top = p.y - 26;
+    discBox.bottom = p.y + 26;
+    return discBox;
+  }
   function boxOf(el) {
     if (!el) return null;
     const r = el.getBoundingClientRect();
@@ -284,10 +322,11 @@ export function createApp(root, options = {}) {
       show: () => true,
     },
     see: {
-      text: () => (s.seen ? t('lbl_seen') : t('lbl_q')),
+      text: () => (s.seen ? t('lbl_seen') : s.edgeSeen ? t('lbl_edge_seen') : t('lbl_q')),
       point: () => V(EYE.x, EYE.y),
-      color: () => (s.seen ? COLORS.seen : COLORS.stop),
-      spots: [...BELOW, ...RIGHT_OF],
+      color: () => (s.seen || s.edgeSeen ? COLORS.seen : COLORS.stop),
+      // beside the eye, away from the light that comes in from the lower right
+      spots: [spot(-30, 4), spot(-30, -14), spot(-28, 22), spot(26, -30), spot(-10, 34)],
       show: () => s.v.ray >= 0.999 && s.v.cut > 0.9 && !inQuiz() && !s.busy,
     },
     coin: {
@@ -297,7 +336,7 @@ export function createApp(root, options = {}) {
       spots: [...RIGHT_OF, ...BELOW, ...LEFT_OF],
       optional: true,
       // in the smallest frames the raised coin's label needs the room
-      show: () => s.v.cut > 0.9 && s.v.arcs < 0.5 && !(s.v.ghost > 0.5 && stage.height < 260),
+      show: () => s.v.cut > 0.9 && s.v.arcs < 0.5 && !(s.v.ghost > 0.5 && stage.height < 260) && !behind(),
     },
     blocked: {
       text: () => t('lbl_blocked'),
@@ -307,7 +346,7 @@ export function createApp(root, options = {}) {
       },
       color: COLORS.stop,
       spots: [...LEFT_OF, ...ABOVE],
-      show: () => s.v.ray >= 0.999 && !s.geo.visible && !inQuiz() && !s.busy,
+      show: () => s.v.ray >= 0.999 && !s.geo.visible && !inQuiz() && !s.busy && !behind(),
     },
     water: {
       text: () => t('lbl_water'),
@@ -315,7 +354,7 @@ export function createApp(root, options = {}) {
       color: COLORS.water,
       spots: [...RIGHT_OF, ...LEFT_OF],
       optional: true,
-      show: () => depthOf(s.v.level) > 1.6 && s.v.cut > 0.9 && s.v.normal < 0.5 && s.v.back < 0.5,
+      show: () => depthOf(s.v.level) > 1.6 && s.v.cut > 0.9 && s.v.normal < 0.5 && s.v.back < 0.5 && !behind() && stage.height >= 260,
     },
     normal: {
       text: () => t('lbl_normal'),
@@ -324,37 +363,37 @@ export function createApp(root, options = {}) {
         return V(S.x, S.y + rays.NORMAL_UP);
       },
       color: COLORS.normal,
-      spots: [...RIGHT_OF, ...LEFT_OF, ...ABOVE],
-      show: () => Boolean(s.geo.surface) && s.v.normal > 0.9,
+      spots: [...ABOVE, ...RIGHT_OF, ...LEFT_OF],
+      show: () => Boolean(s.geo.surface) && s.v.normal > 0.9 && !behind(),
     },
     t1: {
       text: () => t('lbl_t1', { a: whole(s.geo.theta1) }),
+      // on the normal below the surface, to its left: the light in the water runs off to the right
       point: () => {
         const S = s.geo.surface;
-        const a = rad(180 - s.geo.theta1 / 2);
-        return V(S.x + rays.ARC * Math.sin(a), S.y + rays.ARC * Math.cos(a));
+        return V(S.x, S.y - rays.ARC * 0.85);
       },
       color: COLORS.t1,
-      spots: [spot(20, 16), spot(26, 4), spot(14, 30), spot(30, 22)],
-      show: () => Boolean(s.geo.surface) && s.v.arcs > 0.9,
+      spots: [spot(-24, 0), spot(-24, 14), spot(-24, -12), spot(-20, 30)],
+      show: () => Boolean(s.geo.surface) && s.v.arcs > 0.9 && !behind(),
     },
     t2: {
       text: () => t('lbl_t2', { a: whole(s.geo.theta2) }),
+      // on the normal above the surface, to its right: the light in the air runs off to the left
       point: () => {
         const S = s.geo.surface;
-        const a = rad(-s.geo.theta2 / 2);
-        return V(S.x + rays.ARC * Math.sin(a), S.y + rays.ARC * Math.cos(a));
+        return V(S.x, S.y + rays.ARC * 0.85);
       },
       color: COLORS.t2,
-      spots: [spot(-20, -16), spot(-26, -4), spot(-12, -30), spot(-32, -22)],
-      show: () => Boolean(s.geo.surface) && s.v.arcs > 0.9 && rv.showT2,
+      spots: [spot(24, 0), spot(24, -14), spot(24, 12), spot(20, -30)],
+      show: () => Boolean(s.geo.surface) && s.v.arcs > 0.9 && rv.showT2 && !behind(),
     },
     image: {
       text: () => t('lbl_image'),
       point: () => V(-COIN.r * 0.2, s.geo.image.y),
       color: COLORS.image,
       spots: [spot(22, 20), spot(30, 34), ...RIGHT_OF, ...BELOW],
-      show: () => Boolean(s.geo.image) && s.geo.visible && s.v.ghost > 0.9 && !inQuiz(),
+      show: () => Boolean(s.geo.image) && s.geo.visible && s.v.ghost > 0.9 && !inQuiz() && !behind(),
     },
   };
   const shownText = new Map();
@@ -379,14 +418,16 @@ export function createApp(root, options = {}) {
 
   // ── camera: whole cup, the cut-away section, and the section with the jug pouring ─────
   const POSES = {
-    whole: { box: new THREE.Box3(V(EYE.x - 1.6, 0, -6), V(6.4, EYE.y + 1.2, 6)), dir: dirOf(24, 26) },
-    section: { box: new THREE.Box3(V(EYE.x - 1.6, 0, -1.6), V(6.4, EYE.y + 1.2, 0.6)), dir: dirOf(22, 14) },
+    whole: { box: new THREE.Box3(V(EYE.x - 1.4, 0, -6), V(6.2, EYE.y + 2, 6)), dir: dirOf(24, 26) },
+    section: { box: new THREE.Box3(V(EYE.x - 1.4, 0.3, -1.2), V(6.1, EYE.y + 2, 0.4)), dir: dirOf(22, 14) },
     pour: { box: new THREE.Box3(V(EYE.x - 1.6, 0, -2.5), V(12.6, Math.max(EYE.y + 1.2, 15.4), 0.6)), dir: dirOf(22, 14) },
   };
   const fitted = {};
   function fitPoses() {
     for (const [k, p] of Object.entries(POSES)) {
-      const f = fitPose({ box: p.box, dir: p.dir, camera, width: stage.width, height: stage.height, margin: MARGIN });
+      // the tightest frames (a 390 × 520 phone): slimmer margins, so the cup is as big as the height allows
+      const margin = stage.height < 260 ? MARGIN_TIGHT : MARGIN;
+      const f = fitPose({ box: p.box, dir: p.dir, camera, width: stage.width, height: stage.height, margin });
       fitted[k] = { target: f.target, dist: f.position.distanceTo(f.target), dir: p.dir };
     }
   }
@@ -498,8 +539,11 @@ export function createApp(root, options = {}) {
     emitChange();
     return p;
   }
-  // seen from behind the cup the light is inside it: the drawing goes faint, the level's handle hides
-  const behind = () => camera.position.z < -1;
+  // seen from behind the cup or from the side the light is inside it: the drawing goes faint, the level's handle and
+  // the labels of what is hidden go
+  function behind() {
+    return camera.position.z < 1.5;
+  }
   let faint = false;
   stage.onBeforeRender(() => {
     applyCamera();
@@ -508,9 +552,12 @@ export function createApp(root, options = {}) {
     if (behind() !== faint) {
       faint = !faint;
       rays.canvas.style.opacity = faint ? '0.4' : '';
+      syncLabels();
     }
   });
   stage.onResize(() => {
+    // in the tightest frames the handle's first-use word would sit on the labels: the how-to row says it instead
+    if (stage.height < 260) levelHandle?.markUsed();
     fitPoses();
     syncScene();
     refresh();
@@ -651,7 +698,7 @@ export function createApp(root, options = {}) {
     if (step === 'pour') {
       if (d <= 0) return t('out_empty');
       if (g.visible) return t('out_seen', { d });
-      if (s.v.level >= EDGE_LEVEL) return t('out_edge', { d });
+      if (s.edgeGeo?.visible) return t('out_edge', { d });
       return t('out_none', { d });
     }
     if (step === 'angles') {
@@ -662,7 +709,7 @@ export function createApp(root, options = {}) {
       return `${t('out_angles', { a, b })}<span class="cc-law">${N(N_WATER)} × sin ${N(a)}° = ${N(1)} × sin ${N(b)}° = ${N(k)}</span>`;
     }
     if (step === 'image') {
-      if (!g.visible || !g.image) return t('out_image_none');
+      if (!g.visible || !g.image) return t(s.edgeSeen ? 'out_image_edge' : 'out_image_none');
       return t('out_image', { d: tenth(g.depth), a: tenth(g.apparent) });
     }
     return '';
@@ -685,6 +732,7 @@ export function createApp(root, options = {}) {
       lead.classList.toggle('pvc-note', calm);
       ui.learn.classList.toggle('cc-calm', calm);
     }
+    fitCalm();
     sheet.outcome(calm || s.busy ? '' : outcome());
     sheet.rule(calm || s.busy ? '' : rule());
     graph.el.classList.toggle('cc-off', s.step !== 'image' || s.busy);
@@ -761,11 +809,13 @@ export function createApp(root, options = {}) {
     axis: 'y',
     track: { from: new THREE.Vector3(DRAG_X, LEVEL.empty, 0.05), to: new THREE.Vector3(DRAG_X, LEVEL.full, 0.05) },
     label: t('drag_me'),
-    labelAt: 'right',
+    labelAt: 'below',
     aria: t('aria_drag_level'),
     pulse: Boolean(o.coach),
     when: canDrag,
   });
+  if (stage.height < 260) levelHandle.markUsed();
+
   createHowTo(
     ui,
     t,
@@ -886,7 +936,7 @@ export function createApp(root, options = {}) {
       busy: s.busy,
       water: tenth(depthOf(s.v.level)), // cm of water in the cup
       seen: g.visible, // the light from the coin's middle reaches the eye
-      edge: s.v.level >= EDGE_LEVEL, // the far edge of the coin peeks out
+      edge: s.edgeGeo?.visible ?? false, // the far edge (ধার) of the coin reaches the eye
       theta1: g.surface ? whole(g.theta1) : null, // degrees, in water
       theta2: g.surface ? whole(g.theta2) : null, // degrees, in air
       depth: g.water ? tenth(g.depth) : 0, // cm, the coin under the surface
@@ -988,14 +1038,14 @@ export function createApp(root, options = {}) {
         if (!alive()) return null;
         question = { kind };
         if (kind === 'hidden')
-          return { text: t('q_hidden'), ...choicesOf(words(['c_hd_right', 'c_hd_dark', 'c_hd_far', 'c_hd_inside']), kind, (x) => t(x.key)) };
+          return { text: t('q_hidden'), ...choicesOf(words(['c_hd_right', 'c_hd_dark', 'c_hd_bend', 'c_hd_eye']), kind, (x) => t(x.key)) };
         if (kind === 'bend')
           return { text: t('q_bend'), ...choicesOf(words(['c_bd_right', 'c_bd_toward', 'c_bd_none', 'c_bd_back']), kind, (x) => t(x.key)) };
         if (kind === 'angle') {
           const items = angleChoices(QUIZ_THETA);
           question.items = items;
           return {
-            text: t('q_angle', { a: QUIZ_THETA, n: N_WATER, one: 1 }),
+            text: t('q_angle', { n: N_WATER, one: 1 }),
             ...choicesOf(items, kind, (x) => `${N(x.v)}°`),
           };
         }
@@ -1009,7 +1059,7 @@ export function createApp(root, options = {}) {
         syncScene();
         syncLabels();
         stage.invalidate();
-        if (k === 'hidden') return t('why_hidden') + note({ c_hd_dark: 'mis_hd_dark', c_hd_far: 'mis_hd_far', c_hd_inside: 'mis_hd_inside' });
+        if (k === 'hidden') return t('why_hidden') + note({ c_hd_dark: 'mis_hd_dark', c_hd_bend: 'mis_hd_bend', c_hd_eye: 'mis_hd_eye' });
         if (k === 'bend') return t('why_bend') + note({ c_bd_toward: 'mis_bd_toward', c_bd_none: 'mis_bd_none', c_bd_back: 'mis_bd_back' });
         if (k === 'angle') {
           const r = question.items[0].v;

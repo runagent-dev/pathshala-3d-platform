@@ -2,7 +2,7 @@
 // deep the coin lies under the surface: really (a dashed grey line) and as the eye sees it (amber), from trace(). Below
 // the level at which the light from the coin's middle clears the rim the eye sees nothing (shaded). A dot marks the
 // level now. Drawn as SVG in real pixels for its size (numbers stay 12–13 px), rebuilt only when the size or level changes.
-import { COIN, CUP, LEVEL, threshold, trace } from './reading.js';
+import { COIN, CUP, LEVEL, N_WATER, threshold, trace } from './reading.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAXW = LEVEL.full - CUP.base; // cm of water when full
@@ -62,6 +62,9 @@ export function createGraph({ t }) {
     const r0 = COIN.h;
     mk('path', { class: 'g-real', d: `M${X(r0)} ${Y(0)}L${X(MAXW)} ${Y(MAXW - r0)}`, 'stroke-width': 2 });
     mk('text', { class: 'g-real-t', x: X(2.2) + 6, y: Y(2.2 - r0) - 6, 'text-anchor': 'end', 'font-size': 12 }, t('g_real'));
+    // for comparison: looking straight down it would look d/n deep (dotted)
+    mk('path', { class: 'g-down', d: `M${X(r0)} ${Y(0)}L${X(MAXW)} ${Y((MAXW - r0) / N_WATER)}`, 'stroke-width': 1.6 });
+    mk('text', { class: 'g-down-t', x: X(MAXW) - 2, y: Y((MAXW - r0) / N_WATER) + 15, 'text-anchor': 'end', 'font-size': 12 }, t('g_down'));
     // as it looks
     const d = curve.map(([x, y], i) => `${i ? 'L' : 'M'}${X(x).toFixed(1)} ${Y(y).toFixed(1)}`).join('');
     mk('path', { class: 'g-seen', d, 'stroke-width': 3 });

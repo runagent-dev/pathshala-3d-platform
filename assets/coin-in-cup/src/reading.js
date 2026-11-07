@@ -22,8 +22,9 @@ export const W = Math.sqrt(CUP.ri * CUP.ri - ZP * ZP);
 export const RIM = { x: -W, y: CUP.top };
 /** The light starts from the middle of the coin's face. */
 export const COIN_TOP = { x: 0, y: CUP.base + COIN.h };
-/** The eye: placed, as the book asks, so that the empty cup's rim just hides the whole coin. */
-export const EYE = { x: -10.7, y: 11.5 };
+/** The eye: placed, as the book asks, so that the empty cup's rim just hides the whole coin. Moving it along its line
+ * of sight changes nothing the student sees happen: the light that just clears the rim is the same. */
+export const EYE = { x: -8.7, y: 9.8 };
 /** Water levels (y of the surface): an empty cup, and full (0.6 cm below the rim). */
 export const LEVEL = { empty: CUP.base, full: CUP.top - 0.6 };
 

@@ -65,6 +65,8 @@ export function createRays({ stage, host }) {
     showT2: true, // the arc of θ₂ (hidden in one question)
     back: 0, // the dashed line from S back to where the coin seems to be
     lit: 0, // the eye "sees": its iris lights up a little
+    edgeGeo: null, // trace() from the coin's far edge: drawn thin while only the edge reaches the eye
+    edge: 0,
   };
 
   function strokeLine(pts, width, color, edgeColor, alpha, dash) {
@@ -118,7 +120,7 @@ export function createRays({ stage, host }) {
 
   /** The light: along the path points (plane coordinates) as far as k of its whole length, a chevron on each part. */
   const seg = new Float32Array(16);
-  function light(points, k) {
+  function light(points, k, width = 3, head = 13, glow = true) {
     if (k <= 0 || !points || points.length < 2) return { x: 0, y: 0, done: false };
     let total = 0;
     for (let i = 0; i < points.length - 1; i++) total += Math.hypot(points[i + 1].x - points[i].x, points[i + 1].y - points[i].y);
@@ -152,11 +154,11 @@ export function createRays({ stage, host }) {
         heads.push([x0 + (sx - x0) * 0.5, y0 + (sy - y0) * 0.5, sx - x0, sy - y0]);
       }
     }
-    if (v.shine > 0) {
+    if (glow && v.shine > 0) {
       strokeLine(seg.subarray(0, n), 9, C.glow, null, 0.35 * v.shine);
     }
-    strokeLine(seg.subarray(0, n), 3, C.ray, C.edge, 1);
-    for (const [x, y, dx, dy] of heads) chevron(x, y, dx, dy, 13);
+    strokeLine(seg.subarray(0, n), width, C.ray, C.edge, 1);
+    for (const [x, y, dx, dy] of heads) chevron(x, y, dx, dy, head);
     if (k < 1) {
       ctx.beginPath();
       ctx.arc(lastX, lastY, 3.2 * unit, 0, Math.PI * 2);
@@ -208,34 +210,50 @@ export function createRays({ stage, host }) {
     strokeLine(pts, 2.6, color, null, alpha);
   }
 
-  /** The eye, drawn as in the book: an eye seen from the side, looking along (dx, dy) on the screen. */
+  /** The eye, drawn as in the book: an eye seen from the side (lids, the white, the iris and pupil at the front, lashes,
+   * a brow and a little skin round it; no face), looking along (dx, dy) on the screen, tipped at most 30° so it stays
+   * upright. When the light arrives it glows softly round the eye. */
   function eye(x, y, dx, dy, alpha) {
-    const s = unit * 1.05;
-    const a = Math.atan2(dy, dx);
+    const s = unit * (Math.min(w, h) < 450 ? 1.3 : 1.1);
+    const flip = dx < 0;
+    const tilt = Math.max(-0.52, Math.min(0.52, Math.atan2(dy, Math.abs(dx))));
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
-    // keep it upright: mirror instead of turning upside down
-    const flip = Math.cos(a) < 0;
-    ctx.rotate(flip ? a - Math.PI : a);
     ctx.scale(flip ? -s : s, s);
+    ctx.rotate(tilt);
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    // a soft patch of skin round it (no face)
-    const skin = ctx.createRadialGradient(0, -2, 6, 0, -2, 21);
-    skin.addColorStop(0, 'rgba(238,194,158,0.95)');
-    skin.addColorStop(0.75, 'rgba(226,172,134,0.8)');
-    skin.addColorStop(1, 'rgba(226,172,134,0)');
-    ctx.fillStyle = skin;
+    if (v.lit > 0) {
+      const glow = ctx.createRadialGradient(4, -2, 4, 4, -2, 26);
+      glow.addColorStop(0, 'rgba(255,227,110,0.85)');
+      glow.addColorStop(1, 'rgba(255,227,110,0)');
+      ctx.globalAlpha = alpha * v.lit;
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(4, -2, 26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = alpha;
+    }
+    // the skin of the lids and round the eye: a soft rounded patch, smaller than the eye's reach
+    ctx.fillStyle = '#e9b994';
     ctx.beginPath();
-    ctx.ellipse(0, -2, 21, 16, 0, 0, Math.PI * 2);
+    ctx.moveTo(-16, 4);
+    ctx.bezierCurveTo(-18, -14, -4, -24, 10, -21);
+    ctx.bezierCurveTo(18, -19, 20, -10, 17, -3);
+    ctx.bezierCurveTo(14, 9, 2, 13, -6, 12);
+    ctx.bezierCurveTo(-12, 11, -15, 8, -16, 4);
+    ctx.closePath();
     ctx.fill();
-    // the opening between the lids: a wedge, open toward the front (+x)
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+    // the opening between the lids: open toward the front (+x)
     const opening = () => {
       ctx.beginPath();
-      ctx.moveTo(-12, -1);
-      ctx.bezierCurveTo(-4, -13, 8, -12, 13, -3);
-      ctx.bezierCurveTo(9, 7, -2, 9, -12, -1);
+      ctx.moveTo(-11, -1);
+      ctx.bezierCurveTo(-4, -12, 8, -12, 14, -3);
+      ctx.bezierCurveTo(9, 6, -2, 8, -11, -1);
       ctx.closePath();
     };
     opening();
@@ -244,51 +262,52 @@ export function createRays({ stage, host }) {
     ctx.save();
     opening();
     ctx.clip();
-    // the iris and the pupil, at the front, seen from the side: narrow ellipses
-    ctx.fillStyle = '#6f4522';
+    ctx.fillStyle = '#7a4a24';
     ctx.beginPath();
-    ctx.ellipse(8.5, -2.5, 3.4, 7.6, 0, 0, Math.PI * 2);
+    ctx.ellipse(8.5, -3, 3.6, 6.4, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#0e0f12';
     ctx.beginPath();
-    ctx.ellipse(10, -2.5, 1.7, 4.2, 0, 0, Math.PI * 2);
+    ctx.ellipse(10, -3, 1.9, 3.8, 0, 0, Math.PI * 2);
     ctx.fill();
-    if (v.lit > 0) {
-      ctx.globalAlpha = alpha * v.lit;
-      ctx.fillStyle = '#ffe36e';
-      ctx.beginPath();
-      ctx.ellipse(10.5, -2.5, 2.4, 5.2, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = alpha;
-    }
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(9.2, -5, 1.1, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
-    // the lids: a heavy upper lid, a fine lower one, a crease, three lashes
+    // the lids: a heavy upper lid, a fine lower one, the crease, three lashes; the brow above
     opening();
     ctx.strokeStyle = '#4a2d1c';
-    ctx.lineWidth = 1.3;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-12, -1);
-    ctx.bezierCurveTo(-4, -13, 8, -12, 13, -3);
-    ctx.lineWidth = 2.8;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-9, -9);
-    ctx.bezierCurveTo(-2, -18, 7, -17, 12, -11);
     ctx.lineWidth = 1.2;
-    ctx.strokeStyle = 'rgba(74,45,28,0.7)';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-11, -1);
+    ctx.bezierCurveTo(-4, -12, 8, -12, 14, -3);
+    ctx.lineWidth = 2.6;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-8, -9);
+    ctx.bezierCurveTo(-2, -16, 7, -15, 12, -10);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(74,45,28,0.6)';
     ctx.stroke();
     ctx.beginPath();
     for (const [x0, y0, x1, y1] of [
-      [5, -10.5, 8, -15],
-      [9, -8.5, 13, -12],
-      [12, -5.5, 16.5, -7.5],
+      [6, -9.5, 8, -13.5],
+      [9.5, -7.5, 12.5, -10.5],
+      [12.5, -4.8, 16.5, -6.5],
     ]) {
       ctx.moveTo(x0, y0);
       ctx.lineTo(x1, y1);
     }
     ctx.strokeStyle = '#4a2d1c';
-    ctx.lineWidth = 1.2;
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-10, -18);
+    ctx.bezierCurveTo(-3, -24, 8, -24, 15, -17);
+    ctx.strokeStyle = '#5a3a24';
+    ctx.lineWidth = 2.6;
     ctx.stroke();
     ctx.restore();
     ctx.globalAlpha = 1;
@@ -319,6 +338,8 @@ export function createRays({ stage, host }) {
       }
       if (v.back > 0 && g.image) dashed(S, g.image, C.ray, 1, 2, v.back);
     }
+    // the thin light from the coin's far edge, when only that edge is seen
+    if (v.edge > 0 && v.edgeGeo?.visible) light(v.edgeGeo.points, Math.min(v.ray, v.edge), 1.8, 10, false);
     if (g) {
       const end = light(g.points, v.ray);
       if (end.done && !g.visible) stopMark(g.points.at(-1), g.points.at(-2));
@@ -373,6 +394,8 @@ export function createRays({ stage, host }) {
     const g = v.geo;
     if (v.sight > 0 && v.sightLine) along(v.sightLine.from, v.sightLine.to, v.sight);
     if (g && v.ray > 0) for (let i = 0; i < g.points.length - 1; i++) along(g.points[i], g.points[i + 1], 1);
+    const e = v.edgeGeo;
+    if (e?.visible && v.edge > 0) for (let i = 0; i < e.points.length - 1; i++) along(e.points[i], e.points[i + 1], 1);
     if (g?.surface && v.normal > 0) {
       const S = g.surface;
       along({ x: S.x, y: S.y + NORMAL_UP }, { x: S.x, y: S.y - NORMAL_DOWN }, v.normal);

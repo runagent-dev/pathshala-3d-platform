@@ -38,8 +38,11 @@ test('coin-in-cup: hidden when empty, seen and raised with water', async ({ page
 
   // less water: hidden again, and the panel says so
   const low = await fig.call('set', { water: 2 });
-  expect(low).toMatchObject({ step: 'image', water: 2, seen: false, apparent: null });
+  expect(low).toMatchObject({ step: 'image', water: 2, seen: false, edge: true, apparent: null });
+  expect(await frame.locator('.pvc-outcome').textContent()).toContain('ধার');
   expect(await frame.locator('.pvc-outcome').textContent()).toContain('পানি বাড়াও');
+  expect((await fig.call('set', { water: 1 })).edge).toBe(false);
+  await fig.call('set', { water: 2 });
   // the keys move the level
   await frame.locator('.pvc').press('ArrowUp');
   expect((await fig.call('get')).water).toBe(2.2);

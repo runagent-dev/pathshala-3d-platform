@@ -1,4 +1,4 @@
-# Notes: Coin in a cup (পানিতে পয়সা)
+# Notes: Coin in water (পানিতে মুদ্রা)
 
 Book: physics-9-10 › 9.1.1 › p246 (`order: 1`), the নিজে করো box with চিত্র ৯.০৩. Page image: `reference/page-246.png`.
 
@@ -21,8 +21,9 @@ rim becomes visible when water is poured in, and it looks raised, closer to the 
 এসেছে"; from pp 244–245 (the same topic): লম্ব (chapter 9's word for the normal, never অভিলম্ব), আপতন কোণ θ₁, প্রতিসরণ
 কোণ θ₂, প্রতিসরণের দ্বিতীয় সূত্র n₁ sin θ₁ = n₂ sin θ₂, ঘন মাধ্যম / হালকা মাধ্যম, "ঘন মাধ্যম থেকে হালকা মাধ্যমে যাবার সময়
 আলো লম্ব থেকে দূরে সরে যায়" (চিত্র ৯.০২); পানি 1.33 (table ৯.০১). The page writes উপরে. Added by the figure, not on
-the page: "প্রতিবিম্ব (অবাস্তব)" for the ghost coin (the chapter's shared word for a virtual image, common.md), "কাপটি
-কেটে ভেতর দেখানো", "আলো আটকে গেল", "দেখা যায়", the graph's words, "টেনে পানি বাড়াও-কমাও".
+the page: "মুদ্রা যেমন দেখায়" beside "আসল মুদ্রা" for the raised coin (the page's plain idea; the chapter's প্রতিবিম্ব /
+অবাস্তব are 9.4's words, so not used here), "ধার" for the coin's edge (কিনারা is the cup's rim), "কাপটি কেটে ভেতর
+দেখানো", "আলো আটকে গেল", "দেখা যায়", "ধার দেখা যায়", "তেরছাভাবে", the graph's words, "পানি বাড়াও-কমাও".
 
 ## How the figure works
 - **The scene (cm):** a wide glazed tea cup (inner radius 5.2, inner depth 6.0, terracotta glaze outside, cream inside,
@@ -42,7 +43,7 @@ the page: "প্রতিবিম্ব (অবাস্তব)" for the ghost
   depths, and on tall landscape panels a live graph. Then the test is offered. Every step can be replayed (▶) and the
   step words jump.
 - **The student changes the water level** from step ② on: the kit's drag handle on the water's cut face, a drag along
-  the water line, or ↑/↓ (0.2 cm). The panel follows the level, not the step: "আড়ালে" / "কিনারা উঁকি দিচ্ছে" /
+  the water line, or ↑/↓ (0.2 cm). The panel follows the level, not the step: "আড়ালে" / "ধার দেখা যায়" /
   "দেখা যায়", the angles, and "এই পানিতে চোখ মুদ্রা দেখে না" when there is too little water for the image.
 - **The light is exact** (`src/reading.js`): the point S where the light leaves the water is found by bisection so that
   n sin θ₁ = sin θ₂ and the bent ray goes exactly to the eye; the eye sees the coin if that ray passes over the rim.
@@ -52,11 +53,11 @@ the page: "প্রতিবিম্ব (অবাস্তব)" for the ghost
   from straight above). That is where the rays from one point of the coin meet, traced back, for two eyes side by side
   (across the plane of the rays), so it is what a person with two eyes sees; the book's drawing places the raised coin
   further along the line (a sketch). At the full level: 5.2 cm real, about 3.0 cm apparent (the eye looks in at about
-  51° from the normal, so the coin rises more than the d/n = 3.9 cm of looking straight down).
+  52° from the normal, so the coin rises more than the d/n = 3.9 cm of looking straight down).
 - **The eye is placed honestly**: with n = 1.33 a coin "just hidden" by the rim shows when water is poured, but not one
   hidden far behind it. So the eye's line of sight lands 0.8 cm beyond the coin's far edge (the book's sketch lets it
   reach the far wall, which with real water would never show the coin). The light drawn is from the middle of the coin;
-  its far edge peeks out first, at about 1.4 cm of water ("কিনারা উঁকি দিচ্ছে"), the middle at 3.9 cm.
+  its far edge peeks out first, at about 1.4 cm of water ("ধার দেখা যায়"), the middle at 3.9 cm.
 - **Drawing:** the rays, the normal, the arcs, the eye and the sight line are painted on a 2D canvas over the view from
   the exact points projected through the camera, in the chapter's style (amber with a dark edge and chevrons, the
   normal dashed slate, θ₁ blue, θ₂ green, the extension dashed amber), as in `refraction-of-light` and
@@ -71,7 +72,7 @@ the page: "প্রতিবিম্ব (অবাস্তব)" for the ghost
 Calm deep-blue backdrop (`BG ['#0b2a5b', '#123d7a']`) and a finite sand table top with a darker edge band, nothing
 else. The cup is cut through its axis; the cut face is the cup's pale unglazed body with a thin glaze line. The water
 is a translucent surface (scaled to the level, no new geometry) and its cut face (14 rows of vertices moved in place).
-Short labels only on the 3D (চোখ, মুদ্রা / আসল মুদ্রা, ?, আলো আটকে গেল, দেখা যায়, পানি, লম্ব, θ₁, θ₂, প্রতিবিম্ব (অবাস্তব)),
+Short labels only on the 3D (চোখ, মুদ্রা / আসল মুদ্রা, ?, আলো আটকে গেল, দেখা যায় / ধার দেখা যায়, পানি, লম্ব, θ₁, θ₂, মুদ্রা যেমন দেখায়),
 placed by the kit's annotations clear of the rays and of each other.
 
 ## Performance (0.1.0, headless Chromium, 844×390, shadows on)
@@ -81,9 +82,31 @@ once damping settles). JS per animated frame during the pour at 6× CPU throttli
 3.0 ms (300 frames). Ready in about 3.7 s on the software renderer. Textures: a 256² coin face and a 4×256 backdrop.
 Hidden parts of later steps (jug, stream, water, ghost) are warmed with `stage.warmUp`.
 
+## Round 2 (after the independent review)
+- **The 3D keeps one size in every state** at all six sizes (first screen, steps, the ধার state, every test question and
+  the result): the calm card takes exactly the room of the steps' lead-in, result and rule (measured from a hidden
+  stand-in, `fitCalm`), and the how-to row keeps its room, unseen, during the test. Measured: 390×700 315 px, 390×520
+  202 px, 844×390 390, 640×400 400, 800×500 500, 1280×800 800 in all 16 states; no panel or page scroll.
+- **The eye is closer**: (−8.7, 9.8), 65 % of the old distance along the same line of sight. Nothing the student sees
+  changes (the light that just clears the rim is the same ray), the levels stay 1.36 cm (far edge) and 3.92 cm (middle);
+  the camera box is tighter, so the cup is bigger, most of all at 390×520 (slimmer margins there too).
+- **The coin's far edge (ধার)**: from 1.36 cm of water its light reaches the eye before the middle's; it is drawn as a
+  second, thin ray, the eye says "ধার দেখা যায়", and the panel "মুদ্রার দূরের ধার দেখা যায়, মাঝখান এখনো আড়ালে".
+  The main ray is the one from the coin's middle; the eye's place sets these "just hidden" levels (a design choice).
+  At full water the coin's near edge still does not clear the rim, so the panel says "মুদ্রা দেখা যায়", not "পুরো".
+- **Labels off the light**: "দেখা যায়" left of the eye; θ₁ left of the normal under the surface, θ₂ right of it above
+  (the light runs the other way in each); the handle's word below it; labels of what is hidden go when the view is
+  turned behind or to the side of the cup (the drawing fades there).
+- Step ④ says "প্রায় ৩ cm" and why ("চোখ তেরছাভাবে দেখছে বলে এতটা উপরে"); the wide graph adds a dotted line for
+  looking straight down (d/n). The graph stays on tall landscape panels only: at 800×500 only about 100 px are free.
+- The eye icon: a smaller skin patch, a brow, the iris and pupil at the front, 1.3× on phones, a soft glow (not a yellow
+  pupil) when the light arrives; tipped at most 30° so it stays upright.
+- Test: Q3 no longer gives θ₁ in words: it is read off the picture (35°); Q1's wrong answers are also "how light goes"
+  ideas (the light bends out of the cup; the eye's light can't reach the coin; no light comes from the coin).
+- Title "Coin in water (পানিতে মুদ্রা)" (the book says মুদ্রা); the step word for ④ is "দেখায়"; the intro ends with
+  the নিজে করো: "পরে তুমিও ঘরে একটি কাপ আর মুদ্রা নিয়ে করে দেখো।"
+
 ## Open questions
 - The book's sketch has the line of sight meet the far wall; with water (n = 1.33) such a coin would never show. The
   figure places the eye where the rim just hides the coin (see above). Fine with the book team?
-- The ghost coin is labelled "প্রতিবিম্ব (অবাস্তব)", the chapter's shared word; this page itself only says the coin
-  "seems to have risen".
 - Every Bangla line needs a person's check against the book.

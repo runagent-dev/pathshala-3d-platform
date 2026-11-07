@@ -2,7 +2,7 @@
   "$schema": "../../schemas/asset.schema.json",
   "schemaVersion": 2,
   "id": "coin-in-cup",
-  "title": "Coin in a cup (পানিতে পয়সা)",
+  "title": "Coin in water (পানিতে মুদ্রা)",
   "type": "interactive",
   "entry": "index.html",
   "version": "0.1.0",
@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "cm",
-  "description": "The coin in the cup (page 246, topic 9.1.1, the নিজে করো with চিত্র ৯.০৩). A wide glazed tea cup on a plain sand table in a calm deep-blue setting, a coin on its bottom, and an eye drawn as in the book, placed so the rim just hides the coin. Four steps, one tap each: (1) the cup is cut open: the eye's line of sight passes the rim and lands beyond the coin, and the coin's light toward the eye is stopped by the wall; (2) a steel jug pours water: the light from the coin, traced exactly with n = 1.33, bends at the surface and, once there is enough water, clears the rim and reaches the eye; (3) the normal (লম্ব) at that point with θ₁ in the water and θ₂ in the air, n₁ sin θ₁ = n₂ sin θ₂ in numbers: away from the normal; (4) the eye looks straight back along the bent light, so the coin seems raised (a translucent ghost, apparent depth with both eyes). From step 2 the water level can be dragged. A calm intro card, then per step a lead-in, the result and the book's words; a four-question test. Phone-first, Bangla and English.",
+  "description": "The coin in the cup (page 246, topic 9.1.1, the নিজে করো with চিত্র ৯.০৩). A wide glazed tea cup on a plain sand table in a calm deep-blue setting, a coin on its bottom, and an eye drawn as in the book, placed so the rim just hides the coin. Four steps, one tap each: (1) the cup is cut open: the eye's line of sight passes the rim and lands beyond the coin, and the coin's light toward the eye is stopped by the wall; (2) a steel jug pours water: the light from the coin, traced exactly with n = 1.33, bends at the surface and, once there is enough water, clears the rim and reaches the eye (first from the coin's far edge, drawn thin, then from its middle); (3) the normal (লম্ব) at that point with θ₁ in the water and θ₂ in the air, n₁ sin θ₁ = n₂ sin θ₂ in numbers: away from the normal; (4) the eye looks straight back along the bent light, so the coin seems raised (a translucent copy labelled মুদ্রা যেমন দেখায়, beside আসল মুদ্রা; about 3 cm for 5.2 cm at this slant). From step 2 the water level can be dragged. A calm intro card, then per step a lead-in, the result and the book's words; a four-question test. Phone-first, Bangla and English.",
   "tags": ["refraction", "light", "apparent depth", "coin in water", "bangla"],
   "params": [
     {

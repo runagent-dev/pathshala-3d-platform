@@ -18,7 +18,7 @@ export const STRINGS = {
     rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
     rotate_go: 'ঘুরিয়ে দেখো',
     rotate_stay: 'এভাবেই দেখো',
-    title: 'পানিতে পয়সা: প্রতিসরণে লুকানো মুদ্রা দেখা যায়',
+    title: 'পানিতে মুদ্রা: প্রতিসরণে লুকানো মুদ্রা দেখা যায়',
     view: 'দেখার ধরন',
     view_front_short: 'সামনে',
     view_rotate: 'ঘুরিয়ে দেখো',
@@ -29,6 +29,7 @@ export const STRINGS = {
     aria_stage: 'টেবিলে একটি চওড়া কাপ, তার তলায় একটি মুদ্রা; বাঁ পাশে উপরে একটি চোখ কাপের কিনারার উপর দিয়ে তাকিয়ে আছে',
     u_cm: 'cm',
     note_cut: 'কাপটি কেটে ভেতর দেখানো',
+    note_cut_short: 'কেটে দেখানো',
 
     howto_label: 'কীভাবে নাড়াবে',
     howto_orbit: 'ঘুরিয়ে দেখো',
@@ -43,20 +44,21 @@ export const STRINGS = {
     ex_hidden: 'আড়ালে',
     ex_pour: 'পানিতে',
     ex_angles: 'লম্ব',
-    ex_image: 'প্রতিবিম্ব',
+    ex_image: 'দেখায়',
 
     // the action and the quiet buttons
     act_look: 'কাপটি কেটে ভেতরে দেখো',
     act_pour: 'কাপে পানি ঢালো',
     act_normal: 'লম্ব আঁকো',
-    act_image: 'মুদ্রা কোথায় দেখায়?',
+    act_image: 'কোথায় দেখায়?',
     act_quiz: 'পরীক্ষা দাও',
     act_wait: 'দেখো…',
     act_home: 'আবার শুরু',
     act_replay: 'আবার দেখো',
 
     // the first screen: a few calm words
-    intro: 'টেবিলে একটি কাপ, তার তলায় একটি মুদ্রা। পাশে একটি চোখ, কিন্তু কাপের কিনারার আড়ালে মুদ্রাটি সে দেখতে পায় না। মাথা না নাড়িয়ে মুদ্রাটি কীভাবে দেখা সম্ভব? চলো দেখি।',
+    intro:
+      'টেবিলে একটি কাপ, তার তলায় একটি মুদ্রা। কাপের কিনারার আড়ালে চোখ মুদ্রাটি দেখতে পায় না। মাথা না নাড়িয়ে কীভাবে দেখা সম্ভব? চলো দেখি। পরে তুমিও ঘরে একটি কাপ আর মুদ্রা নিয়ে করে দেখো।',
     intro_short: 'কাপের তলায় মুদ্রা, কিন্তু চোখ তা দেখে না। মাথা না নাড়িয়ে কীভাবে দেখবে?',
 
     // the line before the action: what the next tap will show
@@ -69,12 +71,13 @@ export const STRINGS = {
     out_hidden: 'চোখ কিনারার পাশ দিয়ে শুধু মুদ্রার ওপাশের তলা দেখে: মুদ্রা <b>দেখা যায় না</b>।',
     out_empty: 'কাপে পানি নেই: মুদ্রা <b>আড়ালে</b>।',
     out_none: '<b>{d}&nbsp;{u_cm}</b> পানি, তবু মুদ্রা এখনো <b>আড়ালে</b>।',
-    out_edge: '<b>{d}&nbsp;{u_cm}</b> পানিতে মুদ্রার <b>কিনারা</b> উঁকি দিচ্ছে।',
-    out_seen: '<b>{d}&nbsp;{u_cm}</b> পানি: মুদ্রা এখন <b>দেখা যায়</b>!',
+    out_edge: '<b>{d}&nbsp;{u_cm}</b> পানিতে মুদ্রার দূরের <b>ধার</b> দেখা যায়, মাঝখান এখনো আড়ালে।',
+    out_seen: '<b>{d}&nbsp;{u_cm}</b> পানি: মুদ্রা <b>দেখা যায়</b>!',
     out_angles: 'আপতন কোণ <b class="cc-t1">θ<sub>1</sub> = {a}°</b>, প্রতিসরণ কোণ <b class="cc-t2">θ<sub>2</sub> = {b}°</b>',
     out_dry: 'কাপে পানি নেই: আলো সোজা চলে, বাঁকে না।',
-    out_image: 'মুদ্রা আসলে <b>{d}&nbsp;{u_cm}</b> গভীরে, কিন্তু দেখায় <b class="cc-img">{a}&nbsp;{u_cm}</b> গভীরে।',
+    out_image: 'মুদ্রা আসলে <b>{d}&nbsp;{u_cm}</b> গভীরে, দেখায় প্রায় <b class="cc-img">{a}&nbsp;{u_cm}</b> গভীরে। চোখ তেরছাভাবে দেখছে বলে এতটা উপরে।',
     out_image_none: 'এই পানিতে চোখ মুদ্রা দেখে না। পানি বাড়াও।',
+    out_image_edge: 'এই পানিতে চোখ শুধু মুদ্রার ধার দেখে। পানি বাড়াও।',
 
     // the rule: the book's words, the book's term in bold
     rule_hidden: 'আলো সোজা পথে চলে। মুদ্রা থেকে চোখের দিকে আসা আলো কাপের দেয়ালে <b>আটকে যায়</b>।',
@@ -90,11 +93,12 @@ export const STRINGS = {
     lbl_q: '?',
     lbl_blocked: 'আলো আটকে গেল',
     lbl_seen: 'দেখা যায়',
+    lbl_edge_seen: 'ধার দেখা যায়',
     lbl_water: 'পানি',
     lbl_normal: 'লম্ব',
     lbl_t1: 'θ<sub>1</sub> = {a}°',
     lbl_t2: 'θ<sub>2</sub> = {a}°',
-    lbl_image: 'প্রতিবিম্ব (অবাস্তব)',
+    lbl_image: 'মুদ্রা যেমন দেখায়',
 
     hint_wait: 'একটু দাঁড়াও, দেখো কী হয়।',
 
@@ -105,6 +109,7 @@ export const STRINGS = {
     g_real: 'আসল',
     g_seen: 'যেমন দেখায়',
     g_hidden: 'দেখা যায় না',
+    g_down: 'ঠিক উপর থেকে দেখলে',
 
     // the test
     q_count: 'প্রশ্ন {i} / {n}',
@@ -124,12 +129,12 @@ export const STRINGS = {
     q_hidden: 'খালি কাপে চোখ মুদ্রাটি দেখতে পায় না কেন?',
     c_hd_right: 'আলো সোজা চলে, কিনারা আটকায়',
     c_hd_dark: 'মুদ্রা থেকে কোনো আলো আসে না',
-    c_hd_far: 'মুদ্রা চোখ থেকে অনেক দূরে',
-    c_hd_inside: 'কাপের ভেতরে আলো ঢোকে না',
+    c_hd_bend: 'আলো বেঁকে কাপের বাইরে যায়',
+    c_hd_eye: 'চোখের আলো মুদ্রায় পৌঁছায় না',
     why_hidden: '<b>আলো সোজা পথে চলে</b>; মুদ্রার আলো কাপের দেয়ালে আটকে যায়।',
     mis_hd_dark: 'মুদ্রায় আলো পড়ে ফিরে আসে বলেই আমরা মুদ্রা দেখি।',
-    mis_hd_far: 'চোখ কাছেই; মাঝে আছে কাপের দেয়াল।',
-    mis_hd_inside: 'ভেতরে আলো আছে: তুমি তো মুদ্রাটি দেখছ।',
+    mis_hd_bend: 'বাতাসে আলো সোজা চলে; বাঁকে এক মাধ্যম থেকে অন্য মাধ্যমে যাবার সময়।',
+    mis_hd_eye: 'চোখ আলো ছোড়ে না; মুদ্রা থেকে আলো এসে চোখে পড়ে।',
 
     q_bend: 'পানি থেকে বাতাসে বেরোনোর সময় আলো কোন দিকে বাঁকে?',
     c_bd_right: 'লম্ব থেকে দূরে সরে যায়',
@@ -141,7 +146,7 @@ export const STRINGS = {
     mis_bd_none: 'না বাঁকলে আলো কিনারায় আটকে যেত।',
     mis_bd_back: 'খানিকটা আলো ফিরে আসে বটে, কিন্তু বেশির ভাগ বেরিয়ে চোখে আসে।',
 
-    q_angle: 'পানিতে আপতন কোণ {a}°। পানির প্রতিসরণাঙ্ক {n}, বাতাসের {one}। প্রতিসরণ কোণ কত?',
+    q_angle: 'ছবিতে পানিতে আপতন কোণ মাপা আছে। পানির প্রতিসরণাঙ্ক {n}, বাতাসের {one}। প্রতিসরণ কোণ কত?',
     why_angle: '<b>{r}°</b>। {n} × sin {a}° = sin θ<sub>2</sub> = {s}।',
     mis_an_divided: 'n উল্টো জায়গায় বসেছে: তাহলে আলো লম্বের দিকে বাঁকত।',
     mis_an_same: 'কোণ না বদলালে আলো বাঁকত না।',
@@ -164,7 +169,7 @@ export const STRINGS = {
     rotate_body: 'Sideways the picture is bigger, with the text beside it.',
     rotate_go: 'Turn it',
     rotate_stay: 'Keep it upright',
-    title: 'A coin in a cup: refraction shows a hidden coin',
+    title: 'A coin in water: refraction shows a hidden coin',
     view: 'View',
     view_front_short: 'Front',
     view_rotate: 'Turn the view',
@@ -175,6 +180,7 @@ export const STRINGS = {
     aria_stage: 'A wide cup on a table with a coin on its bottom; an eye at the upper left looks over the rim',
     u_cm: 'cm',
     note_cut: 'The cup cut open to show inside',
+    note_cut_short: 'Cut open',
 
     howto_label: 'How to use',
     howto_orbit: 'Turn the view',
@@ -188,19 +194,19 @@ export const STRINGS = {
     ex_hidden: 'Hidden',
     ex_pour: 'Water',
     ex_angles: 'Normal',
-    ex_image: 'Image',
+    ex_image: 'Looks',
 
     act_look: 'Cut the cup and look inside',
     act_pour: 'Pour water into the cup',
     act_normal: 'Draw the normal',
-    act_image: 'Where does the coin appear?',
+    act_image: 'Where does it look?',
     act_quiz: 'Take the test',
     act_wait: 'Watch…',
     act_home: 'Start again',
     act_replay: 'Watch again',
 
     intro:
-      'A cup on a table, a coin on its bottom. Beside it an eye, but the cup’s rim hides the coin from it. How can it see the coin without moving? Let’s find out.',
+      'A cup on a table, a coin on its bottom. The cup’s rim hides the coin from the eye. How can it be seen without moving? Let’s find out, then try it at home with a cup and a coin.',
     intro_short: 'A coin in the cup, but the eye can’t see it. How, without moving?',
 
     lead_hidden: 'Now let’s pour water into the cup. The eye won’t move at all.',
@@ -211,12 +217,14 @@ export const STRINGS = {
     out_hidden: 'Past the rim the eye sees only the bottom beyond the coin: the coin is <b>not seen</b>.',
     out_empty: 'No water in the cup: the coin is <b>hidden</b>.',
     out_none: '<b>{d}&nbsp;{u_cm}</b> of water, but the coin is still <b>hidden</b>.',
-    out_edge: 'With <b>{d}&nbsp;{u_cm}</b> of water the coin’s <b>edge</b> peeks out.',
-    out_seen: '<b>{d}&nbsp;{u_cm}</b> of water: now the coin <b>is seen</b>!',
+    out_edge: 'With <b>{d}&nbsp;{u_cm}</b> of water the coin’s far <b>edge</b> is seen; its middle is still hidden.',
+    out_seen: '<b>{d}&nbsp;{u_cm}</b> of water: the coin <b>is seen</b>!',
     out_angles: 'Angle of incidence <b class="cc-t1">θ<sub>1</sub> = {a}°</b>, angle of refraction <b class="cc-t2">θ<sub>2</sub> = {b}°</b>',
     out_dry: 'No water in the cup: the light goes straight, it doesn’t bend.',
-    out_image: 'The coin is really <b>{d}&nbsp;{u_cm}</b> deep, but looks <b class="cc-img">{a}&nbsp;{u_cm}</b> deep.',
+    out_image:
+      'The coin is really <b>{d}&nbsp;{u_cm}</b> deep but looks about <b class="cc-img">{a}&nbsp;{u_cm}</b> deep: the eye looks in at a slant, so it rises this much.',
     out_image_none: 'With this much water the eye can’t see the coin. Add water.',
+    out_image_edge: 'With this much water the eye sees only the coin’s edge. Add water.',
 
     rule_hidden: 'Light travels in straight lines. The light from the coin toward the eye is <b>stopped</b> by the cup’s wall.',
     rule_pour: 'Pour water into the cup and the coin becomes visible. Because of <b>refraction</b> the light bends and reaches your eye.',
@@ -230,11 +238,12 @@ export const STRINGS = {
     lbl_q: '?',
     lbl_blocked: 'Light stopped',
     lbl_seen: 'Seen',
+    lbl_edge_seen: 'Edge seen',
     lbl_water: 'Water',
     lbl_normal: 'Normal',
     lbl_t1: 'θ<sub>1</sub> = {a}°',
     lbl_t2: 'θ<sub>2</sub> = {a}°',
-    lbl_image: 'Image (virtual)',
+    lbl_image: 'The coin as it looks',
 
     hint_wait: 'Wait a moment and watch.',
 
@@ -244,6 +253,7 @@ export const STRINGS = {
     g_real: 'Real',
     g_seen: 'As it looks',
     g_hidden: 'Not seen',
+    g_down: 'Seen from straight above',
 
     q_count: 'Question {i} / {n}',
     q_score: 'Right: {right}',
@@ -262,12 +272,12 @@ export const STRINGS = {
     q_hidden: 'In the empty cup, why can’t the eye see the coin?',
     c_hd_right: 'Light goes straight; the rim blocks it',
     c_hd_dark: 'No light comes from the coin',
-    c_hd_far: 'The coin is too far from the eye',
-    c_hd_inside: 'No light gets inside the cup',
+    c_hd_bend: 'The light bends out of the cup',
+    c_hd_eye: 'The eye’s light can’t reach the coin',
     why_hidden: '<b>Light travels in straight lines</b>; the coin’s light is stopped by the cup’s wall.',
     mis_hd_dark: 'We see the coin because light falls on it and comes back.',
-    mis_hd_far: 'The eye is near; the cup’s wall is in between.',
-    mis_hd_inside: 'There is light inside: you can see the coin yourself.',
+    mis_hd_bend: 'In air light goes straight; it bends going from one medium into another.',
+    mis_hd_eye: 'The eye sends out no light; light from the coin comes into the eye.',
 
     q_bend: 'Leaving water for air, which way does the light bend?',
     c_bd_right: 'Away from the normal',
@@ -279,7 +289,7 @@ export const STRINGS = {
     mis_bd_none: 'Without bending, the light would be stopped at the rim.',
     mis_bd_back: 'A little light does turn back, but most of it leaves and reaches the eye.',
 
-    q_angle: 'The angle of incidence in water is {a}°. Water’s refractive index is {n}, air’s {one}. What is the angle of refraction?',
+    q_angle: 'The picture shows the angle of incidence in the water. Water’s refractive index is {n}, air’s {one}. What is the angle of refraction?',
     why_angle: '<b>{r}°</b>. {n} × sin {a}° = sin θ<sub>2</sub> = {s}.',
     mis_an_divided: 'n is on the wrong side: then the light would bend toward the normal.',
     mis_an_same: 'If the angle didn’t change, the light wouldn’t bend.',
