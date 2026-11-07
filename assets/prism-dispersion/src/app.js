@@ -1,12 +1,13 @@
 // The prism (book page 254, topic 9.3.2, চিত্র ৯.১২), student view. A 60° glass prism lies on its base on a small prism
-// table, apex up as the book draws it; a ray box on an arc rail shines on its first face, a red glass in front of its lens;
+// table, apex up as the book draws it; a ray box on an arc rail shines on its first face, a red filter in front of its lens;
 // a white screen stands beyond. Five steps, one tap each, slow: ① red light goes in and bends toward the normal (লম্ব);
 // ② it comes out and bends away from the normal; ③ the original direction (আলোর মূল দিক) beside the refracted direction
-// (প্রতিসরিত আলোর দিক): turned toward the base (ভূমি), and the student may turn the lamp (it always is); ④ the red glass
+// (প্রতিসরিত আলোর দিক): turned toward the base (ভূমি), and the student may turn the lamp (it always is); ④ the red filter
 // comes off: white light opens into its colours on the screen, violet bent most, red least; ⑤ the refractive index for
 // each colour, on the graph in the panel. A calm card on the first screen, one lead-in line, the result and the rule per
 // step, the kit's how-to row, five test questions on the picture.
 import * as THREE from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
 import { createAnnotations } from '@shared/student/annotations.js';
@@ -245,6 +246,7 @@ export function createApp(root, options = {}) {
     ref: new THREE.Color(C.refraction),
     turn: new THREE.Color(C.turn),
     trial: new THREE.Color('#ffd43b'),
+    mark: new THREE.Color('#1d2733'),
     pick: new THREE.Color(),
   };
   const colourOf = Object.fromEntries(COLOURS.map((c) => [c.id, new THREE.Color(cssColour(c.nm))]));
@@ -275,7 +277,7 @@ export function createApp(root, options = {}) {
   }
   const angleOf = (d) => Math.atan2(d.y, d.x);
   const lerp = (a, b, k) => a + (b - a) * k;
-  /** The start of the drawn beam: just past the red glass. */
+  /** The start of the drawn beam: just past the red filter. */
   const beamStart = { x: 0, y: 0 };
   const P1 = { x: 0, y: 0 };
   const P2 = { x: 0, y: 0 };
@@ -291,20 +293,20 @@ export function createApp(root, options = {}) {
     const v = s.v;
     const tr = geo.red;
     if (lampI !== s.i) {
-      // only when the lamp turns: its pose and where its beam starts (just past the red glass)
+      // only when the lamp turns: its pose and where its beam starts (just past the red filter)
       lampI = s.i;
       app.setLamp(s.i);
-      const ls = lampAt(s.i, ARC_R - 0.45);
+      const ls = lampAt(s.i, ARC_R - 1.75);
       beamStart.x = ls.x;
       beamStart.y = ls.y;
     }
     const head = 12 * perPixel(); // an arrowhead about 12 px long
     const whiteOn = v.white >= 0.5;
 
-    // the lamp glows; the red glass slides up and away
+    // the lamp glows; the red filter slides up and away
     app.lensMat.emissive.set(whiteOn ? '#fff6e0' : '#ff3030');
     app.lensMat.emissiveIntensity = v.on * (whiteOn ? 1.6 : 1.3);
-    app.filter.position.set(0.2, 3.4 * smooth(0, 0.7, v.filter), 0);
+    app.filter.position.set(0.85, 3.6 * smooth(0, 0.7, v.filter), 0);
     app.filter.visible = v.filter < 0.999;
     app.filterMat.opacity = 0.82 * (1 - smooth(0.6, 1, v.filter));
 
@@ -374,7 +376,7 @@ export function createApp(root, options = {}) {
       rows[k].r = c[0];
       rows[k].g = c[1];
       rows[k].b = c[2];
-      rows[k].a = 1;
+      rows[k].a = c[3];
     });
     const patchA = whiteOn ? v.patch * (s.quiz?.kind === 'red' && !s.quiz.shown ? 0 : 1) : 0;
     light.setPatch(light.patch, rows, 0.25, patchA);
@@ -405,10 +407,10 @@ export function createApp(root, options = {}) {
     if (v.arcs2 > 0 && tr.ok) {
       const aNi = Math.atan2(-f2.ny, -f2.nx);
       const aR = Math.atan2(-tr.inside.y, -tr.inside.x);
-      light.arcs.arc(tr.exit.x, tr.exit.y, 2.0, aNi, lerp(aNi, aNi + wrap(aR - aNi), v.arcs2), col.ref, 14);
+      light.arcs.arc(tr.exit.x, tr.exit.y, 2.0, aNi, lerp(aNi, aNi + wrap(aR - aNi), v.arcs2), col.inc, 14); // at the second face the angle in the glass is the one of incidence (blue)
       const aN = Math.atan2(f2.ny, f2.nx);
       const aE = angleOf(tr.out);
-      light.arcs.arc(tr.exit.x, tr.exit.y, 2.3, aN, lerp(aN, aN + wrap(aE - aN), v.arcs2), col.inc, 16);
+      light.arcs.arc(tr.exit.x, tr.exit.y, 2.3, aN, lerp(aN, aN + wrap(aE - aN), v.arcs2), col.ref, 16); // and the one in the air is the one of refraction (green)
     }
     if (v.dev > 0 && tr.ok) {
       if (turnI !== s.i) {
@@ -437,13 +439,27 @@ export function createApp(root, options = {}) {
     light.trial.begin();
     if (s.quiz?.marks) {
       for (const m of s.quiz.marks) {
-        if (m.kind === 'path') light.trial.dashed(m.from.x, m.from.y, m.from.x + m.d.x * m.len, m.from.y + m.d.y * m.len, col.trial, 0.45, 0.3);
-        else light.trial.add(m.at.x - 1.1, m.at.y, m.at.x - 0.05, m.at.y, col.trial);
+        if (m.kind === 'path' && !m.hidden)
+          light.trial.dashed(m.from.x, m.from.y, m.from.x + m.d.x * m.len, m.from.y + m.d.y * m.len, col.trial, 0.45, 0.3);
       }
     }
     light.trial.end();
+    light.marks.begin();
+    if (s.quiz?.marks)
+      for (const m of s.quiz.marks) {
+        if (m.kind !== 'mark') continue;
+        // a bar across the light's width on the card, a hair in front of it
+        const w = light.patchHalf + 0.15;
+        const cx = SCREEN.at.x + CARD_N.x * 0.06;
+        const cz = CARD_N.z * 0.06;
+        light.marks.add3(cx - CARD_T.x * w, m.at.y, cz - CARD_T.z * w, cx + CARD_T.x * w, m.at.y, cz + CARD_T.z * w, col.mark);
+      }
+    light.marks.end();
     light.headsEnd();
   }
+  // the screen's face: its normal toward the prism, and its level direction across it (in the plane of the card)
+  const CARD_N = { x: -Math.cos(THREE.MathUtils.degToRad(SCREEN.yaw)), z: Math.sin(THREE.MathUtils.degToRad(SCREEN.yaw)) };
+  const CARD_T = { x: CARD_N.z, z: -CARD_N.x };
   const wrap = (d) => {
     let x = d;
     while (x > Math.PI) x -= 2 * Math.PI;
@@ -517,8 +533,8 @@ export function createApp(root, options = {}) {
   const BELOW = [spot(0, 20), spot(18, 18), spot(-18, 18), ...AROUND];
   const ABOVE = [spot(0, -20), spot(18, -18), spot(-18, -18), ...AROUND];
   const NEAR = [spot(0, 0), spot(0, -9), spot(0, 9), spot(-10, 0), spot(10, 0), spot(-10, -9), spot(10, 9), spot(10, -9), spot(-10, 9), ...AROUND];
-  const onCard = (y) => {
-    const v = new THREE.Vector3(0, y, 0.05);
+  const onCard = (y, x = 0) => {
+    const v = new THREE.Vector3(x, y, 0.05);
     return app.screen.localToWorld(v);
   };
   const tr = () => geo.red;
@@ -543,7 +559,7 @@ export function createApp(root, options = {}) {
     filter: {
       kind: 'tag',
       text: () => t('lbl_filter'),
-      point: () => app.lamp.localToWorld(V(0.2, -0.9, 1.25)),
+      point: () => app.lamp.localToWorld(V(0.85, -0.9, 1.1)),
       spots: BELOW,
       show: () => explore() && (s.step === 'intro' || s.step === 'enter') && s.v.filter < 0.3 && !s.busy,
     },
@@ -595,7 +611,7 @@ export function createApp(root, options = {}) {
     },
     r2: {
       kind: 'num',
-      cls: 'pd-ref',
+      cls: 'pd-inc',
       text: () => t('lbl_deg', { a: round0(tr().r2) }),
       point: () => mid(neg(tr().inside), nrm(FACES.second, -1), 2.9, tr().exit),
       spots: NEAR,
@@ -603,7 +619,7 @@ export function createApp(root, options = {}) {
     },
     e: {
       kind: 'num',
-      cls: 'pd-inc',
+      cls: 'pd-ref',
       text: () => t('lbl_deg', { a: round0(tr().e) }),
       point: () => mid(tr().out, nrm(FACES.second), 3.6, tr().exit),
       spots: NEAR,
@@ -621,15 +637,15 @@ export function createApp(root, options = {}) {
       kind: 'num',
       cls: 'pd-out',
       text: () => t('lbl_out'),
-      point: () => V(lerp(tr().exit.x, tr().hit.x, 0.72), lerp(tr().exit.y, tr().hit.y, 0.72), 0),
-      spots: [spot(0, 22), spot(12, 28), spot(-12, 28), spot(0, 36), spot(20, 36), ...BELOW],
+      point: () => V(lerp(tr().exit.x, tr().hit.x, 0.55), lerp(tr().exit.y, tr().hit.y, 0.55), 0),
+      spots: [spot(0, 22), spot(12, 26), spot(-12, 28), spot(0, 36), spot(20, 34), spot(-24, 36), ...BELOW],
       show: () => explore() && s.step === 'base' && !s.busy,
     },
     base: {
       kind: 'tag',
       text: () => t('lbl_base'),
       point: () => V(0, PRISM.baseY + 0.05, PRISM.length / 2),
-      spots: [spot(-26, 22), spot(0, 24), spot(-40, 10), spot(22, 22), ...BELOW],
+      spots: [spot(-34, 18), spot(-26, 26), spot(-48, 8), spot(0, 26), ...BELOW],
       show: () => explore() && s.step === 'base' && !s.busy,
     },
     dev: {
@@ -646,11 +662,13 @@ export function createApp(root, options = {}) {
       show: () => s.v.dev > 0.95 && !s.busy && tr().ok,
     },
     white: {
-      kind: 'num',
+      kind: 'tag',
       cls: 'pd-white',
       text: () => t('lbl_white'),
-      point: () => V(lerp(beamStart.x, tr().entry.x, 0.45), lerp(beamStart.y, tr().entry.y, 0.45), 0),
-      spots: [spot(0, -20), spot(-14, -20), spot(0, 20), ...ABOVE],
+      point: () => V(lerp(beamStart.x, tr().entry.x, 0.55), lerp(beamStart.y, tr().entry.y, 0.55), 0),
+      // well above the rising beam, on a leader: next to it there is the prism
+      spots: [spot(10, -48), spot(0, -44), spot(30, -52), spot(-10, -46), spot(0, 30)],
+      optional: true,
       show: () => explore() && s.v.white > 0.5 && s.v.fanIn > 0.5 && !s.busy,
     },
     violet: {
@@ -699,9 +717,9 @@ export function createApp(root, options = {}) {
     const marks = s.quiz?.marks ?? [];
     for (let k = 0; k < 4; k++) {
       const id = `q${k}`;
-      const m = marks[k];
+      const m = marks[k] && !marks[k].hidden ? marks[k] : null;
       if (m && !anno.has(id)) {
-        anno.add(id, { text: m.letter, point: m.point, kind: 'num', spots: m.spots });
+        anno.add(id, { text: m.letter, point: m.point, kind: m.kind === 'mark' ? 'mark' : 'num', spots: m.spots });
         ui.annoLayer.querySelector('.pvc-anno:last-of-type')?.classList.add('pd-letter');
       } else if (!m && anno.has(id)) anno.remove(id);
     }
@@ -713,17 +731,21 @@ export function createApp(root, options = {}) {
   const BOXES = {
     wide: {
       all: new THREE.Box3(V(-15.4, 0.6, -3), V(18.6, 15.6, 3)),
-      near: new THREE.Box3(V(-14, 3.2, -2.6), V(8.6, 16.2, 2.6)),
+      near: new THREE.Box3(V(-16.6, 3.2, -2.6), V(8.6, 16.2, 2.6)),
       right: new THREE.Box3(V(-7, 2.5, -2), V(18, 17, 2)),
+      screen: new THREE.Box3(V(-5.5, 2.4, -2.2), V(18.6, 15, 2.2)),
+      marks: new THREE.Box3(V(-4, 2.4, -2.2), V(21.5, 15, 2.2)), // room right of the card for the test's letters
     },
     tall: {
       all: new THREE.Box3(V(-14.6, 3.0, -1.5), V(16.6, 15.4, 1.5)),
-      near: new THREE.Box3(V(-11.6, 4.5, -1.5), V(6.5, 15.8, 1.5)),
+      near: new THREE.Box3(V(-14.4, 4.5, -1.5), V(6.5, 15.8, 1.5)),
       right: new THREE.Box3(V(-5, 3.5, -1.5), V(16.4, 16.5, 1.5)),
+      screen: new THREE.Box3(V(-4, 3, -1.5), V(17.2, 14.8, 1.5)),
+      marks: new THREE.Box3(V(-3, 3, -1.5), V(21.5, 14.8, 1.5)),
     },
   };
   const DIR = V(-0.34, 0.26, 1).normalize();
-  const poses = { all: null, near: null, right: null };
+  const poses = { all: null, near: null, right: null, screen: null, marks: null };
   function fitPoses() {
     const d = DIR.clone();
     const boxes = stage.width / Math.max(1, stage.height) < 1.2 ? BOXES.tall : BOXES.wide;
@@ -732,7 +754,8 @@ export function createApp(root, options = {}) {
       poses[k] = { target: p.target, position: p.position };
     }
   }
-  const frameOf = (step) => s.quiz?.frame ?? (step === 'enter' ? 'near' : 'all');
+  // the white light and its colours are seen closer, so the spectrum on the screen is big
+  const frameOf = (step) => s.quiz?.frame ?? (step === 'enter' ? 'near' : step === 'white' || step === 'colours' ? 'screen' : 'all');
   const cam = { from: null, to: 'all', k: 1 };
   const guided = { position: V(0, 0, 0), target: V(0, 0, 0) };
   function applyCamera() {
@@ -832,6 +855,10 @@ export function createApp(root, options = {}) {
   stage.onBeforeRender(() => {
     applyCamera();
     camera.updateMatrixWorld();
+    // from behind the screen, the card fades so it does not hide the prism
+    const behind = (camera.position.x - SCREEN.at.x) * CARD_N.x + (camera.position.z - SCREEN.at.z) * CARD_N.z < 0;
+    app.cardMat.opacity = behind ? 0.3 : 1;
+    app.card.castShadow = !behind;
     syncScene();
   });
   stage.onResize(() => {
@@ -882,6 +909,7 @@ export function createApp(root, options = {}) {
       return [
         [{ dev: 0, orig: 0 }, T.fade],
         [{ filter: 1 }, T.filter],
+        () => flyTo('screen'), // the red filter came off in view of the lamp; now closer to the screen
         [{ white: 1, inside: 0, outRay: 0 }, T.white],
         [{ fanIn: 1 }, T.fanIn],
         [{ fanOut: 1 }, T.fanOut],
@@ -909,7 +937,9 @@ export function createApp(root, options = {}) {
     const my = s.run;
     s.step = step;
     hintOff();
-    flyTo(frameOf(step), animate ? T.fly : 0);
+    // from the base step the red filter comes off in view of the lamp first; the plan flies closer after it
+    const later = animate && from === 'base' && step === 'white';
+    flyTo(later ? 'all' : frameOf(step), animate ? T.fly : 0);
     if (!animate || from === step) {
       Object.assign(s.v, TARGET[step]);
       s.busy = false;
@@ -920,7 +950,13 @@ export function createApp(root, options = {}) {
     refresh();
     emitChange();
     audio.tick?.();
-    for (const [to, sec] of planFor(from, step)) {
+    for (const item of planFor(from, step)) {
+      if (typeof item === 'function') {
+        if (my !== s.run) return;
+        item();
+        continue;
+      }
+      const [to, sec] = item;
       if (!(await tweenTo(to, sec, my))) return;
     }
     s.busy = false;
@@ -990,7 +1026,7 @@ export function createApp(root, options = {}) {
       else action.hide('scene');
     }
     homeBtn.hidden = s.step === 'intro';
-    homeBtn.disabled = s.busy;
+    homeBtn.disabled = false; // a step may be cut short: home stops it
     graph.set({ full: s.v.white >= 0.5 && (s.step === 'white' || s.step === 'colours'), pick: s.step === 'colours' && !s.busy ? s.colour : null });
     const noteText = s.v.white >= 0.5 ? t('note_spread', { k: SPREAD }) : s.v.on > 0 ? t('note_drawn') : '';
     if (steady.note !== noteText) {
@@ -1057,6 +1093,7 @@ export function createApp(root, options = {}) {
 
   // ── turning the lamp: a handle on it, a drag on it, or the arrow keys ───────
   const canDrag = () => !s.locked && !s.busy && s.mode === 'explore' && s.step !== 'intro';
+  const closeUp = () => s.step === 'white' || s.step === 'colours';
   const handleAt = V(0, 0, 0);
   const trackPt = (i) => {
     const p = lampAt(i, ARC_R + 1.3);
@@ -1072,7 +1109,8 @@ export function createApp(root, options = {}) {
     labelAt: 'below',
     aria: t('aria_drag_lamp'),
     pulse: Boolean(o.coach),
-    when: canDrag,
+    // not in the white-light steps: the view is closer to the screen there and the lamp is out of it
+    when: () => canDrag() && !closeUp(),
   });
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
@@ -1181,7 +1219,7 @@ export function createApp(root, options = {}) {
     [
       { kind: 'orbit', cue: rotate },
       { kind: 'front' },
-      { kind: 'drag', axis: 'turn', text: t('howto_lamp'), aria: t('aria_howto_lamp'), handle, when: () => s.step !== 'intro' },
+      { kind: 'drag', axis: 'turn', text: t('howto_lamp'), aria: t('aria_howto_lamp'), handle, when: () => s.step !== 'intro' && !closeUp() },
     ],
     { stage },
   );
@@ -1278,7 +1316,7 @@ export function createApp(root, options = {}) {
   let learnI = I_START;
   let picked = -1;
   let current = null;
-  const KINDS = ['path', 'why', 'red', 'cause', 'define'];
+  const KINDS = ['path', 'orig', 'red', 'cause', 'define'];
   const rot = (d, a) => ({ x: d.x * Math.cos(a) - d.y * Math.sin(a), y: d.x * Math.sin(a) + d.y * Math.cos(a) });
 
   const quiz = createQuiz({
@@ -1314,48 +1352,67 @@ export function createApp(root, options = {}) {
         // the two questions on the picture's right part are framed closer
         s.quiz = {
           kind,
-          frame: kind === 'path' || kind === 'red' ? 'right' : null,
+          frame: kind === 'path' || kind === 'orig' ? 'right' : kind === 'red' ? 'marks' : null,
           marks: null,
           right: null,
           shown: kind !== 'path' && kind !== 'red',
         };
         s.i = I_START;
         retrace();
-        const scene = { path: 'exit', why: 'base', red: 'white', cause: 'white', define: 'intro' }[kind];
+        const scene = { path: 'exit', orig: 'base', red: 'white', cause: 'white', define: 'intro' }[kind];
         await go(scene, { animate: false });
         if (kind === 'path') Object.assign(s.v, { outRay: 0, arcs2: 0, arcs1: 0 });
+        if (kind === 'orig') Object.assign(s.v, { orig: 0, dev: 0 });
         await tweener.animate({ key: 'wait', duration: 0.3 }).finished;
         if (!alive()) return null;
         const r = geo.red;
-        if (kind === 'path') {
-          const dOut = r.out;
-          const turnOut = Math.atan2(r.inside.x * dOut.y - r.inside.y * dOut.x, r.inside.x * dOut.x + r.inside.y * dOut.y);
-          const cands = [
-            { key: 'right', d: dOut, right: true },
-            { key: 'straight', d: r.inside },
-            { key: 'orig', d: r.din },
-            { key: 'apex', d: rot(r.inside, -2 * turnOut) },
-          ].map((c) => {
-            const len = 9.5;
-            const end = { x: r.exit.x + c.d.x * len, y: r.exit.y + c.d.y * len };
-            // the letter just beyond the end of its path, along it
+        /** Lettered dashed lines from a point, the letter just beyond each end, along it. */
+        const lines = (from, list, maxLen) =>
+          list.map((c) => {
+            const len = Math.min(maxLen, (17 - from.y) / Math.max(0.05, c.d.y));
+            const end = { x: from.x + c.d.x * len, y: from.y + c.d.y * len };
             const ax = Math.round(c.d.x * 18);
             const ay = Math.round(-c.d.y * 18);
             return {
               ...c,
               kind: 'path',
-              from: r.exit,
+              from,
               len,
               point: () => V(end.x, end.y, 0),
               spots: [spot(ax, ay), spot(ax + 10, ay), spot(ax, ay - 10), spot(ax, ay + 10)],
             };
           });
+        if (kind === 'path' || kind === 'orig') {
+          const turnOut = Math.atan2(r.inside.x * r.out.y - r.inside.y * r.out.x, r.inside.x * r.out.x + r.inside.y * r.out.y);
+          const cands =
+            kind === 'path'
+              ? lines(
+                  r.exit,
+                  [
+                    { key: 'right', d: r.out, right: true },
+                    { key: 'straight', d: r.inside },
+                    { key: 'orig', d: r.din },
+                    { key: 'apex', d: rot(r.inside, -2 * turnOut) },
+                  ],
+                  9.5,
+                )
+              : // which line is the original direction: the incoming light straight on, from where it meets the prism
+                lines(
+                  r.entry,
+                  [
+                    { key: 'right', d: r.din, right: true },
+                    { key: 'inside', d: r.inside },
+                    { key: 'out', d: r.out },
+                    { key: 'up', d: rot(r.din, THREE.MathUtils.degToRad(20)) },
+                  ],
+                  12,
+                );
           const q = letterChoices(kind, cands);
           Object.assign(s.quiz, { marks: q.marks, right: q.meta.answer, index: q.expected, shown: false });
           current = q;
           syncLabels();
           stage.invalidate();
-          return { text: t('q_path'), ...q };
+          return { text: t(`q_${kind}`), ...q };
         }
         if (kind === 'red') {
           const ys = {
@@ -1367,7 +1424,7 @@ export function createApp(root, options = {}) {
           // the letters go left and right of the marks in turn, and the two on one side lean apart, so close marks keep
           // their letters apart
           const markSpots = (k) => {
-            const side = k % 2 ? 40 : -40;
+            const side = k % 2 ? 30 : -30;
             const lean = k === 0 ? 9 : k === 2 ? -9 : k === 1 ? 6 : -6;
             return [spot(side, lean), spot(side, lean * 2), spot(side, 0)];
           };
@@ -1377,7 +1434,8 @@ export function createApp(root, options = {}) {
             right: key === 'right',
             kind: 'mark',
             at: { x: SCREEN.at.x, y },
-            point: () => onCard(y),
+            // the leader starts at the end of the mark's bar, on its letter's side
+            point: () => onCard(y, (byY.indexOf(y) % 2 ? 1 : -1) * (light.patchHalf + 0.15)),
             spots: markSpots(byY.indexOf(y)),
           }));
           const q = letterChoices(kind, cands);
@@ -1389,13 +1447,7 @@ export function createApp(root, options = {}) {
         }
         syncLabels();
         stage.invalidate();
-        if (kind === 'why')
-          current = wordChoices(kind, ['c_why_right', 'c_why_absorb', 'c_why_toward', 'c_why_reflect'], {
-            c_why_absorb: 'n_why_absorb',
-            c_why_toward: 'n_why_toward',
-            c_why_reflect: 'n_why_reflect',
-          });
-        else if (kind === 'cause')
+        if (kind === 'cause')
           current = wordChoices(kind, ['c_cause_right', 'c_cause_paint', 'c_cause_screen', 'c_cause_reflect'], {
             c_cause_paint: 'n_cause_paint',
             c_cause_screen: 'n_cause_screen',
@@ -1415,11 +1467,12 @@ export function createApp(root, options = {}) {
         const k = s.quiz?.kind;
         const q2 = current;
         if (!k || !q2) return '';
-        if (k === 'path' || k === 'red') {
-          // show the real light now
+        if (k === 'path' || k === 'red' || k === 'orig') {
+          // show the real light (or the original direction) now, in place of its lettered line
           s.quiz.shown = true;
           if (k === 'path') s.v.outRay = 1;
-          s.quiz.marks = s.quiz.marks.filter((m) => !m.right || k === 'red');
+          if (k === 'orig') s.v.orig = 1;
+          for (const m of s.quiz.marks) if (m.right && k !== 'red') m.hidden = true;
           const wrong = correct || picked < 0 ? null : q2.marks[picked];
           const note = wrong && !wrong.right ? ` ${t(`n_${k}_${wrong.key}`)}` : '';
           syncLabels();
@@ -1484,8 +1537,10 @@ export function createApp(root, options = {}) {
   root.addEventListener('keydown', (e) => {
     const tgt = /** @type {Element} */ (e.target);
     if (tgt.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
-    if (tgt.closest('.pd-graph [data-colour]') && ['ArrowLeft', 'ArrowRight'].includes(e.key)) {
-      const k = COLOURS.findIndex((c) => c.id === s.colour);
+    const dot = tgt.closest('.pd-graph [data-colour]');
+    if (dot && ['ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      // from the dot that has the focus
+      const k = COLOURS.findIndex((c) => c.id === dot.getAttribute('data-colour'));
       const n = Math.min(COLOURS.length - 1, Math.max(0, k + (e.key === 'ArrowRight' ? 1 : -1)));
       pickColour(COLOURS[n].id, true);
       e.preventDefault();
@@ -1568,8 +1623,19 @@ export function createApp(root, options = {}) {
       const g = new THREE.Group();
       g.name = 'Prism';
       const copy = app.root.clone(true);
+      const plain = new Map();
       copy.traverse((ob) => {
-        if (ob.name === 'RedGlass') ob.visible = true;
+        if (ob.name === 'RedFilter') ob.visible = true;
+        if (!ob.isMesh || ob.userData.noExport) return;
+        // shared vertices (the merged parts are built unindexed) and plain metals without the brushed textures:
+        // the GLB stays small and looks the same in any viewer
+        ob.geometry = mergeVertices(ob.geometry.index ? ob.geometry : ob.geometry.toNonIndexed(), 1e-4);
+        const m = ob.material;
+        if (m?.map || m?.roughnessMap || m?.bumpMap) {
+          if (!plain.has(m))
+            plain.set(m, new THREE.MeshStandardMaterial({ name: m.name, color: m.color, metalness: m.metalness, roughness: m.roughness }));
+          ob.material = plain.get(m);
+        }
       });
       g.add(copy);
       return g;

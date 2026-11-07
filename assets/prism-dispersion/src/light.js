@@ -66,6 +66,16 @@ function segLines(name, max, materials, order) {
       col.array[o + 2] = col.array[o + 5] = color.b;
       n++;
     },
+    /** One segment between two points in space (x, y, z each). */
+    add3(ax, ay, az, bx, by, bz, color) {
+      if (n >= max) return;
+      const o = n * 6;
+      pos.array.set([ax, ay, az, bx, by, bz], o);
+      col.array[o] = col.array[o + 3] = color.r;
+      col.array[o + 1] = col.array[o + 4] = color.g;
+      col.array[o + 2] = col.array[o + 5] = color.b;
+      n++;
+    },
     /** Dashes from a to b: `on` cm drawn, `off` cm gap, starting with a dash at a. */
     dashed(ax, ay, bx, by, color, on = 0.42, off = 0.3) {
       const L = Math.hypot(bx - ax, by - ay);
@@ -146,19 +156,21 @@ export function createLight() {
   const trialEdge = lineMat({ linewidth: 5, color: C.edge, transparent: true, opacity: 0.85 });
   const trialCore = lineMat({ linewidth: 2.6, vertexColors: true });
   const trial = segLines('Trial', 120, [trialEdge, trialCore], 19);
-  for (const s of [beam, normal, orig, arcs, trial]) root.add(...s.meshes);
+  // the test's marks on the screen: short dark bars across the light's width, on the white card
+  const marks = segLines('Marks', 8, [lineMat({ linewidth: 4.5, vertexColors: true })], 19);
+  for (const s of [beam, normal, orig, arcs, trial, marks]) root.add(...s.meshes);
 
-  // ── the fan: a glowing sheet of the colours (inside the glass, and from the prism to the screen) ──
+  // ── the fan: a sheet of the colours (inside the glass, and from the prism to the screen). Normal blending, each
+  // colour at full strength fading out by its alpha at the two ends, so it stays coloured over the white screen too ──
   const K = FAN_NM.length;
   const fanColours = FAN_NM.map((nm) => {
     const h = hue(nm);
-    const g = glow(nm);
-    return [h[0] * g, h[1] * g, h[2] * g];
+    return [h[0], h[1], h[2], glow(nm)];
   });
   function sheet(name, tris) {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(tris * 9), 3));
-    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(tris * 9), 3));
+    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(tris * 12), 4));
     const m = new THREE.Mesh(
       g,
       new THREE.MeshBasicMaterial({
@@ -167,7 +179,6 @@ export function createLight() {
         transparent: true,
         opacity: 0.6,
         depthWrite: false,
-        blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
         toneMapped: false,
       }),
@@ -188,13 +199,14 @@ export function createLight() {
     for (let k = 0; k < K - 1; k++) {
       const a = fanColours[k];
       const b = fanColours[k + 1];
-      ci.set([...a.map((v) => v * 0.35), ...a, ...b], k * 9); // dim at the entry point (the white there is the beam's)
-      co.set([...a, ...a, ...b, ...b, ...a, ...b], k * 18);
+      const w = [1, 1, 1, 0.15]; // nearly clear at the entry point: the white there is the beam's
+      ci.set([...w, ...a, ...b], k * 12);
+      co.set([...a, ...a, ...b, ...b, ...b, ...a], k * 24);
     }
   }
 
   // ── the patch on the screen, in the screen's frame (its face is z = 0 there, y is height) ──
-  const half = 0.62 / Math.cos(THREE.MathUtils.degToRad(SCREEN.yaw)); // the beam is 1.24 cm high (along z); on the turned card it is wider
+  const half = 0.8 / Math.cos(THREE.MathUtils.degToRad(SCREEN.yaw)); // the slit's light is 1.6 cm high (along z); on the turned card it is wider
   const ROWS = K + 2;
   function patchMesh(name) {
     const g = new THREE.BufferGeometry();
@@ -269,6 +281,7 @@ export function createLight() {
     orig,
     arcs,
     trial,
+    marks,
     fanIn,
     fanOut,
     patch,
@@ -280,7 +293,7 @@ export function createLight() {
       fanIn.visible = kIn > 0 && opacity > 0;
       fanOut.visible = kOut > 0 && opacity > 0;
       fanIn.material.opacity = 0.6 * opacity;
-      fanOut.material.opacity = 0.42 * opacity;
+      fanOut.material.opacity = 0.72 * opacity;
       if (!fanIn.visible && !fanOut.visible) return;
       const pi = fanIn.geometry.attributes.position.array;
       const po = fanOut.geometry.attributes.position.array;

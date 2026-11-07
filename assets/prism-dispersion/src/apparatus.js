@@ -1,6 +1,6 @@
 // The things on the table, in centimetres (the table top is y = 0, the light travels in the plane z = 0): a 60° crown-glass
 // prism lying on its base (ভূমি) on a small prism table, apex up as in চিত্র ৯.১২; a ray box (a lamp with a slit and a
-// lens) that slides along an arc rail centred on the point where its beam meets the prism, with a red glass in a slot in
+// lens) that slides along an arc rail centred on the point where its beam meets the prism, with a red filter in a slot in
 // front of its lens; a white screen on a stand. Static parts are merged per material; the light itself is in light.js.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -77,7 +77,7 @@ function standParts({ x, z, height, baseR = 2.6, rodR = 0.42 }) {
 }
 
 /**
- * Everything but the light. Returns the groups the figure moves (the lamp, the red glass), the meshes a tap may hit,
+ * Everything but the light. Returns the groups the figure moves (the lamp, the red filter), the meshes a tap may hit,
  * and setLamp(i) which puts the lamp on its rail for an angle of incidence i.
  */
 export function createApparatus(mats) {
@@ -199,6 +199,7 @@ export function createApparatus(mats) {
   const postIron = new THREE.Mesh(merge(ps.iron), iron);
   const postSteel = new THREE.Mesh(merge(ps.steel), steel);
   const tickMesh = new THREE.Mesh(merge(ticks), new THREE.MeshBasicMaterial({ name: 'RailTicks', color: '#e9edf2' }));
+  tickMesh.userData.noExport = true; // printed marks: not part of the model
   for (const m of [railMesh, postIron, postSteel]) {
     m.castShadow = true;
     m.receiveShadow = true;
@@ -216,8 +217,8 @@ export function createApparatus(mats) {
   for (let k = 0; k < 4; k++) vents.push(at(new THREE.BoxGeometry(2.4, 0.08, 0.22), -0.9 - L / 2 - 0.2, 1.3, -0.9 + k * 0.6));
   const face = at(new THREE.BoxGeometry(0.12, 2.2, 2.6), -0.9 + 0.02, 0, 0);
   const barrel = at(new THREE.CylinderGeometry(0.78, 0.78, 0.9, 32).rotateZ(Math.PI / 2), -0.45, 0, 0);
-  const slot = at(new THREE.BoxGeometry(0.5, 0.35, 2.7), 0.2, -1.25, 0); // the red glass sits in this slot
-  const slotSides = [at(new THREE.BoxGeometry(0.5, 2.55, 0.12), 0.2, 0, 1.3), at(new THREE.BoxGeometry(0.5, 2.55, 0.12), 0.2, 0, -1.3)];
+  const slot = at(new THREE.BoxGeometry(1.7, 0.3, 2.9), 0.85, -1.38, 0); // the red filter sits in this slot
+  const slotSides = [at(new THREE.BoxGeometry(1.7, 0.3, 0.12), 0.85, -1.38, 1.4), at(new THREE.BoxGeometry(1.7, 0.3, 0.12), 0.85, -1.38, -1.4)];
   const carriage = at(new THREE.BoxGeometry(1.6, 1.3, 0.8), -0.9 - L / 2, 0, RAIL_Z + 0.5);
   const lampDark = new THREE.Mesh(merge([...vents, face, barrel, slot, ...slotSides, carriage]), black);
   const lampRing = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.09, 8, 32).rotateY(Math.PI / 2), mats.chrome);
@@ -226,23 +227,26 @@ export function createApparatus(mats) {
   housing.castShadow = true;
   lampDark.castShadow = true;
   lamp.add(housing, lampDark, lampRing, lens);
-  // the red glass: a thin pane in the slot, it slides up and out
+  // the red filter: a thin pane in the slot, it slides up and out
   const filter = new THREE.Group();
-  filter.name = 'RedGlass';
+  filter.name = 'RedFilter';
   const filterMat = new THREE.MeshPhysicalMaterial({
-    name: 'RedGlass',
-    color: '#e03131',
-    emissive: '#5c0b0b',
-    roughness: 0.12,
+    name: 'RedFilter',
+    color: '#f03e3e',
+    emissive: '#c92a2a',
+    emissiveIntensity: 0.55,
+    roughness: 0.18,
     metalness: 0,
     transparent: true,
-    opacity: 0.82,
+    opacity: 0.9,
     clearcoat: 1,
   });
-  const pane = new THREE.Mesh(new RoundedBoxGeometry(0.14, 2.3, 2.45, 2, 0.05), filterMat);
+  // a thick pane, turned a little toward the viewer so its red face shows (not only its edge)
+  const pane = new THREE.Mesh(new RoundedBoxGeometry(0.24, 2.6, 2.7, 2, 0.08), filterMat);
+  pane.rotation.y = -0.6;
   pane.castShadow = true;
   filter.add(pane);
-  filter.position.set(0.2, 0, 0);
+  filter.position.set(0.85, 0, 0);
   lamp.add(filter);
   // a big, invisible box round the lamp for taps and drags
   const lampHit = new THREE.Mesh(at(new THREE.BoxGeometry(L + 1.8, 3.6, 3.8), -L / 2 - 0.3, 0, 0), new THREE.MeshBasicMaterial({ visible: false }));
@@ -256,7 +260,8 @@ export function createApparatus(mats) {
   screen.position.set(SCREEN.at.x, 0, SCREEN.at.z);
   screen.rotation.y = Math.atan2(N.x, N.z);
   const cardH = SCREEN.top - SCREEN.bottom;
-  const cardMat = new THREE.MeshStandardMaterial({ name: 'ScreenCard', color: '#eef0f2', roughness: 0.9, metalness: 0 });
+  // transparent from the start (opacity 1): seen from behind it fades, so the prism shows through (app.js)
+  const cardMat = new THREE.MeshStandardMaterial({ name: 'ScreenCard', color: '#eef0f2', roughness: 0.9, metalness: 0, transparent: true });
   const card = new THREE.Mesh(at(new RoundedBoxGeometry(SCREEN.half * 2, cardH, 0.3, 2, 0.1), 0, SCREEN.bottom + cardH / 2, -0.16), cardMat);
   card.castShadow = true;
   card.receiveShadow = true;

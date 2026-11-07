@@ -5,7 +5,7 @@
 //
 // The picture spreads the colours wider than real glass would (K times, see SPREAD): real crown glass fans 400–700 nm
 // over about 1.5°, a few millimetres on a screen at this distance. The red light that the figure starts with is traced
-// with the real index, and the spread is widened about it, so red stays where it was when the red glass comes off.
+// with the real index, and the spread is widened about it, so red stays where it was when the red filter comes off.
 
 const rad = (d) => (d * Math.PI) / 180;
 const deg = (r) => (r * 180) / Math.PI;
@@ -15,7 +15,7 @@ export const CAUCHY = Object.freeze({ B: 0.0042 }); // µm², a common crown gla
 const A_CAUCHY = 1.52 - CAUCHY.B / 0.5893 ** 2;
 /** The refractive index of the glass at λ (nm): 1.534 for violet (400 nm), 1.52 for yellow, 1.516 for red (700 nm). */
 export const indexAt = (nm) => A_CAUCHY + CAUCHY.B / (nm / 1000) ** 2;
-/** The red glass in front of the lamp lets through red light: drawn as one wavelength. */
+/** The red filter in front of the lamp lets through red light: drawn as one wavelength. */
 export const RED_NM = 650;
 /** How many times wider the picture spreads the colours than real crown glass. */
 export const SPREAD = 6;

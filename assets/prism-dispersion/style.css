@@ -23,8 +23,8 @@ body.bg-transparent { background: transparent; }
 
 /* the steps: five words in a row */
 .pd .pvc-examples { flex-wrap: nowrap; gap: 2px; }
-.pd .pvc-examples button { flex: 1 1 0; min-width: 0; min-height: 36px; padding: 2px 1px 3px; }
-.pd .pvc-ex-word { font-size: 13px; white-space: normal; line-height: 1.2; }
+.pd .pvc-examples button { flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 2px 2px 3px; }
+.pd .pvc-ex-word { font-size: 13px; white-space: nowrap; line-height: 1.2; }
 
 /* the result and the rule */
 .pd .pvc-outcome { font-size: 14.5px; line-height: 1.45; --pvc-outcome-lines: 2; }
@@ -105,6 +105,12 @@ body.bg-transparent { background: transparent; }
   .pd .pvc-outcome { font-size: 13.5px; line-height: 1.4; }
   .pd .pvc-rule { font-size: 13px; line-height: 1.42; --pvc-rule-lines: 3; }
   .pd:not(.pd-side) .pd-graph { display: none; }
+  /* the test as low as the শেখো sheet, so the 3D gets the room */
+  .pd:not(.pd-side) .pvc-q-ask { gap: 5px; }
+  .pd:not(.pd-side) .pvc-q-options { gap: 6px; }
+  .pd:not(.pd-side) .pvc-opt { height: 36px; }
+  .pd:not(.pd-side) .pvc-q-text { font-size: 13.5px; line-height: 1.35; }
+  .pd:not(.pd-side) .pvc-q-feedback { font-size: 12.5px; line-height: 1.38; }
   .pd .pvc-anno { font-size: 12px; }
 }
 /* short and beside (844 × 390, 640 × 400): no lead line, no how-to row, the graph as big as is left */
@@ -121,3 +127,7 @@ body.bg-transparent { background: transparent; }
   .pd .pvc-opt { font-size: 12.5px; height: 40px; }
   .pd .pvc-anno { font-size: 12px; }
 }
+/* the test's letters on the screen: a dark leader from the mark's bar, readable on the white card */
+.pd .pvc-anno-lines line.k-mark { stroke: #1d2733 !important; stroke-width: 1.6; }
+.pd .pvc-anno-lines circle.k-mark { fill: #1d2733; stroke: #fff; }
+.pd-graph-svg .g-chip { fill: #fff; }

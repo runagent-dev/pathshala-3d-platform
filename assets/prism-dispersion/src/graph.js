@@ -41,7 +41,7 @@ export function createGraph(host, t, { onPick }) {
     const small = h < 110;
     const left = 44;
     const right = 12;
-    const top = small ? 30 : 34;
+    const top = small ? 22 : 26;
     const bottom = small ? 30 : 36;
     const pw = w - left - right;
     const ph = h - top - bottom;
@@ -59,7 +59,6 @@ export function createGraph(host, t, { onPick }) {
       el('line', { x1: left, x2: left + pw, y1: Y(n), y2: Y(n), class: 'grid' });
       el('text', { x: left - 6, y: Y(n) + 4, 'text-anchor': 'end', class: 'g-num' }).textContent = t.num(n.toFixed(2));
     }
-    if (!small) el('text', { x: left - 8, y: top + 4, 'text-anchor': 'end', class: 'g-name' }).textContent = t('g_axis_n');
     el('path', { d: `M${left},${top} V${top + ph} H${left + pw}`, class: 'axis' });
     el('rect', { x: X(400), y: top + ph + 2, width: pw, height: 6, fill: 'url(#pd-spec)', rx: 2 });
     for (const nm of [400, 500, 600, 700])
@@ -68,7 +67,8 @@ export function createGraph(host, t, { onPick }) {
 
     // the book's table value for glass, at yellow light
     el('line', { x1: left, x2: left + pw, y1: Y(1.52), y2: Y(1.52), class: 'g-book' });
-    if (!small) el('text', { x: left + 6, y: Y(1.52) + 14, 'text-anchor': 'start', class: 'g-tag' }).textContent = t('g_book', { n: '1.52' });
+    if (!small && state.full)
+      el('text', { x: left + 6, y: Y(1.52) + 14, 'text-anchor': 'start', class: 'g-tag' }).textContent = t('g_book', { n: '1.52' });
 
     if (state.full) {
       // the curve, in the colours
@@ -90,25 +90,20 @@ export function createGraph(host, t, { onPick }) {
         if (state.pick === c.id) el('circle', { cx: x, cy: y, r: 9.5, class: 'g-ring' }, g);
         el('circle', { cx: x, cy: y, r: 6, fill: cssColour(c.nm), class: 'g-dot' }, g);
       }
-      if (state.pick) {
-        const c = COLOURS.find((k) => k.id === state.pick);
-        const x = X(c.nm);
-        // above the plot, over its dot, never past the edges
-        const anchor = x > left + pw * 0.66 ? 'end' : x < left + pw * 0.33 ? 'start' : 'middle';
-        el('text', { x: Math.min(left + pw, Math.max(left, x)), y: top - 5, 'text-anchor': anchor, class: 'g-val' }).textContent = t('g_pick', {
-          c: t(`c_${c.id}`),
-          n: round3(indexAt(c.nm)).toFixed(3),
-        });
-      }
+      // the picked colour's value is in the result line; here only its ring
     } else {
       // only the red light, so far
       const x = X(RED_NM);
       const y = Y(indexAt(RED_NM));
       el('circle', { cx: x, cy: y, r: 6, fill: cssColour(RED_NM), class: 'g-dot' });
-      el('text', { x: x - 12, y: y - 9, 'text-anchor': 'end', class: 'g-val' }).textContent = t('g_pick', {
-        c: t('c_red'),
-        n: round3(indexAt(RED_NM)).toFixed(3),
-      });
+      // its value to the left of the dot, on a white chip so the dashed 1.52 line never runs through the words
+      const txt = el('text', { x: x - 14, y: y + 4, 'text-anchor': 'end', class: 'g-val' });
+      txt.textContent = t('g_pick', { c: t('c_red'), n: round3(indexAt(RED_NM)).toFixed(3) });
+      const bb = txt.getBBox();
+      const chip = document.createElementNS(NS, 'rect');
+      for (const [k, v] of Object.entries({ x: bb.x - 3, y: bb.y - 1, width: bb.width + 6, height: bb.height + 2, rx: 3, class: 'g-chip' }))
+        chip.setAttribute(k, String(v));
+      svg.insertBefore(chip, txt);
     }
   }
 

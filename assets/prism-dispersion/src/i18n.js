@@ -5,7 +5,7 @@
 // বেঁকে যায়", the figure's labels "আলোর মূল দিক" and "প্রতিসরিত আলোর দিক", "প্রতিসরণাঙ্ক আসলে আলোর তরঙ্গ দৈর্ঘ্য বা রঙের
 // ওপর নির্ভর করে", "ভিন্ন ভিন্ন রঙের জন্য প্রতিসরণাঙ্ক ভিন্ন", "প্রিজম থেকে আলো বের হবার সময় তার রংগুলো আলাদা হয়ে গেছে,
 // নিউটন প্রথম দেখিয়েছিলেন". The page writes ওপর, লম্ব (the chapter's অভিলম্ব), রং / রঙের. Colour names as the sister
-// figure light-spectrum (বেগুনি নীল সবুজ হলুদ কমলা লাল). Added by the figure, not on the page: বাতি, লাল কাচ, পর্দা, সাদা আলো.
+// figure light-spectrum (বেগুনি নীল সবুজ হলুদ কমলা লাল). Added by the figure, not on the page: বাতি, লাল ফিল্টার (as colour-of-objects), পর্দা, সাদা আলো.
 // Use t('key', vars) in code and t.num() for numbers; numbers inside sentences come in as {vars}. A {key} that is not a
 // var is another string of the same language. The questions (q_*) are plain text: the quiz writes them as text.
 
@@ -17,7 +17,7 @@ export const STRINGS = {
     rotate_body: 'পাশে ঘোরালে ছবি বড় হয়, লেখা থাকে পাশে।',
     rotate_go: 'ঘুরিয়ে দেখো',
     rotate_stay: 'এভাবেই দেখো',
-    title: 'প্রিজম: আলো ভূমির দিকে বাঁকে, রংগুলো আলাদা হয়',
+    title: 'প্রিজম: আলো ভূমির দিকে বেঁকে যায়, রংগুলো আলাদা হয়',
     view: 'দেখার ধরন',
     view_front_short: 'সামনে',
     view_rotate: 'ঘুরিয়ে দেখো',
@@ -40,15 +40,15 @@ export const STRINGS = {
     ex_label: 'ধাপ',
     ex_enter: 'ঢোকা',
     ex_exit: 'বের হওয়া',
-    ex_base: 'ভূমির দিকে',
+    ex_base: 'বাঁক',
     ex_white: 'সাদা আলো',
     ex_colours: 'রং',
 
     // the action and the quiet button
     act_on: 'বাতি জ্বালাও',
     act_exit: 'আলো বের হতে দাও',
-    act_base: 'মূল দিকের সাথে মেলাও',
-    act_white: 'লাল কাচ সরাও',
+    act_base: 'মূল দিকটি দেখাও',
+    act_white: 'লাল ফিল্টার সরাও',
     act_colours: 'রংগুলো দেখো',
     act_quiz: 'পরীক্ষা দাও',
     act_wait: 'দেখো…',
@@ -56,14 +56,14 @@ export const STRINGS = {
 
     // the first screen
     intro:
-      'টেবিলে একটি কাচের প্রিজম, বাঁ পাশে একটি বাতি আর ডান পাশে সাদা পর্দা। বাতির সামনে লাল কাচ, তাই প্রথমে শুধু লাল আলো যাবে। চলো দেখি, প্রিজমের ভেতর দিয়ে আলো কোন দিকে যায়।',
+      'টেবিলে একটি কাচের প্রিজম, বাঁ পাশে একটি বাতি আর ডান পাশে সাদা পর্দা। বাতির সামনে লাল ফিল্টার, তাই প্রথমে শুধু লাল আলো যাবে। চলো দেখি, প্রিজমের ভেতর দিয়ে আলো কোন দিকে যায়।',
     intro_short: 'কাচের প্রিজম, বাতি আর সাদা পর্দা। চলো দেখি, প্রিজমে আলো কোন দিকে যায়।',
 
     // the line before the action: what the next tap will show
     lead_enter: 'এবার আলো দ্বিতীয় পৃষ্ঠ দিয়ে বের হবে।',
     lead_exit: 'আলো কি তার মূল দিকে ফিরে গেল?',
-    lead_base: 'এবার লাল কাচ সরিয়ে সাদা আলো পাঠাই।',
-    lead_white: 'কোন রং কতটা বাঁকল, আর কেন?',
+    lead_base: 'এবার লাল ফিল্টার সরিয়ে সাদা আলো পাঠাই।',
+    lead_white: 'কোন রং কতটা বেঁকে গেল, আর কেন?',
     lead_colours: 'এবার নিজে যাচাই করো।',
 
     // the result line
@@ -71,8 +71,8 @@ export const STRINGS = {
     out_exit: 'বের হওয়ার সময় আলো <b>লম্ব থেকে সরে</b> গেল: লম্বের সাথে {r2}° থেকে {e}°।',
     out_base: 'আলো তার মূল দিক থেকে <b>{d}°</b> বেঁকেছে, প্রিজমের ভূমির দিকে।',
     out_white: 'সাদা আলো রঙে রঙে আলাদা হয়ে গেছে: <b>বেগুনি</b> সবচেয়ে বেশি বেঁকেছে, <b>লাল</b> সবচেয়ে কম।',
-    out_colour_violet: '{c} আলোয় কাচের প্রতিসরণাঙ্ক <b>{n}</b>, সবচেয়ে বেশি; তাই বেগুনি সবচেয়ে বেশি বাঁকে।',
-    out_colour_red: '{c} আলোয় কাচের প্রতিসরণাঙ্ক <b>{n}</b>, সবচেয়ে কম; তাই লাল সবচেয়ে কম বাঁকে।',
+    out_colour_violet: '{c} আলোয় কাচের প্রতিসরণাঙ্ক <b>{n}</b>, সবচেয়ে বেশি; তাই বেগুনি সবচেয়ে বেশি বেঁকে যায়।',
+    out_colour_red: '{c} আলোয় কাচের প্রতিসরণাঙ্ক <b>{n}</b>, সবচেয়ে কম; তাই লাল সবচেয়ে কম বেঁকে যায়।',
     out_colour_mid: '{c} আলোয় কাচের প্রতিসরণাঙ্ক <b>{n}</b>: বেগুনির চেয়ে কম, লালের চেয়ে বেশি।',
 
     // the rule: the book's words, the book's term in bold
@@ -82,7 +82,7 @@ export const STRINGS = {
     rule_base: 'দ্বিতীয় পৃষ্ঠটি সমান্তরাল নয়, তাই আলো আর মূল দিকে ঘুরে যেতে পারে না। প্রিজমের আলোক রশ্মির দিক প্রিজমের <b>ভূমির দিকে</b> বেঁকে যায়। বাতি ঘুরিয়ে দেখো।',
     rule_white:
       'প্রতিসরণাঙ্ক আলোর তরঙ্গ দৈর্ঘ্য বা রঙের ওপর নির্ভর করে। তাই ভিন্ন ভিন্ন রং ভিন্ন ভিন্ন কোণে দিক পরিবর্তন করে, আর প্রিজম থেকে বের হবার সময় <b>রংগুলো আলাদা হয়ে যায়</b>।',
-    rule_colours: 'যে রঙের জন্য প্রতিসরণাঙ্ক বেশি, সে বেশি বাঁকে। সাদা আলোর রংগুলো প্রিজমে এভাবে আলাদা হয়, <b>নিউটন</b> প্রথম দেখিয়েছিলেন। গ্রাফে রং বেছে নাও।',
+    rule_colours: 'যে রঙের জন্য প্রতিসরণাঙ্ক বেশি, সে বেশি বেঁকে যায়। সাদা আলোর রংগুলো প্রিজমে এভাবে আলাদা হয়, <b>নিউটন</b> প্রথম দেখিয়েছিলেন। গ্রাফে রং বেছে নাও।',
 
     // the colours (as light-spectrum)
     c_violet: 'বেগুনি',
@@ -94,7 +94,7 @@ export const STRINGS = {
 
     // labels on the picture (short)
     lbl_prism: 'প্রিজম',
-    lbl_filter: 'লাল কাচ',
+    lbl_filter: 'লাল ফিল্টার',
     lbl_screen: 'পর্দা',
     lbl_lamp: 'বাতি',
     lbl_normal: 'লম্ব',
@@ -111,7 +111,6 @@ export const STRINGS = {
     g_book: 'বইয়ের সারণি: কাচ {n}',
     g_aria: 'গ্রাফ: সাধারণ কাচের প্রতিসরণাঙ্ক বেগুনি আলোয় সবচেয়ে বেশি, লাল আলোয় সবচেয়ে কম',
     g_pick: '{c}: প্রতিসরণাঙ্ক {n}',
-    g_note: 'সাধারণ কাচ (আনুমানিক মান)',
 
     // the notes in the corner
     note_drawn: 'আলোর পথ এঁকে দেখানো',
@@ -137,34 +136,30 @@ export const STRINGS = {
 
     q_path: 'লাল আলো প্রিজমের দ্বিতীয় পৃষ্ঠ দিয়ে বের হবে। ছবির কোন পথে যাবে?',
     a_path: '<b>{x} পথে</b>: বের হওয়ার সময় লম্ব থেকে সরে, প্রিজমের ভূমির দিকে।',
-    n_path_straight: 'পৃষ্ঠ পার হওয়ার সময় আলো বাঁকে; সোজা যায় না।',
+    n_path_straight: 'পৃষ্ঠ পার হওয়ার সময় আলো বেঁকে যায়; সোজা যায় না।',
     n_path_orig: 'দ্বিতীয় পৃষ্ঠ সমান্তরাল নয়, তাই আলো মূল দিকে ফেরে না।',
-    n_path_apex: 'আলো শীর্ষের দিকে নয়, ভূমির দিকে বাঁকে।',
+    n_path_apex: 'আলো শীর্ষের দিকে নয়, ভূমির দিকে বেঁকে যায়।',
 
-    q_why: 'দ্বিতীয় পৃষ্ঠে আলো লম্ব থেকে সরে গেল, তবু মূল দিকে ফিরল না। কেন?',
-    c_why_right: 'দুই পৃষ্ঠ সমান্তরাল নয়',
-    c_why_absorb: 'কাচ আলো শুষে নেয়',
-    c_why_toward: 'বের হতে আলো লম্বের দিকে বাঁকে',
-    c_why_reflect: 'আলো ভেতরে প্রতিফলিত হয়',
-    a_why: '<b>দুই পৃষ্ঠ সমান্তরাল নয়</b>। কাচের ফলকে দুই পৃষ্ঠ সমান্তরাল বলে আলো মূল দিকে ফেরে; প্রিজমে ফেরে না।',
-    n_why_absorb: 'শোষণে আলো কমে, দিক বদলায় না।',
-    n_why_toward: 'বের হওয়ার সময় আলো লম্ব থেকে সরে যায়।',
-    n_why_reflect: 'আলো দ্বিতীয় পৃষ্ঠ দিয়ে বের হয়ে গেছে।',
+    q_orig: 'বাতি থেকে আসা লাল আলো প্রিজমে বেঁকে গেছে। ছবির কোন রেখাটি আলোর মূল দিক?',
+    a_orig: '<b>{x} রেখা</b>: বাতি থেকে আলো যেদিকে আসছিল, সোজা সেদিকে। আলো সেখান থেকে ভূমির দিকে বেঁকে গেছে।',
+    n_orig_inside: 'এটি প্রিজমের ভেতরে আলোর দিক।',
+    n_orig_out: 'এটি প্রতিসরিত আলোর দিক, মূল দিক নয়।',
+    n_orig_up: 'মূল দিক বাতির আলোর সোজাসুজি; এটি তার চেয়ে খাড়া।',
 
     q_red: 'সাদা আলো পাঠালে পর্দার কোন দাগে লাল আলো পড়বে?',
-    a_red: '<b>দাগ {x}</b>: লালের প্রতিসরণাঙ্ক সবচেয়ে কম, তাই সে সবচেয়ে কম বাঁকে।',
-    n_red_violet: 'সবচেয়ে বেশি বাঁকে বেগুনি; সেটি এখানে পড়ে।',
+    a_red: '<b>দাগ {x}</b>: লালের প্রতিসরণাঙ্ক সবচেয়ে কম, তাই সে সবচেয়ে কম বেঁকে যায়।',
+    n_red_violet: 'সবচেয়ে বেশি বেঁকে যায় বেগুনি; সেটি এখানে পড়ে।',
     n_red_green: 'এখানে পড়ে সবুজ, লাল আর বেগুনির মাঝে।',
-    n_red_straight: 'দ্বিতীয় পৃষ্ঠেও আলো বাঁকে; সোজা গেলে এখানে পড়ত।',
+    n_red_straight: 'দ্বিতীয় পৃষ্ঠেও আলো বেঁকে যায়; সোজা গেলে এখানে পড়ত।',
 
     q_cause: 'প্রিজমে সাদা আলোর রংগুলো আলাদা হয়ে গেল কেন?',
-    c_cause_right: 'রং ভেদে কাচের প্রতিসরণাঙ্ক ভিন্ন',
-    c_cause_paint: 'প্রিজমের কাচ আলোকে রং করে',
+    c_cause_right: 'রং ভেদে প্রতিসরণাঙ্ক ভিন্ন',
+    c_cause_paint: 'কাচ আলোকে রং করে দেয়',
     c_cause_screen: 'পর্দা নিজেই রং তৈরি করে',
     c_cause_reflect: 'কাচের পৃষ্ঠে আলো প্রতিফলিত হয়',
     a_cause: '<b>রং ভেদে প্রতিসরণাঙ্ক ভিন্ন</b>, তাই প্রতিটি রং ভিন্ন কোণে দিক বদলায়। রংগুলো সাদা আলোতেই ছিল।',
-    n_cause_paint: 'কাচ রং যোগ করে না; লাল কাচ সরানোর পরই রং দেখা গেল।',
-    n_cause_screen: 'পর্দা সাদা; লাল কাচ থাকলে তাতে শুধু লাল পড়ে।',
+    n_cause_paint: 'কাচ রং যোগ করে না; লাল ফিল্টার সরানোর পরই রং দেখা গেল।',
+    n_cause_screen: 'পর্দা সাদা; লাল ফিল্টার থাকলে তাতে শুধু লাল পড়ে।',
     n_cause_reflect: 'প্রতিফলনে রং আলাদা হয় না; প্রতিসরণে হয়।',
 
     q_define: 'আলোক বিজ্ঞানের ভাষায় প্রিজম কী?',
@@ -205,26 +200,26 @@ export const STRINGS = {
     ex_label: 'Steps',
     ex_enter: 'In',
     ex_exit: 'Out',
-    ex_base: 'To the base',
+    ex_base: 'Bend',
     ex_white: 'White light',
     ex_colours: 'Colours',
 
     act_on: 'Switch on the lamp',
     act_exit: 'Let the light out',
-    act_base: 'Compare directions',
-    act_white: 'Take off the red glass',
+    act_base: 'Show the original direction',
+    act_white: 'Take off the red filter',
     act_colours: 'Look at the colours',
     act_quiz: 'Take the test',
     act_wait: 'Watch…',
     act_home: 'Start again',
 
     intro:
-      'A glass prism, a lamp and a white screen. A red glass on the lamp lets only red light out. Let us see which way light goes through a prism.',
+      'A glass prism, a lamp and a white screen. A red filter on the lamp lets only red light out. Let us see which way light goes through a prism.',
     intro_short: 'A glass prism, a lamp and a screen. Which way does light go through a prism?',
 
     lead_enter: 'Now the light leaves by the second face.',
     lead_exit: 'Did it turn back to its first direction?',
-    lead_base: 'Now take off the red glass: white light.',
+    lead_base: 'Now take off the red filter: white light.',
     lead_white: 'Which colour bent how much, and why?',
     lead_colours: 'Now test yourself.',
 
@@ -254,7 +249,7 @@ export const STRINGS = {
     c_red: 'red',
 
     lbl_prism: 'Prism',
-    lbl_filter: 'Red glass',
+    lbl_filter: 'Red filter',
     lbl_screen: 'Screen',
     lbl_lamp: 'Lamp',
     lbl_normal: 'Normal',
@@ -270,10 +265,9 @@ export const STRINGS = {
     g_book: "Book's table: glass {n}",
     g_aria: 'Graph: the refractive index of common glass is highest for violet light and lowest for red',
     g_pick: '{c}: index {n}',
-    g_note: 'Common glass (typical values)',
 
-    note_drawn: 'The light’s path is drawn',
-    note_spread: 'Colours spread {k} times wider than real',
+    note_drawn: 'Light paths drawn',
+    note_spread: 'Colours spread {k}× wider',
 
     hint_wait: 'Wait a moment and watch.',
 
@@ -298,15 +292,11 @@ export const STRINGS = {
     n_path_orig: 'The faces are not parallel, so it does not return to its first direction.',
     n_path_apex: 'It bends toward the base, not the apex.',
 
-    q_why: 'Why did the light not turn back to its original direction?',
-    c_why_right: 'The two faces are not parallel',
-    c_why_absorb: 'Glass absorbs the light',
-    c_why_toward: 'Leaving, light bends toward the normal',
-    c_why_reflect: 'The light reflects inside',
-    a_why: '<b>The faces are not parallel.</b> In a slab they are, so light returns to its direction.',
-    n_why_absorb: 'Absorption dims light; it does not turn it.',
-    n_why_toward: 'Leaving glass, light bends away from the normal.',
-    n_why_reflect: 'The light has gone out through the second face.',
+    q_orig: "The lamp's red light bent in the prism. Which line is its original direction?",
+    a_orig: "<b>Line {x}</b>: straight on from the lamp's light; the light bent away from it, toward the base.",
+    n_orig_inside: 'That is the direction inside the prism.',
+    n_orig_out: 'That is the refracted direction.',
+    n_orig_up: "It is steeper than the lamp's light.",
 
     q_red: 'If white light is sent, on which mark does the red light land?',
     a_red: '<b>Mark {x}</b>: red has the lowest index, so it bends the least.',
@@ -315,10 +305,10 @@ export const STRINGS = {
     n_red_straight: 'Light bends at the second face too; going straight it would land here.',
 
     q_cause: 'Why did the colours of white light separate in the prism?',
-    c_cause_right: 'The index of glass differs by colour',
-    c_cause_paint: 'The prism’s glass colours the light',
-    c_cause_screen: 'The screen makes the colours',
-    c_cause_reflect: 'Light reflects at the glass faces',
+    c_cause_right: 'Index differs by colour',
+    c_cause_paint: 'Glass colours the light',
+    c_cause_screen: 'The screen makes colours',
+    c_cause_reflect: 'Light reflects at the faces',
     a_cause: '<b>The index differs by colour</b>, so each colour turns by its own angle. The colours were in the white light.',
     n_cause_paint: 'Glass adds no colour.',
     n_cause_screen: 'The screen is white.',
