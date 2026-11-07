@@ -36,8 +36,10 @@ test('charging-by-friction: rubbing moves electrons; like charges repel, unlike 
   expect(await fig.call('set', { phase: 'pn', animate: false })).toMatchObject({ stand: 'B', force: 'attract', turned: 'toward' });
   // far away, the hanging rod hardly turns
   const far = await fig.call('set', { phase: 'pn0', animate: false });
-  expect(Math.abs(far.swing.B)).toBeLessThan(8);
+  expect(far.swing).toEqual({ A: 0, B: 0 });
   expect(far.turned).toBe('still');
+  // the parked rod at the other stand pulls on nothing
+  expect((await fig.call('set', { phase: 'nn0', animate: false })).swing).toEqual({ A: 0, B: 0 });
 
   await fig.call('reset');
   expect(await fig.call('get')).toMatchObject({ phase: 'intro', view: 'front', mode: 'explore', net: { glass: 0 } });
@@ -77,8 +79,8 @@ test('charging-by-friction: dragging the cloth rubs, dragging the rod brings it 
   const ry = rb.y + rb.height / 2;
   await page.mouse.move(rx, ry);
   await page.mouse.down();
-  // toward the hanging rod: up and to the right on the screen
-  await page.mouse.move(rx + 160, ry - 60, { steps: 8 });
+  // toward the hanging rod: up the screen
+  await page.mouse.move(rx, ry - 160, { steps: 8 });
   await page.mouse.up();
   await fig.advance(3000);
   const after = await fig.call('get');

@@ -1,11 +1,12 @@
 // Static electricity by rubbing (book pages 274–275, topic 10.2), student view. On a plain table in a calm blue setting:
 // a glass rod and a piece of silk, a plastic rod and a piece of flannel, each rod lying on two wooden V-blocks with the
-// cloth draped over its end; behind them two lab stands, each with a rod hanging from a silk thread tied at its middle.
+// cloth draped over its end; behind the table two lab stands, each with a rod hanging over the blue from a silk thread.
 // Charges are signs (red +, blue −, always with the sign drawn): every body starts neutral (equal + and −); rubbing (a
 // tap, or dragging the cloth back and forth) moves electrons only, glass → silk and flannel → plastic, as the book
-// says. Then চিত্র ১০.০৩: the rubbed rod is held near a hanging one (a tap, or dragging the rod) and the hanging rod
-// turns away (like charges) or toward it (unlike), from a real Coulomb torque about the thread (./physics.js), with
-// outlined force arrows. Five experiments in the book's order, each in two taps (look, then do), a calm first card,
+// says. Then চিত্র ১০.০৩, close up and from well above, with only the rods in the picture and four signs of extra charge on
+// each: the rubbed rod comes in from the side (a tap, or dragging it) and the hanging rod turns away (like charges) or
+// toward it (unlike), from a Coulomb torque about the thread (./physics.js), with outlined force arrows and the rest
+// line and curved arrow of the book (./turn.js). Five experiments in the book's order, each in two taps (look, then do), a calm first card,
 // one lead-in line, one result and one rule per step; the kit's how-to row; a five-question test.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
@@ -26,7 +27,8 @@ import { fitPose } from './camera.js';
 import { createCharges } from './charges.js';
 import { createI18n } from './i18n.js';
 import { CLOTH, HANG_CHARGE, HELD, HELD_CHARGE, ROD, STAND, STATION, TABLE } from './layout.js';
-import { COUNTS, chargeOf, movedAfter, settle, step as swingStep, still, SWING, torqueY } from './physics.js';
+import { createTurnMark } from './turn.js';
+import { COUNTS, chargeOf, heldReach, movedAfter, settle, step as swingStep, still, SWING, torqueY } from './physics.js';
 
 export const DEFAULTS = {
   view: 'front',
@@ -44,6 +46,7 @@ const FORCE = '#0ca678';
 const INK = '#1d2733';
 const DOUBLE_TAP = 420; // ms
 const MARGIN = { top: 52, bottom: 14, side: 12 };
+const MARGIN_CLOSE = { top: 8, bottom: 6, side: 2 };
 const STROKE = 0.8; // s per stroke when the figure rubs
 const ARROW_FROM = 0.35; // how near the rod in the hand comes (0…1) before the force arrows show
 // how long things take (s): slow enough to follow
@@ -151,7 +154,7 @@ export function createApp(root, options = {}) {
     sun.shadow.bias = -0.0005;
     sun.shadow.normalBias = 0.003;
     sun.shadow.radius = 3;
-    Object.assign(sun.shadow.camera, { left: -0.55, right: 0.55, top: 0.45, bottom: -0.45, near: 0.9, far: 2.9 });
+    Object.assign(sun.shadow.camera, { left: -0.55, right: 0.55, top: 0.4, bottom: -0.3, near: 0.9, far: 2.9 });
     sun.shadow.camera.updateProjectionMatrix();
   }
   sun.target.updateMatrixWorld();
@@ -164,10 +167,13 @@ export function createApp(root, options = {}) {
   scene.add(charges.root);
 
   // the force arrows: on the hanging rod's end and on the tip of the rod in the hand (equal and opposite)
-  const ARROW_R = 0.003;
+  const ARROW_R = 0.0034;
   const fHang = boldArrow('ForceOnHanging', FORCE, ARROW_R, { order: 40 });
   const fHeld = boldArrow('ForceOnHeld', FORCE, ARROW_R, { order: 40 });
   scene.add(fHang.root, fHeld.root);
+  // how far the hanging rod has turned: the dashed rest line and a curved arrow
+  const turnMark = createTurnMark({ half: ROD.half });
+  scene.add(turnMark.root);
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -193,6 +199,7 @@ export function createApp(root, options = {}) {
     userMovedCamera: false,
     freeze: false, // the test: the hanging rods held still until the answer
     hideHang: false, // the test: the signs of the hanging rod in view hidden ("?")
+    hideTurn: false, // the test: the turn mark off while the question asks about the turn
     quizKind: '',
     dragging: '',
   };
@@ -214,7 +221,10 @@ export function createApp(root, options = {}) {
       return;
     }
     // the rod's centre is half a rod behind its tip, toward the hand
-    outPos.copy(tipNear[place]).addScaledVector(HELD.toHand, (1 - near) * HELD.reach + ROD.half);
+    outPos
+      .copy(tipNear[place])
+      .addScaledVector(HELD.away, (1 - near) * HELD.reach)
+      .addScaledVector(HELD.toHand, ROD.half);
     outQ.copy(HAND_Q);
   }
   /** Places a rod from `at` (0…n between the places in `places`), with a lift between the blocks and a stand. */
@@ -254,8 +264,9 @@ export function createApp(root, options = {}) {
     glass: () => moved.glass() / COUNTS.moved, // +1 when fully rubbed
     plastic: () => -moved.plastic() / COUNTS.moved,
   };
-  const PAIR_X = [-0.095, -0.052, 0.048, 0.073, 0.098, 0.121]; // along a rod: two pairs at the plain end, four where it is rubbed
-  const PAIR_DY = 0.0056;
+  const PAIR_X = [-0.075, -0.035, 0.048, 0.073, 0.098, 0.121]; // along a rod: two pairs at the plain end, four where it is rubbed
+  const PAIR_DY = 0.0085;
+  const NET_X = [0.113, 0.083, 0.053, 0.023]; // at the stands: only the extra charge, four spaced signs on the rubbed part, as the book's bars
   const CLOTH_COLS = [-0.03, -0.01, 0.01, 0.03];
   const CR = ROD.r + 0.002; // a cloth's surface round the rod
   const W = V(0, 0, 0);
@@ -296,8 +307,8 @@ export function createApp(root, options = {}) {
   // the signs at the rubbing places show while the camera is there (or over the whole table); a rod in the hand keeps
   // its signs wherever it goes
   const atStations = () => s.frame === 'all' || s.frame === 'glass' || s.frame === 'plastic';
-  const visG = () => (s.v.gAt > 0.01 || atStations() ? s.v.signsG : 0);
-  const visP = () => (s.v.pAt > 0.01 || atStations() ? s.v.signsP : 0);
+  const visG = () => (s.v.gAt <= 0.01 && atStations() ? s.v.signsG : 0);
+  const visP = () => (s.v.pAt <= 0.01 && atStations() ? s.v.signsP : 0);
   const visSilk = () => (atStations() ? s.v.signsG : 0);
   const visFlannel = () => (atStations() ? s.v.signsP : 0);
   // the glass rod: six + always; its − stay, except three that go to the silk
@@ -345,13 +356,15 @@ export function createApp(root, options = {}) {
   // the hanging rods, charged "the same way": the glass with three electrons gone, the plastic with three more
   const visA = () => (s.hideHang || s.frame !== 'A' ? 0 : s.v.hangA);
   const visB = () => (s.hideHang || s.frame !== 'B' ? 0 : s.v.hangB);
-  PAIR_X.forEach((x, i) => {
-    fixed('+', rods.hangGlass, x, PAIR_DY, 0, visA);
-    if (!GLASS_OUT.includes(i)) fixed('-', rods.hangGlass, x, -PAIR_DY, 0, visA);
-    fixed('+', rods.hangPlastic, x, PAIR_DY, 0, visB);
-    fixed('-', rods.hangPlastic, x, -PAIR_DY, 0, visB);
-  });
-  for (const x of [0.0605, 0.0855, 0.1095]) fixed('-', rods.hangPlastic, x, 0, ROD.r + 0.001, visB);
+  // the rods in the hand, once picked up, the same way
+  const visGNet = () => (s.v.gAt > 0.01 ? s.v.signsG : 0);
+  const visPNet = () => (s.v.pAt > 0.01 ? s.v.signsP : 0);
+  for (const x of NET_X) {
+    fixed('+', rods.hangGlass, x, 0, 0, visA);
+    fixed('-', rods.hangPlastic, x, 0, 0, visB);
+    fixed('+', rods.glass, x, 0, 0, visGNet);
+    fixed('-', rods.plastic, x, 0, 0, visPNet);
+  }
 
   // ── the swing of the hanging rods: Coulomb's law between the charges, a weak twist of the thread ─────────────────
   const C3 = { A: [STAND.A.x, STAND.A.y, STAND.A.z], B: [STAND.B.x, STAND.B.y, STAND.B.z] };
@@ -368,9 +381,9 @@ export function createApp(root, options = {}) {
   function gatherHeld() {
     nHeld.A = 0;
     nHeld.B = 0;
-    addHeld('A', 'glass', net.glass(), weight(s.v.gAt, 1));
-    addHeld('B', 'glass', net.glass(), weight(s.v.gAt, 2));
-    addHeld('B', 'plastic', net.plastic(), weight(s.v.pAt, 1));
+    addHeld('A', 'glass', net.glass(), weight(s.v.gAt, 1) * heldReach(s.v.gNear));
+    addHeld('B', 'glass', net.glass(), weight(s.v.gAt, 2) * heldReach(s.v.gNear));
+    addHeld('B', 'plastic', net.plastic(), weight(s.v.pAt, 1) * heldReach(s.v.pNear));
   }
   const weight = (at, place) => Math.max(0, 1 - Math.abs(at - place) * 2);
   function addHeld(id, rod, q, w) {
@@ -484,28 +497,27 @@ export function createApp(root, options = {}) {
     const st = activeStand();
     fHang.root.visible = false;
     fHeld.root.visible = false;
+    if (st && (s.frame === 'A' || s.frame === 'B') && !s.hideTurn) turnMark.set(st.id === 'A' ? STAND.A : STAND.B, swing[st.id].theta);
+    else turnMark.hide();
     if (!st || s.quizKind === 'predict' || s.quizKind === 'unknown' || s.busy === 'carry') return;
     // the arrows come in as the rod comes near, never before: they would give the answer away
     if (s.v[st.near] < ARROW_FROM) return;
     const f = forceOn(st.id);
     const mag = f.length();
-    const len = Math.min(0.075, 0.09 * Math.min(1, mag / F_REF));
+    // never longer than the gap: each stays on its own side, anchored on its own rod
+    const len = Math.min(0.033, 0.04 * Math.min(1, mag / F_REF));
     if (len < 0.012) return;
     DIR.copy(f).normalize();
-    // a pull is drawn lying on the rod it acts on, its head at the rod's end, so it never reaches across to the other rod
-    const back = swingForce() === 'attract' ? -len : 0;
     // on the hanging rod: at its charged end, pointing the way it is pushed or pulled
     END.set(ROD.half - 0.012, 0, 0);
     rods[st.id === 'A' ? 'hangGlass' : 'hangPlastic'].localToWorld(END);
-    END.addScaledVector(DIR, back);
-    END.y += 0.019; // just over the rod it acts on
+    END.addScaledVector(DIR, ROD.r + 0.006); // from just off the rod, clear of its signs
     fHang.set(END, DIR, len);
-    // on the rod in the hand: equal and opposite, at its tip
-    TIP.set(ROD.half - 0.012, 0, 0);
+    // on the rod in the hand: equal and opposite, from its charged end, beside the other arrow
+    TIP.set(ROD.half - 0.03, 0, 0);
     rods[st.rod].localToWorld(TIP);
     DIR.negate();
-    TIP.addScaledVector(DIR, back);
-    TIP.y -= 0.028; // just under the rod it acts on, clear of its signs
+    TIP.addScaledVector(DIR, ROD.r + 0.006);
     fHeld.set(TIP, DIR, len);
   }
 
@@ -515,22 +527,35 @@ export function createApp(root, options = {}) {
     const e = THREE.MathUtils.degToRad(el);
     return V(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
   };
-  const stBox = (st) => new THREE.Box3(V(st.x - 0.13, -0.004, st.z - 0.035), V(st.x + 0.135, 0.058, st.z + 0.06));
+  const stBox = (st) => new THREE.Box3(V(st.x - 0.1, 0, st.z - 0.03), V(st.x + 0.135, 0.058, st.z + 0.07));
   // beside a panel: the rod in the hand's whole way in view; a phone held upright: the working end and the hanging rod
-  const standBox = (c) => new THREE.Box3(V(c.x - 0.4, c.y - 0.1, c.z - 0.1), V(c.x + 0.15, c.y + 0.05, c.z + 0.3));
-  const standTall = (c) => new THREE.Box3(V(c.x - 0.3, c.y - 0.08, c.z - 0.1), V(c.x + 0.14, c.y + 0.04, c.z + 0.26));
+  // the stands: the hanging rod's whole turn and the last of the rod in the hand, in the air over the blue, seen from well
+  // above so a turn about the vertical thread reads as an angle
+  // (fitted on the line of the hanging rod, so the rods themselves fill the width; the rod in the hand comes in from the
+  // view's left edge, and `shift` slides the view toward it, for the room it is drawn back in)
+  const standBox = (c) => new THREE.Box3(V(c.x - 0.25, c.y, c.z), V(c.x + 0.145, c.y, c.z));
   const FRAMES = {
-    all: { box: new THREE.Box3(V(TABLE.x0 + 0.03, 0, TABLE.z0 + 0.04), V(TABLE.x1 - 0.03, 0.36, TABLE.z1 - 0.03)), dir: dirOf(16, 30) },
+    all: { box: new THREE.Box3(V(TABLE.x0 + 0.03, 0, -0.34), V(TABLE.x1 - 0.03, 0.38, TABLE.z1 - 0.03)), dir: dirOf(16, 30) },
     glass: { box: stBox(STATION.glass), dir: dirOf(18, 27) },
     plastic: { box: stBox(STATION.plastic), dir: dirOf(18, 27) },
-    // a phone held upright looks from the other side, so the rod in the hand runs up the narrow view, not off its edge
-    A: { box: standBox(STAND.A), tall: standTall(STAND.A), dir: dirOf(16, 34), tallDir: dirOf(-14, 34) },
-    B: { box: standBox(STAND.B), tall: standTall(STAND.B), dir: dirOf(16, 34), tallDir: dirOf(-14, 34) },
+    A: { box: standBox(STAND.A), dir: dirOf(14, 54), shift: 0.05 },
+    B: { box: standBox(STAND.B), dir: dirOf(14, 54), shift: 0.05 },
   };
   function poseOf(frame) {
     const f = FRAMES[frame];
-    const tall = f.tall && root.classList.contains('cf-stack');
-    return fitPose({ box: tall ? f.tall : f.box, dir: tall ? f.tallDir : f.dir, camera, width: stage.width, height: stage.height, margin: MARGIN });
+    const pose = fitPose({
+      box: f.box,
+      dir: f.dir,
+      camera,
+      width: stage.width,
+      height: stage.height,
+      margin: frame === 'A' || frame === 'B' ? MARGIN_CLOSE : MARGIN,
+    });
+    if (f.shift) {
+      pose.position.z += f.shift;
+      pose.target.z += f.shift;
+    }
+    return pose;
   }
   let camK = 1;
   let camFrom = null;
@@ -612,8 +637,18 @@ export function createApp(root, options = {}) {
     }
     return fly(s.frame, animate ? T.fly : 0);
   }
+  /** At the stands, once the camera has arrived, nothing of the rubbing places is drawn or left in the picture. */
+  function syncStations() {
+    const away = (s.frame === 'A' || s.frame === 'B') && camK >= 1;
+    for (const m of bench.stations) m.visible = !away;
+    const rubbing = (s.frame === 'glass' || s.frame === 'plastic') && camK >= 1;
+    for (const m of bench.stands) m.visible = !rubbing;
+    rods.glass.visible = !(away && s.v.gAt < 0.01);
+    rods.plastic.visible = !(away && s.v.pAt < 0.01);
+  }
   stage.onBeforeRender(() => {
     applyCamera();
+    syncStations();
     camera.updateMatrixWorld();
     placeRods();
     gatherHeld();
@@ -657,6 +692,8 @@ export function createApp(root, options = {}) {
     out.y = (-tmp.y * 0.5 + 0.5) * stage.height;
     return out;
   }
+  const M0 = V(0, 0, 0);
+  const M1 = V(0, 0, 0);
   function arrowBoxes() {
     const out = [];
     for (const a of [fHang, fHeld]) {
@@ -664,6 +701,28 @@ export function createApp(root, options = {}) {
       toScreen(a.root.position, A0);
       toScreen(a.tip, A1);
       out.push({ left: Math.min(A0.x, A1.x) - 8, top: Math.min(A0.y, A1.y) - 8, right: Math.max(A0.x, A1.x) + 8, bottom: Math.max(A0.y, A1.y) + 8 });
+    }
+    if (turnMark.root.visible) {
+      // the curved arrow, and the rest line's free half
+      const st = activeStand();
+      const th = st ? swing[st.id].theta : 0;
+      turnMark.ends(th, M0, M1);
+      toScreen(M0, A0);
+      toScreen(M1, A1);
+      out.push({
+        left: Math.min(A0.x, A1.x) - 12,
+        top: Math.min(A0.y, A1.y) - 12,
+        right: Math.max(A0.x, A1.x) + 12,
+        bottom: Math.max(A0.y, A1.y) + 12,
+      });
+      M1.copy(M0).setX(M0.x + 0.01 - ROD.half);
+      toScreen(M1, A1);
+      for (let i = 0; i < 4; i++) {
+        const k = i / 3;
+        const x = A0.x + (A1.x - A0.x) * k;
+        const y = A0.y + (A1.y - A0.y) * k;
+        out.push({ left: x - 24, top: y - 5, right: x + 24, bottom: y + 5 });
+      }
     }
     return out;
   }
@@ -687,6 +746,8 @@ export function createApp(root, options = {}) {
   const ptHeld = { glass: at(rods.glass, -0.1, 0, 0), plastic: at(rods.plastic, -0.1, 0, 0) };
   const THREAD = V(0, 0, 0);
   const E_ON_SILK = [spot(30, 46), spot(66, 34), spot(-14, 54), spot(80, 8), spot(54, 54)];
+  const F_PUSH = [...ABOVE, ...RIGHT, ...LEFT];
+  const F_PULL = [spot(-72, -44), spot(-84, -60), spot(-60, -62), spot(-92, -36), ...ABOVE];
   const E_ON_ROD = [spot(30, -40), spot(-30, -42), spot(0, -54), spot(60, -30)];
   const calm = () => !s.busy && camK >= 1;
   const LABELS = {
@@ -739,7 +800,7 @@ export function createApp(root, options = {}) {
     hang: {
       text: () => t(s.hideHang ? 'lbl_hang_unknown' : s.frame === 'A' ? 'lbl_hang_glass' : 'lbl_hang_plastic'),
       point: () => (s.frame === 'A' ? ptHangA() : ptHangB()),
-      spots: [spot(34, 22), spot(40, 0), spot(30, 40), spot(34, -26), spot(-10, 40), spot(-30, 46), spot(-10, -34)],
+      spots: [spot(34, 22), spot(40, 0), spot(30, 40), spot(34, -26), spot(-10, 40), spot(-30, 46), spot(-30, 64), spot(-64, 62), spot(-10, -34)],
       show: () => (s.frame === 'A' || s.frame === 'B') && !s.busy,
     },
     held: {
@@ -755,7 +816,7 @@ export function createApp(root, options = {}) {
     force: {
       text: () => t(swingForce() === 'repel' ? 'lbl_repel' : 'lbl_attract'),
       point: () => fHang.tip,
-      spots: [...ABOVE, ...RIGHT, ...LEFT],
+      spots: () => (swingForce() === 'attract' ? F_PULL : F_PUSH),
       show: () => fHang.root.visible && !s.busy && s.dragging !== 'rod' && swingForce() != null,
     },
   };
@@ -972,7 +1033,7 @@ export function createApp(root, options = {}) {
   const rodAt = V(0, 0, 0);
   const rodFrom = V(0, 0, 0);
   const rodTo = V(0, 0, 0);
-  const GRIP = 0.11; // the handle sits this far from the tip, toward the hand: between the rubbed and the plain part
+  const GRIP = 0.14; // the handle sits this far from the tip, toward the hand: on the plain part, clear of the signs
   const lastStand = { id: 'A' };
   const rodHandle = createDragHandle(stage, {
     point: () => {
@@ -980,13 +1041,13 @@ export function createApp(root, options = {}) {
       return rodAt.set(ROD.half - GRIP, 0, 0).applyMatrix4(rods[st.rod].matrixWorld);
     },
     axis: 'x',
-    direction: () => HELD.toHand,
+    direction: () => HELD.away,
     track: {
-      from: () => rodFrom.copy(tipNear[lastStand.id]).addScaledVector(HELD.toHand, GRIP + HELD.reach),
+      from: () => rodFrom.copy(tipNear[lastStand.id]).addScaledVector(HELD.toHand, GRIP).addScaledVector(HELD.away, HELD.reach),
       to: () => rodTo.copy(tipNear[lastStand.id]).addScaledVector(HELD.toHand, GRIP),
     },
     label: t('drag_bring'),
-    labelAt: 'right',
+    labelAt: 'above',
     aria: t('aria_drag_rod'),
     pulse: Boolean(o.coach),
     when: () => {
@@ -1070,7 +1131,7 @@ export function createApp(root, options = {}) {
       } else {
         const st = bringable();
         rodHandle.markUsed();
-        const a = tipNear[st.id].clone().addScaledVector(HELD.toHand, HELD.reach);
+        const a = tipNear[st.id].clone().addScaledVector(HELD.away, HELD.reach);
         const b = tipNear[st.id].clone();
         drag = { what, st, id: e.pointerId, a, b, grab: s.v[st.near] - along(p, a, b) };
       }
@@ -1259,6 +1320,7 @@ export function createApp(root, options = {}) {
   }
   /** What the action's ring is round: a point on the part the next tap acts on (the cloth to rub, the rod to bring). */
   const RING = V(0, 0, 0);
+  const RING_X = 0.068; // on the rod in the hand: round its signs, which show through the ring; the handle's word stays clear
   function actionTarget() {
     const p = stepDone() ? NEXT[s.phase] : s.phase;
     if (!p) return null;
@@ -1267,8 +1329,8 @@ export function createApp(root, options = {}) {
     if (p === 'glass') return on(cloths.silk, 0, ROD.r + 0.004);
     if (p === 'plastic0') return s.frame === 'plastic' || s.frame === 'all' ? on(rods.plastic, 0.04) : null;
     if (p === 'plastic') return on(cloths.flannel, 0, ROD.r + 0.004);
-    if (p === 'pp' || p === 'pn') return on(rods.glass, ROD.half - 0.03);
-    if (p === 'nn') return on(rods.plastic, ROD.half - 0.03);
+    if (p === 'pp' || p === 'pn') return on(rods.glass, RING_X);
+    if (p === 'nn') return on(rods.plastic, RING_X);
     return null; // the next step flies somewhere else: the button says it
   }
   action = createAction({
@@ -1281,7 +1343,16 @@ export function createApp(root, options = {}) {
     icon: ICONS.hand,
     target: actionTarget,
     radius: 26,
-    avoid: [ui.corner, ui.hint, rotate.el, $('.pvc-panel-toggle'), () => anno.boxes(), () => clothHandle.box(), () => rodHandle.box()],
+    avoid: [
+      ui.corner,
+      ui.hint,
+      rotate.el,
+      $('.pvc-panel-toggle'),
+      () => anno.boxes(),
+      () => clothHandle.box(),
+      () => rodHandle.box(),
+      () => charges.boxes(),
+    ],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -1321,7 +1392,7 @@ export function createApp(root, options = {}) {
   }
 
   // ── state for the book ────────────────────────────────────────────────────────────────────────────────────────
-  const deg = (r) => Math.round((r * 180) / Math.PI);
+  const deg = (r) => Math.round((r * 180) / Math.PI) + 0; // + 0: never "−0"
   function snapshot() {
     const mg = moved.glass();
     const mp = moved.plastic();
@@ -1413,6 +1484,7 @@ export function createApp(root, options = {}) {
         s.quizKind = '';
         s.freeze = false;
         s.hideHang = false;
+        bench.grey(false);
         syncUI();
         go(learnSaved || 'intro', { animate: false });
       },
@@ -1423,6 +1495,7 @@ export function createApp(root, options = {}) {
         s.quizKind = kind;
         s.freeze = kind === 'predict';
         s.hideHang = kind === 'unknown';
+        bench.grey(kind === 'unknown');
         // the hidden rod is repelled by the rod in the hand, which is the glass or the plastic: read its sign off the picture
         const neg = kind === 'unknown' && Math.random() < 0.5;
         await go(neg ? 'nn' : q.scene, { animate: false });
@@ -1445,6 +1518,7 @@ export function createApp(root, options = {}) {
         if (kind === 'unknown') {
           // the hidden signs come back: the answer, shown, with the arrows
           s.hideHang = false;
+          bench.grey(false);
           s.quizKind = 'unknown-shown';
           stage.invalidate();
         }
@@ -1598,6 +1672,9 @@ export function createApp(root, options = {}) {
         if (ob.userData.noExport) continue;
         g.add(ob.clone(true));
       }
+      g.traverse((ob) => {
+        ob.visible = true; // the rubbing places may be hidden at the stands
+      });
       return g;
     },
   };

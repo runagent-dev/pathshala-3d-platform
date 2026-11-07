@@ -17,6 +17,7 @@ import {
   step,
   still,
   torqueY,
+  heldReach,
 } from '../../assets/charging-by-friction/src/physics.js';
 
 describe('charging-by-friction: rubbing', () => {
@@ -65,13 +66,14 @@ describe('charging-by-friction: rubbing', () => {
 function setup(qHang, qHeld, near) {
   const c = [STAND.A.x, STAND.A.y, STAND.A.z];
   const u = [HELD.toHand.x, HELD.toHand.y, HELD.toHand.z];
-  const tip = [c[0] + HELD.near.x, c[1] + HELD.near.y, c[2] + HELD.near.z].map((v, i) => v + u[i] * (1 - near) * HELD.reach);
+  const a = [HELD.away.x, HELD.away.y, HELD.away.z];
+  const tip = [c[0] + HELD.near.x, c[1] + HELD.near.y, c[2] + HELD.near.z].map((v, i) => v + a[i] * (1 - near) * HELD.reach);
   const pts = [];
   const qs = [];
   for (let j = 0; j < HELD_CHARGE.n; j++) {
     const d = (HELD_CHARGE.len * j) / (HELD_CHARGE.n - 1);
     pts.push(tip.map((v, i) => v + u[i] * d));
-    qs.push(qHeld / HELD_CHARGE.n);
+    qs.push((qHeld * heldReach(near)) / HELD_CHARGE.n);
   }
   const torque = (th) => torqueY(c, { ...HANG_CHARGE, q: qHang }, th, pts, qs);
   return { c, tip, torque };
@@ -94,13 +96,13 @@ describe('charging-by-friction: the hanging rod', () => {
       assert.equal(d1 > d0, away, `q ${qh}, ${qr}: end went ${d1 > d0 ? 'away' : 'toward'} (${deg(th).toFixed(1)}°)`);
     }
   });
-  it('turns clearly when near and hardly when far', () => {
+  it('turns clearly when near and not at all from the far end of the travel', () => {
     const near = Math.abs(deg(settle(setup(1, 1, 1).torque)));
     const far = Math.abs(deg(settle(setup(1, 1, 0).torque)));
     const attract = Math.abs(deg(settle(setup(-1, 1, 1).torque)));
     assert.ok(near > 25 && near < 60, `repelled ${near}°`);
     assert.ok(attract > 12 && attract < 40, `attracted ${attract}°`);
-    assert.ok(far < 8, `far ${far}°`);
+    assert.equal(far, 0);
     // nearer, more
     const mid = Math.abs(deg(settle(setup(1, 1, 0.5).torque)));
     assert.ok(far < mid && mid < near);

@@ -60,10 +60,11 @@ export function forceKind(q1, q2) {
 
 export const SWING = {
   K: 1, // Coulomb's constant in the figure's units
-  soft: 0.01, // m: softening, so the force stays finite if two charge points come very close
-  torsion: 5, // the thread's twist back, per radian
-  inertia: 0.4, // the rod's moment of inertia about the thread: a swing of about 2 s
-  damping: 0.9, // the air's drag on the turning rod: it overshoots a little and settles in a few seconds
+  soft: 0.16, // m: softening: each sign stands for charge spread round a thick rod, so the force never runs away close up
+  torsion: 0.5, // the thread's twist back, per radian
+  stiff: 12, // it twists back harder the more it is wound up: a real thread tightens
+  inertia: 0.25, // the rod's moment of inertia about the thread: a swing of about 2 s
+  damping: 1.2, // the air's drag on the turning rod: hardly any overshoot, settled in a few seconds
   max: (80 * Math.PI) / 180, // the rod never turns more than this
   dt: 1 / 240, // s: one step of the swing
 };
@@ -119,11 +120,23 @@ export function torqueY(c, hang, theta, pts, qs, scratch = [], m = pts.length) {
 }
 
 /**
+ * How much of the rod in the hand's charge reaches the hanging rod, at `near` (0 far back … 1 closest): none at the far
+ * end of its travel, so a hanging rod is truly at rest until the rod comes in; all of it from about a third of the way.
+ */
+export function heldReach(near) {
+  const k = Math.max(0, Math.min(1, near / 0.35));
+  return k * k * (3 - 2 * k);
+}
+
+/** The thread's twist back at an angle. */
+export const twist = (theta) => SWING.torsion * theta * (1 + SWING.stiff * theta * theta);
+
+/**
  * One time step of the swing (semi-implicit Euler, fixed dt): state { theta, omega } is changed in place. `torque(θ)`
  * gives the electric turning effect at an angle. Returns the state.
  */
 export function step(state, torque, dt = SWING.dt) {
-  const tau = torque(state.theta) - SWING.torsion * state.theta - SWING.damping * state.omega;
+  const tau = torque(state.theta) - twist(state.theta) - SWING.damping * state.omega;
   state.omega += (tau / SWING.inertia) * dt;
   state.theta += state.omega * dt;
   if (state.theta > SWING.max) {
@@ -146,6 +159,6 @@ export function settle(torque, theta0 = 0, seconds = 12) {
 
 /** True once the swing has died out (less than a tenth of a degree left to go, and hardly turning). */
 export function still(state, torque) {
-  const tau = torque(state.theta) - SWING.torsion * state.theta;
+  const tau = torque(state.theta) - twist(state.theta);
   return Math.abs(state.omega) < 2e-3 && Math.abs(tau) / SWING.torsion < 1.5e-3;
 }

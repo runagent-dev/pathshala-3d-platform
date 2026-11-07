@@ -18,7 +18,7 @@ body.bg-transparent { background: transparent; }
 .cf .pvc-learn.cf-calm .pvc-rule { visibility: hidden; }
 
 /* a finished bring-near: the rod can still be dragged, but nothing on it calls for attention */
-.cf.cf-settled .pvc-dh-word { display: none; }
+.cf.cf-settled .pvc-dh-word, .cf.cf-settled .pvc-dh-track { display: none; }
 .cf.cf-settled .pvc-dh.pulse .pvc-dh-disc::after { animation: none; opacity: 0; }
 
 /* the result and the rule */

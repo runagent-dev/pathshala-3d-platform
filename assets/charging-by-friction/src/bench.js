@@ -185,8 +185,8 @@ export function createBench() {
   {
     const n = slab.attributes.normal;
     const c = new Float32Array(n.count * 3);
-    const top = new THREE.Color('#c8b18a');
-    const edge = new THREE.Color('#957c58');
+    const top = new THREE.Color('#ab9069');
+    const edge = new THREE.Color('#7f6847');
     for (let i = 0; i < n.count; i++) {
       const col = n.getY(i) > 0.7 ? top : edge;
       c.set([col.r, col.g, col.b], i * 3);
@@ -201,8 +201,8 @@ export function createBench() {
 
   // ── wooden V-blocks under the two rubbing rods (one merged mesh) ──
   const vShape = new THREE.Shape();
-  const bw = 0.024; // across (z)
-  const bh = 0.03;
+  const bw = 0.036; // across (z)
+  const bh = 0.034;
   const notch = AXIS_Y - ROD.r * 1.41; // the V's bottom: a rod of radius r touches both faces of a 90° V
   vShape.moveTo(-bw / 2, 0);
   vShape.lineTo(bw / 2, 0);
@@ -226,14 +226,14 @@ export function createBench() {
 
   // ── the rods ──
   const rodGeo = rodGeometry();
-  const coreGeo = rodGeometry(ROD.r * 0.62, ROD.half - 0.0015);
+  const coreGeo = rodGeometry(ROD.r * 0.74, ROD.half - 0.0015);
   const glassMat = new THREE.MeshPhysicalMaterial({
     name: 'Glass',
-    color: '#e4f4ef',
+    color: '#c4efe4',
     metalness: 0,
-    roughness: 0.05,
+    roughness: 0.04,
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.42,
     depthWrite: false,
     clearcoat: 1,
     clearcoatRoughness: 0.04,
@@ -243,15 +243,30 @@ export function createBench() {
   // the faint green of soda glass, seen through its thickness (and at the ends)
   const glassCore = new THREE.MeshStandardMaterial({
     name: 'GlassTint',
-    color: '#6fbf9f',
+    color: '#46c9ab',
     roughness: 0.2,
     transparent: true,
-    opacity: 0.55,
+    opacity: 0.66,
     depthWrite: false,
   });
+  // a dark edge round the glass (the back faces of a slightly fatter rod) and a long bright streak, as glass shows a window
+  const glassEdge = new THREE.MeshBasicMaterial({ name: 'GlassEdge', color: '#0b3f3a', side: THREE.BackSide, fog: false });
+  const streakMat = new THREE.MeshBasicMaterial({
+    name: 'GlassStreak',
+    color: '#ffffff',
+    transparent: true,
+    opacity: 0.85,
+    depthWrite: false,
+    fog: false,
+  });
+  const edgeGeo = rodGeometry(ROD.r + 0.0013, ROD.half + 0.0013);
+  const streakGeo = new THREE.BoxGeometry(ROD.len - 0.04, 0.0009, 0.0026);
+  streakGeo.translate(0, ROD.r * 0.86, ROD.r * 0.42);
+  // the test's rod of unknown charge: a plain grey, so its colour says nothing
+  const greyMat = new THREE.MeshStandardMaterial({ name: 'UnknownRod', color: '#aeb6bf', roughness: 0.45, metalness: 0.1 });
   const plasticMat = new THREE.MeshPhysicalMaterial({
     name: 'Plastic',
-    color: '#c4566c',
+    color: '#c22f4d',
     roughness: 0.32,
     metalness: 0,
     clearcoat: 0.6,
@@ -266,7 +281,13 @@ export function createBench() {
       const shell = new THREE.Mesh(rodGeo, glassMat);
       shell.renderOrder = 2;
       shell.castShadow = true;
-      g.add(core, shell);
+      const edge = new THREE.Mesh(edgeGeo, glassEdge);
+      edge.userData.noExport = true;
+      const streak = new THREE.Mesh(streakGeo, streakMat);
+      streak.renderOrder = 3;
+      streak.userData.noExport = true;
+      g.add(edge, core, shell, streak);
+      g.userData.parts = { edge, core, streak };
     } else {
       const m = new THREE.Mesh(rodGeo, plasticMat);
       m.castShadow = true;
@@ -332,12 +353,13 @@ export function createBench() {
   const metal = [];
   const threads = [];
   const side = 0; // the pillar stands straight behind the hanging rod, clear of its swing (its ends turn 12.5 cm round)
-  const back = 0.15;
+  const back = STAND.back;
   for (const c of [STAND.A, STAND.B]) {
     const px = c.x + side;
     const pz = c.z - back;
-    const base = new THREE.ExtrudeGeometry(roundedRect(-0.06, 0.06, -0.055, 0.075, 0.012), {
-      depth: 0.012,
+    // a broad heavy base, longest toward the arm's side so the long arm cannot tip it
+    const base = new THREE.ExtrudeGeometry(roundedRect(-0.085, 0.085, -0.075, 0.075, 0.014), {
+      depth: 0.016,
       bevelEnabled: true,
       bevelThickness: 0.003,
       bevelSize: 0.003,
@@ -366,7 +388,7 @@ export function createBench() {
     metal.push(knob);
     // the thread, from under the arm's end down to the top of the rod
     const len = STAND.arm - 0.004 - (c.y + ROD.r);
-    const th = new THREE.CylinderGeometry(0.0007, 0.0007, len, 6);
+    const th = new THREE.CylinderGeometry(0.002, 0.002, len, 8);
     th.translate(c.x, c.y + ROD.r + len / 2, c.z);
     threads.push(th);
   }
@@ -376,14 +398,28 @@ export function createBench() {
   metalMesh.name = 'StandRods';
   const threadMesh = new THREE.Mesh(merge(threads), threadMat);
   threadMesh.name = 'SilkThreads';
+  // a dark edge round the thread: the back faces of a fatter copy, so a thread reads on the blue and over the rods
+  const threadGeo = threadMesh.geometry;
+  const threadEdge = new THREE.Mesh(
+    merge(
+      [STAND.A, STAND.B].map((c) => {
+        const len = STAND.arm - 0.004 - (c.y + ROD.r);
+        return new THREE.CylinderGeometry(0.0032, 0.0032, len, 8).translate(c.x, c.y + ROD.r + len / 2, c.z);
+      }),
+    ),
+    new THREE.MeshBasicMaterial({ name: 'ThreadEdge', color: '#10213a', side: THREE.BackSide, fog: false }),
+  );
+  threadEdge.name = 'SilkThreadEdges';
+  threadEdge.userData.noExport = true;
+  threadMesh.geometry = threadGeo;
   for (const m of [standMesh, metalMesh]) {
     m.castShadow = true;
     m.receiveShadow = true;
   }
-  root.add(standMesh, metalMesh, threadMesh);
+  root.add(standMesh, metalMesh, threadMesh, threadEdge);
 
   // the hanging rods turn about their thread: each in a group at the knot, with the knot's loop round the rod
-  const loopGeo = new THREE.TorusGeometry(ROD.r + 0.0009, 0.0011, 6, 20);
+  const loopGeo = new THREE.TorusGeometry(ROD.r + 0.0012, 0.0019, 6, 24);
   loopGeo.rotateY(Math.PI / 2); // the loop round the rod's x axis
   const hangers = {};
   for (const [id, c, rod] of [
@@ -417,5 +453,29 @@ export function createBench() {
   placeCloth('silk', CLOTH.rest);
   placeCloth('flannel', CLOTH.rest);
 
-  return { root, rods, cloths: { silk, flannel }, hangers, table, onBlocks, placeCloth, materials: { glassMat, plasticMat, silkMat, flannelMat } };
+  /** The test's unknown rod: both hanging rods a plain grey, or back to glass and plastic. */
+  const grey = (on) => {
+    const parts = rods.hangGlass.userData.parts;
+    parts.core.visible = !on;
+    parts.edge.visible = !on;
+    parts.streak.visible = !on;
+    for (const m of [...rods.hangGlass.children, ...rods.hangPlastic.children])
+      if (m.material === glassMat || m.material === plasticMat || m.material === greyMat)
+        m.material = on ? greyMat : m.parent === rods.hangGlass ? glassMat : plasticMat;
+  };
+  return {
+    root,
+    rods,
+    cloths: { silk, flannel },
+    hangers,
+    table,
+    /** What belongs to the rubbing places: hidden while the camera is at the stands. */
+    stations: [blockMesh, silk, flannel, table],
+    /** What belongs to the stands: hidden while the camera is at the rubbing places. */
+    stands: [standMesh, metalMesh, threadMesh, threadEdge, hangers.A, hangers.B],
+    grey,
+    onBlocks,
+    placeCloth,
+    materials: { glassMat, plasticMat, silkMat, flannelMat },
+  };
 }

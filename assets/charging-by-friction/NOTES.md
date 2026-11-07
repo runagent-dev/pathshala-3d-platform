@@ -20,26 +20,33 @@ Rubbing moves electrons from one material to the other (glass → silk, flannel 
 ## How the figure works
 - Ten steps in the book's order: glass (look, rub), plastic (look, rub), + + / − − / + − (take the rod, bring it near). Each waits
   for a tap on the numbered action, or on the part in its ring; the cloth and the rod can also be dragged (`createDragHandle`).
-- Every body starts with equal + and −. Each sign stands for a great many charges (the panel says so). One stroke moves
+- Rubbing: every body starts with equal + and −. Each sign stands for a great many charges (the panel says so). One stroke moves
   nothing, then one electron per stroke: three in four strokes. Protons never move.
-- The hanging rod turns from a Coulomb torque about the thread between point charges on the two rubbed ends (`src/physics.js`), a
-  weak thread twist and air drag, in arbitrary units: only the signs and shapes are meant. It is exaggerated to be seen, and the
-  charge sits on the rubbed end because an insulator keeps it where it was rubbed.
-- The force arrows and the বিকর্ষণ / আকর্ষণ label appear only once the rod is more than a third of the way in, so the "before" steps
-  never give the answer away. Teal, outlined, one on each rod, equal and opposite.
-- On a phone held upright the camera at the stands looks from the other side (azimuth −14° instead of 16°), so the rod in the hand
-  runs up the narrow view rather than off its edge.
-- Test: five questions. The hidden rod's question picks glass or plastic in the hand at random and hides the hanging rod's signs;
-  both are repulsions, because a neutral rod can also be attracted (that is 10.3's induction), so an attraction would not settle it.
+- The stands: only the rods are in the picture, thick (22 mm, against about 13 mm in a real lab), in the air over the blue. The
+  rubbing table, its blocks and cloths are hidden there; the stands are hidden at the rubbing places. The camera looks from 54°
+  above, so a turn about the vertical thread reads as an angle, and it is fitted on the line of the hanging rod. The stands stand
+  behind the table on their own bases, with long arms, so nothing sits behind the rods.
+- Signs at the stands: four spaced signs of extra charge per rod, as the book draws them, not the neutral pairs (the rule line says
+  so). An insulator keeps its charge where it was rubbed, so they sit on the rubbed half.
+- The swing: a Coulomb torque about the thread between point charges on the two rubbed ends (`src/physics.js`), softened because
+  the charge is spread round a thick rod; a thread that twists back harder as it winds up; air drag. Arbitrary units: only signs and
+  shapes are meant, and the turn is far bigger than a real one, so it can be seen. At the far end of its travel the rod in the hand
+  has no effect at all (`heldReach`), so the hanging rod is truly at rest in the "before" steps.
+- The force arrows and the বিকর্ষণ / আকর্ষণ label appear only once the rod is more than a third of the way in. Teal, outlined, one on
+  each rod, equal and opposite. A dashed rest line and a curved arrow at the plain end show the turn, as the book does.
+- Test: five questions. In the hidden rod's question the hanging rod is grey with no signs and the rod in the hand is glass or
+  plastic at random; both are repulsions, because a neutral rod can also be attracted (that is 10.3's induction).
 
-## Measured (844×390, load ~30, software rendering)
-- 39 draw calls and 25.4 k triangles at most (shadows on); the whole scene is about that, so no azimuth can exceed it.
-- Rubbing, 6× CPU throttle, real clock: 1.6 ms median and 3 ms p95 per animated frame. 0 draws idle.
+## Measured (844×390, software rendering)
+- Whole scene (intro, shadows on): 32 draw calls, 26.2 k triangles. At the stands: 40 draw calls with charges, arrows and turn mark
+  (12.4 k triangles); the rubbing places: 12 draw calls, 13.6 k triangles. The whole scene is about that, so no azimuth can exceed it.
+- Real clock, 6× CPU throttle: rubbing 1.3 ms median, 2.3 ms p95 per animated frame; bringing near and the swing 1.1 ms median, 2 ms
+  p95. 0 draws idle. Time to ready about 4 s under load.
 - No `transmission`; shadow map 1024; textures 128 and 256; charges in two InstancedMeshes (two draw calls). Nothing allocated
-  per frame in the swing, the charges or the labels' points.
+  per frame in the swing, the charges or the labels' points; the turn mark shows its fixed arc with `drawRange`.
 
 ## Open questions
-- The book draws square-section bars; the figure uses round rods, as a school lab has. "দণ্ড" is the book's word.
+- The book draws square-section bars; the figure uses thick round rods. "দণ্ড" is the book's word.
 - No hand is drawn: the rod "in the hand" floats and the student's own finger is the hand. The label says হাতের কাচ.
 - The hanging rods are said to be charged "the same way" before the student sees them charged (the book says the same).
 - ঘষা ১/৪ counts of 4 strokes and 3 electrons are the figure's; the book gives no numbers.
