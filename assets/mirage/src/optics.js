@@ -24,7 +24,7 @@ export const N = { top: 1, mid: Math.cos(25 * D2R), low: Math.cos(35 * D2R) };
 /** The tree: its foot, and the point at the top of its crown the light leaves from. */
 export const TREE = { x: 1.9, topX: 1.8, topY: 1.42 };
 /** The eye: its height, where it starts (far: the mirage shows), the near place of the last step, and how far it can go. */
-export const EYE = { y: 0.85, far: -2.2, near: -0.55, min: -2.8, max: -0.35 };
+export const EYE = { y: 0.85, far: -2.2, near: -0.55, min: -2.6, max: -0.35 };
 
 /** The critical angle (ক্রান্তি কোণ) from the middle layer into the lowest, in degrees: sin θc = n_low / n_mid. */
 export const CRIT_B = Math.asin(N.low / N.mid) * R2D;

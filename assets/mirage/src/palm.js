@@ -195,7 +195,7 @@ export function createPalm() {
     tree.add(m);
   }
 
-  // the image: the same shapes upside down, hanging from the ground line, pale and see-through (প্রতিবিম্ব (অবাস্তব))
+  // the image: the same shapes upside down, hanging from the ground line, pale blue-white and see-through (প্রতিবিম্ব)
   const ghostOf = (src, extra = {}) =>
     new THREE.MeshBasicMaterial({
       name: `${src.name}Image`,
@@ -210,8 +210,12 @@ export function createPalm() {
     });
   const ghostMats = [ghostOf(trunkMat), ghostOf(leafMat, { alphaTest: 0.2, side: THREE.DoubleSide }), ghostOf(nutMat, { color: '#b9d3c0' })];
   // a pale, light-filled copy: the dark bark and fronds lifted (colours above 1, not tone mapped) so it reads on the blue
-  ghostMats[0].color.setRGB(1.6, 1.75, 1.95);
-  ghostMats[1].color.setRGB(1.9, 2.2, 2.1);
+  ghostMats[0].color.setRGB(1.75, 1.95, 2.2);
+  ghostMats[1].color.setRGB(2.0, 2.35, 2.45);
+  const pale = ghostMats.map((m) => m.color.clone());
+  // seen from the eye (the inset), over the blue "water": the tree's own colours, a little blue, like a reflection
+  const reflect = [new THREE.Color(0.85, 0.92, 1.05), new THREE.Color(0.9, 1.0, 1.05), new THREE.Color(0.9, 1.0, 1.05)];
+  let shown = 0;
   const ghost = new THREE.Group();
   ghost.name = 'PalmImage';
   ghost.userData.noExport = true;
@@ -226,13 +230,22 @@ export function createPalm() {
   function setImage(a, s, wobble = 0) {
     ghost.visible = a > 0.01;
     if (!ghost.visible) return;
-    for (const m of ghostMats) m.opacity = 0.5 * a;
+    shown = a;
+    for (const m of ghostMats) m.opacity = 0.7 * a;
     // the fronds' leaflets are cut out by their alpha: test against the faded opacity, never 0 (no shader change)
-    ghostMats[1].alphaTest = Math.max(0.02, 0.45 * 0.5 * a);
+    ghostMats[1].alphaTest = Math.max(0.02, 0.45 * 0.7 * a);
     // flipped about the ground: y → −s·y; a shimmer squeezes it sideways for a moment as it appears
     const w = 1 + 0.06 * Math.sin(wobble * Math.PI * 6) * (1 - wobble);
     ghost.scale.set(w, -s, 1);
     ghost.position.x = TREE.x * (1 - w);
   }
-  return { tree, ghost, setImage, trunk, crown };
+  /** 'reflect' for the inset's draw (the tree's colours, stronger), 'pale' back for the main view. */
+  function look(mode) {
+    const r = mode === 'reflect';
+    ghostMats.forEach((m, k) => {
+      m.color.copy(r ? reflect[k] : pale[k]);
+      m.opacity = (r ? 0.88 : 0.7) * shown;
+    });
+  }
+  return { tree, ghost, setImage, look, trunk, crown };
 }

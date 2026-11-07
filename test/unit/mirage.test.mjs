@@ -87,11 +87,13 @@ describe('mirage: the strings', () => {
   it('has every Bangla key in English and back', () => {
     assert.deepEqual(Object.keys(STRINGS.bn).sort(), Object.keys(STRINGS.en).sort());
   });
-  it('uses chapter 9’s লম্ব for the normal, never অভিলম্ব, and the page’s ক্রান্তি কোণ', () => {
+  it('uses chapter 9’s লম্ব and বিভেদতল, the page’s ক্রান্তি কোণ and প্রতিবিম্ব (no অবাস্তব)', () => {
     for (const v of Object.values(STRINGS.bn)) assert.ok(!v.includes('অভিলম্ব'), v);
     assert.equal(STRINGS.bn.lbl_normal, 'লম্ব');
     assert.ok(STRINGS.bn.rule_bend.includes('ক্রান্তি কোণ'));
-    assert.equal(STRINGS.bn.lbl_image, 'প্রতিবিম্ব (অবাস্তব)');
+    assert.equal(STRINGS.bn.lbl_image, 'প্রতিবিম্ব');
+    for (const v of Object.values(STRINGS.bn)) assert.ok(!v.includes('অবাস্তব') && !v.includes('সীমানা'), v);
+    assert.ok(STRINGS.bn.out_far.includes('বিভেদতল'));
   });
   it('writes numbers with Bangla digits', () => {
     const t = createI18n('bn');

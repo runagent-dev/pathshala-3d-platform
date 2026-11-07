@@ -24,6 +24,7 @@ test(`${ID}: the steps, far and near, and the eye moved`, async ({ page }) => {
   expect(await fig.call('get')).toMatchObject({ step: 'direct', busy: false, shown: { direct: true, layers: false } });
 
   expect(await fig.call('set', { step: 'layers', animate: false })).toMatchObject({ shown: { layers: true, bent: false } });
+  expect(await frame.locator('.mg-inset').isHidden()).toBe(true);
   expect(await frame.locator('.pvc-rule b').first().textContent()).toBe('প্রতিসরণাঙ্ক বেশি');
 
   // far: refracted (r > i), then totally reflected at the lowest boundary (i > θc)
@@ -36,6 +37,10 @@ test(`${ID}: the steps, far and near, and the eye moved`, async ({ page }) => {
   const img = await fig.call('set', { step: 'image', animate: false });
   expect(img).toMatchObject({ mirage: true, shown: { image: true } });
   expect(img.image).toBeLessThan(-1);
+  await fig.advance(300);
+  // what the eye sees: the inset is open from the image on (640 × 400 has room for it)
+  expect(await frame.locator('.mg-inset').isVisible()).toBe(true);
+  expect(await frame.locator('.mg-inset-cap').textContent()).toBe('চোখ যা দেখে');
 
   // near: no total reflection, no image
   const close = await fig.call('set', { step: 'near', animate: false });
@@ -69,7 +74,7 @@ test(`${ID}: the test, answered all right, scores five of five`, async ({ page }
       .replace(/<[^>]+>/g, '')
       .replace(/&nbsp;/g, ' ')
       .trim();
-  const kinds = ['n', 'r', 'tir', 'img', 'road'];
+  const kinds = ['walk', 'r', 'tir', 'img', 'road'];
   const right = Object.fromEntries(kinds.map((k) => [plain(t(`q_${k}`)), plain(t(`c_${k}_right`))]));
   await fig.call('practice');
   for (let i = 0; i < kinds.length; i++) {

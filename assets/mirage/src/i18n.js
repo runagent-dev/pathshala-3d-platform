@@ -5,8 +5,9 @@
 // পূর্ণ অভ্যন্তরীণ প্রতিফলন, আপতন কোণ, ক্রান্তি কোণ ("ক্রান্তি কোণকে অতিক্রম"), "মরীচিকাকে দূর থেকে দেখা যায়, কাছে এলে
 // দেখা যায় না", "সরাসরি গাছটি দেখতে পাবে", "গাছের একটি প্রতিবিম্ব গাছের নিচেও দেখতে পাবে", "মনে হবে নিচে পানি থাকার
 // কারণে সেখানে গাছের প্রতিবিম্ব দেখা যাচ্ছে", "কাছে গেলে দেখা যাবে কোনো পানি নেই", and the hot road ("দূরে কালচে ভেজা
-// রাস্তা", "খটখটে শুকনো"). The page writes উপরের. Sister figures (9.1, 9.2) call the virtual image "প্রতিবিম্ব (অবাস্তব)"
-// and the normal "লম্ব" (chapter 9 never says অভিলম্ব).
+// রাস্তা", "খটখটে শুকনো"). The page writes উপরের. As in the sister figures (9.1, 9.2):
+// the normal is "লম্ব" (chapter 9 never says অভিলম্ব); the boundary between two layers is a "বিভেদতল" (9.2). The page calls the
+// image only "প্রতিবিম্ব".
 // Use t('key', vars) in code and t.num() for numbers; numbers inside sentences come in as {vars}. intro / intro_short
 // are the first screen's calm card; lead_* the line before the action; out_* the result; rule_* the rule, the book's
 // term in bold. The questions (q_*) are plain text, no HTML: the quiz writes them as text.
@@ -69,19 +70,19 @@ export const STRINGS = {
     lead_near: 'চোখটি টেনে দূরে-কাছে সরিয়ে দেখো। তারপর নিজে যাচাই করো।',
 
     // the result line
-    out_direct: 'গাছের মাথা থেকে আলো <b>সোজা পথে</b> চোখে আসে। চোখ গাছটি সরাসরি দেখে।',
-    out_layers: 'বালুর কাছের বাতাস সবচেয়ে <b>উত্তপ্ত</b>, উপরের বাতাস ঠান্ডা।',
+    out_direct: 'গাছের মাথা থেকে আলো <b>সোজা পথে</b> চোখে আসে। তাই চোখ গাছটিকে যেখানে আছে সেখানেই দেখে।',
+    out_layers: 'বালুর কাছের বাতাস সবচেয়ে <b>উত্তপ্ত</b>, উপরের বাতাস ঠান্ডা। উত্তপ্ত বাতাসের ঘনত্ব কম।',
     out_bend: 'আপতন কোণ {i}°, প্রতিসরণ কোণ <b>{r}°</b>: কোণ বেড়ে গেল। নিচের স্তরে আলো আর ঢুকতে পারল না।',
-    out_image: 'চোখ গাছটি দেখে, আর গাছের নিচে একটি <b>উল্টো গাছ</b>।',
-    out_far: 'নিচের সীমানায় আপতন কোণ <b>{i}°</b>, ক্রান্তি কোণ {c}° থেকে বেশি: মরীচিকা দেখা যায়।',
-    out_close: 'নিচের সীমানায় আপতন কোণ <b>{i}°</b>, ক্রান্তি কোণ {c}° থেকে কম: আলো বালুতে পড়ে।',
+    out_image: 'চোখ গাছটি দেখে, আর গাছের নিচে একটি <b>উল্টো গাছ</b>। এই প্রতিবিম্ব সত্যিকারের গাছ নয়, আলো সেখানে যায়নি।',
+    out_far: 'নিচের বিভেদতলে আপতন কোণ <b>{i}°</b>, ক্রান্তি কোণ {c}° থেকে বেশি: মরীচিকা দেখা যায়।',
+    out_close: 'নিচের বিভেদতলে আপতন কোণ <b>{i}°</b>, ক্রান্তি কোণ {c}° থেকে কম। চোখের দিকে আসার মতো আলো বালুতে পড়ে।',
 
     // the rule: the book's words, the book's term in bold
     rule_direct: 'একই বাতাসের ভেতর দিয়ে আলো সোজা পথে চলে। তাই কোনো মানুষ দূরের একটি গাছের দিকে তাকালে <b>সরাসরি গাছটি</b> দেখতে পায়।',
     rule_layers:
       'সহজভাবে বোঝানোর জন্য মাত্র তিনটি স্তর। উপরের স্তরে বাতাসের ঘনত্ব বেশি, তাই <b>প্রতিসরণাঙ্ক বেশি</b>। নিচের স্তরে বাতাস উত্তপ্ত, তাই ঘনত্ব কম এবং <b>প্রতিসরণাঙ্কও কম</b>।',
     rule_bend:
-      'গাছ থেকে আলো প্রতিটি স্তরে প্রতিসরিত হওয়ার সময় প্রতিসরণ কোণ বেড়ে যায়। নিচের সীমানায় আপতন কোণ {iB}°, ক্রান্তি কোণ {c}° থেকে বেশি। তাই সেখানে <b>পূর্ণ অভ্যন্তরীণ প্রতিফলন</b>।',
+      'প্রতিটি স্তরে প্রতিসরিত হওয়ার সময় প্রতিসরণ কোণ বেড়ে যায়। নিচের বিভেদতলে আপতন কোণ {iB}°, ক্রান্তি কোণ {c}° থেকে বেশি, তাই <b>পূর্ণ অভ্যন্তরীণ প্রতিফলন</b>।',
     rule_image: 'চোখ ভাবে আলো সোজা পথে এসেছে, তাই ভাঙা রেখা বরাবর গাছের নিচে গাছের <b>প্রতিবিম্ব</b> দেখে। মনে হয় নিচে পানি আছে। এই দৃষ্টি বিভ্রমই <b>মরীচিকা</b>।',
     rule_near:
       'কাছে এলে আলোকে খাড়া হয়ে নামতে হয়, আপতন কোণ ছোট হয়ে যায়। তাই <b>মরীচিকাকে দূর থেকে দেখা যায়, কাছে এলে দেখা যায় না</b>। কাছে গেলে দেখা যায় কোনো পানি নেই।',
@@ -95,11 +96,9 @@ export const STRINGS = {
     lbl_top: 'উপরের স্তর · n বেশি',
     lbl_mid: 'মাঝের স্তর',
     lbl_low: 'নিচের স্তর · n কম',
-    lbl_top_q: 'উপরের স্তর',
-    lbl_low_q: 'নিচের স্তর',
     lbl_normal: 'লম্ব',
     lbl_tir: 'পূর্ণ অভ্যন্তরীণ প্রতিফলন',
-    lbl_image: 'প্রতিবিম্ব (অবাস্তব)',
+    lbl_image: 'প্রতিবিম্ব',
     lbl_water: 'পানি মনে হয়',
     lbl_nowater: 'পানি নেই',
 
@@ -121,17 +120,7 @@ export const STRINGS = {
     q_again: 'আবার পরীক্ষা দাও',
     q_locked: 'পরীক্ষার সময় দৃশ্যটি আটকানো থাকে। ছবি দেখে উত্তর বেছে নাও।',
 
-    q_n: 'ছবির মরুভূমির বাতাসের কোন স্তরে প্রতিসরণাঙ্ক সবচেয়ে বেশি?',
-    c_n_right: 'উপরের স্তরে',
-    c_n_low: 'বালুর কাছের স্তরে',
-    c_n_mid: 'মাঝের স্তরে',
-    c_n_same: 'সব স্তরে সমান',
-    why_n: '<b>উপরের স্তরে</b>: সেখানে বাতাস ঠান্ডা, ঘনত্ব বেশি, তাই প্রতিসরণাঙ্ক বেশি।',
-    mis_n_low: 'বালুর কাছের বাতাস উত্তপ্ত, ঘনত্ব কম, তাই প্রতিসরণাঙ্ক সবচেয়ে কম।',
-    mis_n_mid: 'মাঝের স্তর উপরের স্তরের চেয়ে গরম, তাই তার প্রতিসরণাঙ্ক কম।',
-    mis_n_same: 'সব স্তরে সমান হলে আলো সোজা চলত, বাঁকত না।',
-
-    q_r: 'আলো মাঝের স্তরে ঢুকল। ছবিতে প্রতিসরণ কোণ r, আপতন কোণ i-এর চেয়ে কেমন?',
+    q_r: 'ছবিতে r আর i দেখো। আলো মাঝের স্তরে ঢোকার সময় প্রতিসরণ কোণ r, আপতন কোণ i-এর চেয়ে কেমন?',
     c_r_right: 'বড়',
     c_r_small: 'ছোট',
     c_r_same: 'সমান',
@@ -141,15 +130,15 @@ export const STRINGS = {
     mis_r_same: 'সমান হতো যদি দুই স্তরের প্রতিসরণাঙ্ক সমান হতো।',
     mis_r_zero: 'শূন্য হয় শুধু লম্ব বরাবর এলে।',
 
-    q_tir: 'নিচের সীমানায় পৌঁছে আলো উপরে ফিরে গেল কেন?',
+    q_tir: 'নিচের বিভেদতলে পৌঁছে আলো উপরে ফিরে গেল কেন?',
     c_tir_right: 'আপতন কোণ ক্রান্তি কোণের চেয়ে বেশি',
     c_tir_less: 'আপতন কোণ ক্রান্তি কোণের চেয়ে কম',
     c_tir_sand: 'বালু আয়নার মতো আলো ফেরায়',
     c_tir_push: 'গরম বাতাস আলোকে উপরে ঠেলে',
     why_tir: '<b>আপতন কোণ ক্রান্তি কোণের চেয়ে বেশি</b>, তাই পূর্ণ অভ্যন্তরীণ প্রতিফলন হলো।',
     mis_tir_less: 'ক্রান্তি কোণের চেয়ে কম হলে আলো নিচের স্তরে প্রতিসরিত হয়ে ঢুকে যেত।',
-    mis_tir_sand: 'আলো বালু পর্যন্ত পৌঁছায়ইনি; বাতাসের স্তরেই ফিরে গেছে।',
-    mis_tir_push: 'বাতাস আলোকে ঠেলে না; স্তরের সীমানায় আলো প্রতিসরিত বা প্রতিফলিত হয়।',
+    mis_tir_sand: 'আলো বালু পর্যন্ত পৌঁছায়নি; বাতাসের স্তরেই ফিরে গেছে।',
+    mis_tir_push: 'বাতাস আলোকে ঠেলে না; বিভেদতলে আলো প্রতিসরিত বা প্রতিফলিত হয়।',
 
     q_img: 'বাঁকা পথের আলো চোখে পৌঁছাল। চোখ প্রতিবিম্ব কোথায় ও কেমন দেখবে?',
     c_img_right: 'গাছের নিচে, উল্টো',
@@ -161,15 +150,28 @@ export const STRINGS = {
     mis_img_above: 'আলো চোখে নিচের দিক থেকে আসছে, উপর থেকে নয়।',
     mis_img_none: 'এই আলোও চোখে পৌঁছায়, তাই চোখ গাছ ছাড়াও প্রতিবিম্ব দেখে।',
 
-    q_road: 'উত্তপ্ত রাস্তা দূর থেকে ভেজা দেখায়, কাছে গেলে খটখটে শুকনো। কেন?',
-    c_road_right: 'আপতন কোণ ছোট হয়ে ক্রান্তি কোণের কম হয়',
+    q_road: 'গরমের দিনে উত্তপ্ত রাস্তা দূর থেকে ভেজা দেখায়, কাছে গেলে খটখটে শুকনো। কাছে কী বদলায়?',
+    c_road_right: 'আপতন কোণ ক্রান্তি কোণের চেয়ে কম হয়',
     c_road_crit: 'কাছে গেলে ক্রান্তি কোণ বেড়ে যায়',
-    c_road_dry: 'পানি ততক্ষণে শুকিয়ে যায়',
-    c_road_cool: 'কাছে রাস্তা ঠান্ডা থাকে',
-    why_road: '<b>আপতন কোণ ছোট হয়ে যায়</b>, ক্রান্তি কোণকে অতিক্রম করে না: পূর্ণ অভ্যন্তরীণ প্রতিফলন হয় না।',
+    c_road_dry: 'কাছে যেতে যেতে পানি শুকিয়ে যায়',
+    why_road: '<b>আপতন কোণ ক্রান্তি কোণের চেয়ে কম হয়</b>: কাছে এলে আলো খাড়া হয়ে নামে, পূর্ণ অভ্যন্তরীণ প্রতিফলন হয় না।',
     mis_road_crit: 'ক্রান্তি কোণ নির্ভর করে বাতাসের প্রতিসরণাঙ্কের উপর, দূরত্বের উপর নয়।',
     mis_road_dry: 'সেখানে কখনো পানি ছিলই না; সেটি ছিল দৃষ্টি বিভ্রম।',
-    mis_road_cool: 'পুরো রাস্তাই রোদে সমান গরম; বদলেছে শুধু আলোর কোণ।',
+    inset_cap: 'চোখ যা দেখে',
+    cap_desert: 'মরুভূমিতে মরীচিকা খুবই পরিচিত দৃশ্য। মূল শব্দটি এসেছে মরুভূমিতে উষ্ণ স্থানে সৃষ্টি এক ধরনের <b>দৃষ্টি বিভ্রম</b> থেকে।',
+    cap_road:
+      'গরমের দিনে উত্তপ্ত রাস্তায় গাড়ি চালিয়ে যাওয়ার সময় একই কারণে দূরে কালচে ভেজা রাস্তা দেখা যায়। সেখানে পৌঁছানোর পর দেখা যায় রাস্তাটি খটখটে শুকনো। এটাও এক ধরনের <b>মরীচিকা</b>।',
+    q_walk: 'চোখটি গাছের কাছে এল, আলো বালুতে পড়ছে। এখান থেকে চোখ কী দেখবে?',
+    c_walk_right: 'শুধু গাছটি',
+    c_walk_both: 'গাছ আর উল্টো গাছ',
+    c_walk_water: 'শুধু পানি',
+    c_walk_none: 'কিছুই না',
+    why_walk: '<b>শুধু গাছটি</b>: কাছ থেকে আপতন কোণ ক্রান্তি কোণের চেয়ে কম, পূর্ণ অভ্যন্তরীণ প্রতিফলন হয় না, তাই উল্টো গাছ নেই।',
+    mis_walk_both: 'উল্টো গাছ দেখা যায় শুধু দূর থেকে; এখানে সেই আলো বালুতে পড়ে।',
+    mis_walk_water: 'পানি কখনো ছিলই না; সেটি ছিল দৃষ্টি বিভ্রম।',
+    mis_walk_none: 'গাছ থেকে সোজা আলো এখনো চোখে আসে, তাই গাছটি দেখা যায়।',
+    c_road_more: 'আপতন কোণ ক্রান্তি কোণের চেয়ে বেশি হয়',
+    mis_road_more: 'বেশি হলে পূর্ণ অভ্যন্তরীণ প্রতিফলন হতো, রাস্তা ভেজাই দেখাত।',
   },
   en: {
     panel_hide: 'Hide the text',
@@ -222,22 +224,21 @@ export const STRINGS = {
     lead_image: 'Now let us walk up to the tree.',
     lead_near: 'Drag the eye near and far. Then test yourself.',
 
-    out_direct: 'Light from the top of the tree comes to the eye <b>in a straight line</b>. The eye sees the tree directly.',
-    out_layers: 'The air near the sand is the <b>hottest</b>; the air above is cool.',
+    out_direct: 'Light from the top of the tree comes to the eye <b>in a straight line</b>. So the eye sees the tree where it is.',
+    out_layers: 'The air near the sand is the <b>hottest</b>; the air above is cool. Hot air is less dense.',
     out_bend: 'Angle of incidence {i}°, angle of refraction <b>{r}°</b>: it grew. The light could not enter the lowest layer.',
-    out_image: 'The eye sees the tree, and an <b>upside-down tree</b> below it.',
-    out_far: 'At the lowest boundary i = <b>{i}°</b>, more than the critical angle {c}°: a mirage.',
-    out_close: 'At the lowest boundary i = <b>{i}°</b>, less than the critical angle {c}°: the light hits the sand.',
+    out_image: 'The eye sees the tree and an <b>upside-down tree</b> below it. That is no real tree: no light went there.',
+    out_far: 'At the lowest interface i = <b>{i}°</b>, more than the critical angle {c}°: a mirage.',
+    out_close: 'At the lowest interface i = <b>{i}°</b>, less than the critical angle {c}°. The light for the eye hits the sand.',
 
     rule_direct: 'In the same air light goes straight. So someone looking at a far tree sees <b>the tree directly</b>.',
     rule_layers:
       'Three layers keep it simple. Up high the air is denser: a <b>higher refractive index</b>. Low down it is hot, less dense: a <b>lower refractive index</b>.',
     rule_bend:
-      'At each layer the angle of refraction grows. At the lowest boundary the angle of incidence {iB}° is more than the critical angle {c}°: <b>total internal reflection</b>.',
+      'At each layer the angle of refraction grows. At the lowest interface the angle of incidence {iB}° is more than the critical angle {c}°: <b>total internal reflection</b>.',
     rule_image:
       'The eye takes the light as straight, so along the dashed line it sees an <b>image</b> below the tree, as if in water. This illusion is a <b>mirage</b>.',
-    rule_near:
-      'Close up the light must come down steeply: a small angle of incidence. So <b>a mirage is seen from afar, not up close</b>. There is no water.',
+    rule_near: 'Up close light must come down steeply: i is small. So <b>a mirage is seen from afar, not up close</b>. There is no water.',
     rule_far_again:
       'From afar the light comes in almost level and the angle of incidence passes the critical angle. So <b>a mirage is seen from afar</b>.',
 
@@ -248,11 +249,9 @@ export const STRINGS = {
     lbl_top: 'Upper layer · n higher',
     lbl_mid: 'Middle layer',
     lbl_low: 'Lower layer · n lower',
-    lbl_top_q: 'Upper layer',
-    lbl_low_q: 'Lower layer',
     lbl_normal: 'Normal',
     lbl_tir: 'Total internal reflection',
-    lbl_image: 'Image (virtual)',
+    lbl_image: 'Image',
     lbl_water: 'Looks like water',
     lbl_nowater: 'No water',
 
@@ -273,17 +272,7 @@ export const STRINGS = {
     q_again: 'Take the test again',
     q_locked: 'The scene is locked during the test. Look at the picture and pick an answer.',
 
-    q_n: 'In the picture, which layer of desert air has the highest refractive index?',
-    c_n_right: 'The upper layer',
-    c_n_low: 'The layer by the sand',
-    c_n_mid: 'The middle layer',
-    c_n_same: 'All the same',
-    why_n: '<b>The upper layer</b>: the air there is cool and denser, so its refractive index is higher.',
-    mis_n_low: 'The air by the sand is hot and less dense: the lowest index.',
-    mis_n_mid: 'The middle layer is warmer than the upper one, so its index is lower.',
-    mis_n_same: 'If they were all the same, light would go straight, not bend.',
-
-    q_r: 'Light passed from the upper layer into the middle one. How does r compare with i?',
+    q_r: 'Look at r and i. Entering the middle layer, how does r compare with i?',
     c_r_right: 'Larger',
     c_r_small: 'Smaller',
     c_r_same: 'Equal',
@@ -293,7 +282,7 @@ export const STRINGS = {
     mis_r_same: 'They would be equal if the two layers had the same index.',
     mis_r_zero: 'It is zero only for light along the normal.',
 
-    q_tir: 'Why did the light turn back up at the lowest boundary?',
+    q_tir: 'Why did the light turn back up at the lowest interface?',
     c_tir_right: 'i is more than the critical angle',
     c_tir_less: 'i is less than the critical angle',
     c_tir_sand: 'The sand reflects it like a mirror',
@@ -301,7 +290,7 @@ export const STRINGS = {
     why_tir: '<b>Its angle of incidence is more than the critical angle</b>, so it was totally internally reflected.',
     mis_tir_less: 'Below the critical angle the light would pass into the lowest layer.',
     mis_tir_sand: 'The light never reached the sand; it turned back in the air.',
-    mis_tir_push: 'Air does not push light; at a boundary light is refracted or reflected.',
+    mis_tir_push: 'Air does not push light; at an interface light is refracted or reflected.',
 
     q_img: 'The bent light reached the eye. Where does the eye see the image, which way up?',
     c_img_right: 'Below the tree, upside down',
@@ -313,15 +302,28 @@ export const STRINGS = {
     mis_img_above: 'The light reaches the eye from below, not from above.',
     mis_img_none: 'This light reaches the eye too, so it sees an image besides the tree.',
 
-    q_road: 'On a hot day the road far ahead looks wet; close up it is bone dry. Why not wet up close?',
-    c_road_right: 'i falls below the critical angle',
+    q_road: 'On a hot day the road far ahead looks wet; close up it is bone dry. What changes up close?',
+    c_road_right: 'i becomes less than the critical angle',
     c_road_crit: 'The critical angle grows up close',
-    c_road_dry: 'The water has dried by then',
-    c_road_cool: 'The road is cool up close',
-    why_road: '<b>The angle of incidence becomes small</b> and does not pass the critical angle: no total internal reflection.',
+    c_road_dry: 'The water dries up as you go',
+    why_road: '<b>i becomes less than the critical angle</b>: up close light comes down steeply, no total internal reflection.',
     mis_road_crit: 'The critical angle depends on the air’s refractive index, not on the distance.',
     mis_road_dry: 'There never was water; it was an optical illusion.',
-    mis_road_cool: 'The whole road is equally hot; only the light’s angle changed.',
+    inset_cap: 'What the eye sees',
+    cap_desert: 'A mirage is a familiar sight in the desert. The word comes from a kind of <b>optical illusion</b> in hot places.',
+    cap_road:
+      'Driving on a hot road on a summer day, for the same reason the road far ahead looks dark and wet; when you get there it is bone dry. This too is a kind of <b>mirage</b>.',
+    q_walk: 'The eye came near the tree; the light falls on the sand. What does the eye see from here?',
+    c_walk_right: 'Only the tree',
+    c_walk_both: 'The tree and an upside-down tree',
+    c_walk_water: 'Only water',
+    c_walk_none: 'Nothing',
+    why_walk: '<b>Only the tree</b>: from near, i is less than the critical angle, no total internal reflection, so no upside-down tree.',
+    mis_walk_both: 'The upside-down tree is seen only from afar; here that light falls on the sand.',
+    mis_walk_water: 'There never was water; it was an optical illusion.',
+    mis_walk_none: 'Straight light from the tree still reaches the eye, so the tree is seen.',
+    c_road_more: 'i becomes more than the critical angle',
+    mis_road_more: 'If it were more, there would be total internal reflection: the road would look wet.',
   },
 };
 

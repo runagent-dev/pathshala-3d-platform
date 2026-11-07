@@ -84,18 +84,29 @@ function sandTextures() {
   return { map, bump: bm };
 }
 
-/** A soft round spot (white in the middle, clear at the rim): the "water" patch. */
-function spotTexture() {
+/** The water sheet: soft edges all round, light streaks across (a calm, shimmering surface). 256×128, made once. */
+function waterTexture() {
   const c = document.createElement('canvas');
-  c.width = 128;
+  c.width = 256;
   c.height = 128;
   const ctx = c.getContext('2d');
-  const g = ctx.createRadialGradient(64, 64, 4, 64, 64, 62);
+  const g = ctx.createRadialGradient(128, 64, 10, 128, 64, 128);
   g.addColorStop(0, 'rgba(255,255,255,1)');
-  g.addColorStop(0.55, 'rgba(255,255,255,0.75)');
+  g.addColorStop(0.6, 'rgba(255,255,255,0.85)');
   g.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 128, 128);
+  ctx.save();
+  ctx.scale(1, 0.5);
+  ctx.beginPath();
+  ctx.arc(128, 128, 128, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  // streaks: thin brighter and darker lines across, as light on a still surface
+  ctx.globalCompositeOperation = 'source-atop';
+  for (let y = 8; y < 128; y += 7) {
+    ctx.fillStyle = y % 14 ? 'rgba(255,255,255,0.9)' : 'rgba(120,170,220,0.55)';
+    ctx.fillRect(24 + ((y * 37) % 40), y, 200 - ((y * 23) % 60), 1.5);
+  }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -122,7 +133,7 @@ export function createSetting() {
 
   // pebbles: one instanced mesh, a few on the strip (none on the light's path or under the eye)
   const r = rng(21);
-  const pebGeo = new THREE.IcosahedronGeometry(1, 1);
+  const pebGeo = new THREE.IcosahedronGeometry(1, 0);
   const pebMat = new THREE.MeshStandardMaterial({ name: 'Pebble', color: '#ffffff', roughness: 0.8 });
   const PEB = 16;
   const pebbles = new THREE.InstancedMesh(pebGeo, pebMat, PEB);
@@ -153,32 +164,29 @@ export function createSetting() {
   pebbles.receiveShadow = true;
   root.add(pebbles);
 
-  // the three layers of air: tinted slabs over the sand (the lowest, on the hot sand, the warmest), drawn before the rays
+  // the three layers of air: a thin cross-section pane in the light's own plane (z = 0), so the rays drawn in that
+  // plane bend exactly on its boundary lines from any side; the lowest, on the hot sand, the warmest
   const layers = new THREE.Group();
   layers.name = 'AirLayers';
   layers.userData.noExport = true;
-  const slabOf = (y0, y1, color, opacity, name) => {
+  const PANE = 0.04;
+  const paneOf = (y0, y1, color, opacity, name) => {
     const mat = new THREE.MeshBasicMaterial({ name, color, transparent: true, opacity, depthWrite: false, toneMapped: false });
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(W - 0.02, y1 - y0, SAND.depth - 0.02), mat);
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(W - 0.02, y1 - y0, PANE), mat);
     mesh.position.set(cx, (y0 + y1) / 2, 0);
     mesh.renderOrder = 2;
     mesh.userData.opacity = opacity;
     layers.add(mesh);
     return mesh;
   };
-  const low = slabOf(0.002, LAYER.b, '#ff7a2e', 0.42, 'LayerLow');
-  const mid = slabOf(LAYER.b, LAYER.a, '#ffbf5e', 0.3, 'LayerMid');
-  const up = slabOf(LAYER.a, LAYER.top, '#a5d8ff', 0.16, 'LayerTop');
-  // the boundaries: a light line round each, at a and b
-  const ring = (y) => {
-    const x0 = SAND.left + 0.01;
-    const x1 = SAND.right - 0.01;
-    const z0 = -SAND.depth / 2 + 0.01;
-    const z1 = SAND.depth / 2 - 0.01;
-    return [x0, y, z1, x1, y, z1, x1, y, z1, x1, y, z0, x1, y, z0, x0, y, z0, x0, y, z0, x0, y, z1];
-  };
-  const lineGeo = new LineSegmentsGeometry().setPositions([...ring(LAYER.a), ...ring(LAYER.b)]);
-  const lineMat = new LineMaterial({ color: '#e7f5ff', linewidth: 2, transparent: true, opacity: 0.95, depthWrite: false });
+  const low = paneOf(0.002, LAYER.b, '#ff7a2e', 0.72, 'LayerLow');
+  const mid = paneOf(LAYER.b, LAYER.a, '#ffc35c', 0.62, 'LayerMid');
+  const up = paneOf(LAYER.a, LAYER.top, '#b9e1ff', 0.34, 'LayerTop');
+  // the boundaries (বিভেদতল): one light line each, in the light's plane
+  const x0 = SAND.left + 0.01;
+  const x1 = SAND.right - 0.01;
+  const lineGeo = new LineSegmentsGeometry().setPositions([x0, LAYER.a, 0, x1, LAYER.a, 0, x0, LAYER.b, 0, x1, LAYER.b, 0]);
+  const lineMat = new LineMaterial({ color: '#f1f8ff', linewidth: 2.5, transparent: true, opacity: 1, depthWrite: false });
   const lines = new LineSegments2(lineGeo, lineMat);
   lines.renderOrder = 3;
   lines.name = 'Boundaries';
@@ -186,13 +194,14 @@ export function createSetting() {
   layers.visible = false;
   root.add(layers);
 
-  // the "water": a pale sky-blue patch on the sand where the eye's line meets the ground
+  // the "water": a pale, shimmering sky-blue sheet on the sand, from where the eye's line meets the ground to the
+  // tree's foot (what the eye takes for water)
   const water = new THREE.Mesh(
-    new THREE.CircleGeometry(1, 40),
+    new THREE.PlaneGeometry(1, 1),
     new THREE.MeshBasicMaterial({
       name: 'Water',
-      color: '#a9d6ff',
-      map: spotTexture(),
+      color: '#5fa8e8',
+      map: waterTexture(),
       transparent: true,
       opacity: 0,
       depthWrite: false,
@@ -200,23 +209,28 @@ export function createSetting() {
     }),
   );
   water.rotation.x = -Math.PI / 2;
-  water.scale.set(0.8, 0.5, 1);
-  water.position.y = 0.003;
-  water.renderOrder = 4; // over the layers' tint
+  water.position.y = 0.004;
+  water.renderOrder = 4;
   water.visible = false;
   water.userData.noExport = true;
   root.add(water);
 
-  /** k: 0…1, how much the layers show. */
+  const COOL = new THREE.Color('#ffffff');
+  const HOT = new THREE.Color('#ffd9b0');
+  /** k: 0…1, how much the layers show (and how warm the sand looks). */
   function setHeat(k) {
     layers.visible = k > 0.001;
     for (const ms of [low, mid, up]) ms.material.opacity = ms.userData.opacity * k;
-    lineMat.opacity = 0.95 * k;
+    lineMat.opacity = k;
+    top.color.copy(COOL).lerp(HOT, k);
   }
-  /** The water patch at x, with opacity a. */
-  function setWater(x, a) {
+  /** The water sheet from x0 to x1 along the ground, with opacity a. */
+  function setWater(from, to, a) {
     water.visible = a > 0.01;
-    water.position.x = x;
+    if (!water.visible) return;
+    const len = Math.max(0.2, to - from);
+    water.scale.set(len + 0.35, 1.45, 1);
+    water.position.x = from + len / 2 + 0.05;
     water.material.opacity = 0.85 * a;
   }
   return { root, slab, layers, setHeat, setWater, water, top };

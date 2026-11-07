@@ -4,7 +4,7 @@
 // n highest above and lowest by the sand; ③ a second ray from the tree's top heads down: the camera flies in, the ray
 // is refracted at the first boundary (normal, i and r: r grows) and totally reflected at the second; ④ it climbs to
 // the eye, the eye's line is carried on dashed below the ground, and an upside-down see-through tree appears there
-// (প্রতিবিম্ব (অবাস্তব)) over a pale "water" patch; ⑤ the eye walks up to the tree: the ray must come down steeply,
+// (প্রতিবিম্ব) over a pale sheet of "water", and a small inset shows what the eye sees from where it stands; ⑤ the eye walks up to the tree: the ray must come down steeply,
 // the angle of incidence falls below the critical angle, the ray ends in the sand and the mirage is gone. After that
 // the student drags the eye near and far and watches the mirage come and go. A calm card first, then one lead-in
 // line, the result and the rule per step; the kit's how-to row; a five-question test. Rays: optics.js (exact Snell's
@@ -25,6 +25,7 @@ import { createTweener, ease } from '@shared/tween.js';
 import { fitPose } from './camera.js';
 import { createEye, EYE_R } from './eye.js';
 import { createI18n } from './i18n.js';
+import { createInset, MAIN_ONLY } from './inset.js';
 import { deg, direct, EYE, LAYER, TREE, trace } from './optics.js';
 import { createPalm } from './palm.js';
 import { createRays } from './rays.js';
@@ -45,7 +46,7 @@ export const DEFAULTS = {
 export const STEPS = ['direct', 'layers', 'bend', 'image', 'near'];
 const ORDER = ['intro', ...STEPS];
 const INK = '#1d2733';
-const COLORS = { ray: '#b86e00', normal: '#495057', image: '#1864ab', water: '#1864ab', hot: '#c2410c', cool: '#1864ab' };
+const COLORS = { normal: '#495057', image: '#1864ab', water: '#1864ab', hot: '#c2410c', cool: '#1864ab' };
 const DOUBLE_TAP = 420; // ms
 const MARGIN = { top: 50, bottom: 14, side: 10 };
 // how long things take (s): slow enough to follow
@@ -92,6 +93,10 @@ export function createApp(root, options = {}) {
   lead.className = 'mg-lead';
   $('.pvc-act-row').before(lead);
   ui.canvasHost.setAttribute('aria-label', t('aria_stage'));
+  // the book's own sentences round the idea, only where a tall panel beside the 3D has room for them
+  const cap = document.createElement('p');
+  cap.className = 'mg-cap pvc-note';
+  $('.pvc-rule').after(cap);
   // the honest note in a corner: the layers and the angles are drawn much bigger than in real air
   const note = document.createElement('div');
   note.className = 'mg-note';
@@ -133,6 +138,16 @@ export function createApp(root, options = {}) {
   const rays = createRays({ stage, host: ui.canvasHost });
   // the ray drawing sits above the canvas, under the labels
   ui.canvasHost.insertBefore(rays.canvas, ui.annoLayer.parentElement === ui.canvasHost ? ui.annoLayer : null);
+  // what the eye sees, in a corner: the eye itself and the layers' pane (edge-on from the eye) only in the main view
+  const inset = createInset({
+    stage,
+    host: ui.canvasHost,
+    caption: t('inset_cap'),
+    before: () => palm.look('reflect'),
+    after: () => palm.look('pale'),
+  });
+  for (const part of [eye.root, setting.layers]) part.traverse((ob) => ob.layers.set(MAIN_ONLY));
+  camera.layers.enable(MAIN_ONLY);
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -178,7 +193,8 @@ export function createApp(root, options = {}) {
     const hideImage = s.quizKind === 'img';
     const a = hideImage ? 0 : v.image * s.ghost;
     palm.setImage(a, mirage ? tr.scale : 1, s.wobble);
-    setting.setWater(s.lastWater, a);
+    setting.setWater(s.lastWater, TREE.x, a);
+    inset.set(insetWanted() && v.image > 0.3, s.eyeX, mirage ? tr.image.y : null);
     const rv = rays.v;
     rv.direct = direct(s.eyeX);
     rv.directK = v.direct;
@@ -187,11 +203,28 @@ export function createApp(root, options = {}) {
     rv.path = tr.path;
     rv.pieces = mirage ? v.pieces : Math.min(v.pieces, 3);
     rv.sandEnd = !mirage;
-    rv.ext = mirage ? v.ext : 0;
+    rv.ext = mirage && s.quizKind !== 'img' ? v.ext : 0;
     rv.image = mirage ? tr.image : null;
+    // the "water's" surface: a pale line on the ground, from where the eye's line meets it to past the tree's foot
+    rv.mirror = mirage && s.quizKind !== 'img' ? v.ext * v.image : 0;
+    rv.mirrorFrom = s.lastWater;
+    rv.mirrorTo = TREE.x + 0.45;
+    // too near: where the eye would look for the water, it sees only hot sand
+    rv.sight = !mirage && stepIndex() >= 4 && s.mode !== 'quiz' ? v.image : 0;
+    rv.sightTo = sightX();
+    rv.hole = inset.box();
     rv.normals = v.normals;
     rv.arcs = v.arcs;
     note.hidden = !(v.heat > 0.5) || s.mode === 'quiz';
+  }
+  /** The inset is part of the image and the walk (not the test: it would show answers). */
+  function insetWanted() {
+    return stepIndex() >= 4 && s.mode !== 'quiz';
+  }
+  /** Where the eye, too near for a mirage, looks for the "water" (down the steep ray's angle): only sand there. */
+  function sightX() {
+    const t2 = trace(s.eyeX);
+    return s.eyeX + EYE.y / Math.tan((t2.g * Math.PI) / 180);
   }
   /** The image fades in and out as the mirage comes and goes under the student's drag. */
   stage.addTicker((dt) => {
@@ -220,6 +253,7 @@ export function createApp(root, options = {}) {
       () => action?.ringBox(),
       () => boxOf(rotateEl),
       () => eyeHandle?.box(),
+      () => inset.box(),
     ],
   });
   function boxOf(el) {
@@ -236,7 +270,7 @@ export function createApp(root, options = {}) {
     left: [spot(-18, 0), spot(-18, -20), spot(-18, 20), spot(0, -26)],
     tree: [spot(-24, 0), spot(-24, -22), spot(-24, 22), spot(24, 0), spot(24, 26)],
     eye: [spot(0, -30), spot(-22, -24), spot(-26, 6), spot(24, -26), spot(30, 0), spot(26, 22), spot(-44, -36), spot(-52, 0), spot(0, -50)],
-    layerTop: [spot(-10, -34), spot(10, -40), spot(-30, -30), spot(30, -30)],
+    layerTop: [spot(-10, -34), spot(10, -40), spot(-30, -30), spot(30, -30), spot(46, -14), spot(54, 12), spot(-50, 10)],
     layerMid: [spot(40, 34), spot(56, 20), spot(30, 50), spot(-20, -36)],
     layerLow: [spot(-30, 40), spot(-46, 30), spot(-10, 54), spot(-60, 16), spot(40, 44), spot(60, 30), spot(30, 60)],
     normal: [spot(-14, -18), spot(14, -18), spot(-26, 0), spot(26, 0), spot(-14, 24)],
@@ -277,10 +311,12 @@ export function createApp(root, options = {}) {
     const qk = s.quizKind;
     // in a small view the names of the tree, the eye and the sand give way first (optional)
     const small = stage.height < 300;
-    label('tree', wide && !s.busy, t('lbl_tree'), TREE.x - 0.05, 0.62, 0, SP.tree, INK, small);
+    // in a small view showing the layers, their names come first
+    const crowded = small && v.heat > 0.7 && f === 'scene';
+    label('tree', wide && !s.busy && !crowded, t('lbl_tree'), TREE.x - 0.05, 0.62, 0, SP.tree, INK, small);
     // in step ④ the action's ring already marks the eye, among the rays: its name gives way there
     const ringOnEye = s.step === 'image' && o.coach && !quiz;
-    label('eye', wide && !s.busy && !ringOnEye, t('lbl_eye'), s.eyeX, EYE.y + EYE_R, 0, SP.eye, INK, small);
+    label('eye', wide && !s.busy && !ringOnEye && !crowded, t('lbl_eye'), s.eyeX, EYE.y + EYE_R, 0, SP.eye, INK, small);
     label(
       'sand',
       wide && stepIndex() <= 2 && !s.busy && !quiz && !(small && v.heat > 0.5),
@@ -293,9 +329,9 @@ export function createApp(root, options = {}) {
       true,
     );
     const layersOn = v.heat > 0.7 && f === 'scene' && !s.busy;
-    label('top', layersOn, t(qk === 'n' ? 'lbl_top_q' : 'lbl_top'), -0.7, LAYER.a + 0.16, FRONT_Z, SP.layerTop, COLORS.cool);
-    label('mid', layersOn, t('lbl_mid'), 0.4, (LAYER.a + LAYER.b) / 2, FRONT_Z, SP.layerMid, '#9a5b00', true);
-    label('low', layersOn, t(qk === 'n' ? 'lbl_low_q' : 'lbl_low'), -0.4, LAYER.b / 2, FRONT_Z, SP.layerLow, COLORS.hot, small);
+    label('top', layersOn, t('lbl_top'), -0.7, LAYER.a + 0.16, 0, SP.layerTop, COLORS.cool);
+    label('mid', layersOn, t('lbl_mid'), 0.4, (LAYER.a + LAYER.b) / 2, 0, SP.layerMid, '#9a5b00', true);
+    label('low', layersOn, t('lbl_low'), -0.4, LAYER.b / 2, 0, SP.layerLow, COLORS.hot, small);
     const p = tr.path;
     label('normal', f === 'bend' && v.normals > 0.6 && !s.busy, t('lbl_normal'), p[1].x, p[1].y + 0.19, 0, SP.normal, COLORS.normal);
     label('tir', f === 'bend' && tr.kind === 'tir' && v.pieces > 2.4 && !s.busy && !quiz, t('lbl_tir'), p[2].x, p[2].y, 0, SP.tir, '#9a5b00');
@@ -306,9 +342,9 @@ export function createApp(root, options = {}) {
       'water',
       f === 'full' && !quiz && v.image > 0.6 && !s.busy && (imgA > 0.6 || sandNow),
       t(sandNow ? 'lbl_nowater' : 'lbl_water'),
-      s.lastWater,
+      sandNow ? sightX() : (s.lastWater + TREE.x) / 2,
       0,
-      FRONT_Z,
+      FRONT_Z * 0.45,
       SP.water,
       COLORS.water,
       small,
@@ -317,8 +353,10 @@ export function createApp(root, options = {}) {
 
   // ── camera: a gentle three-quarter view; close on the bends; down to the image ─
   const frames = {
-    scene: { box: new THREE.Box3(V(EYE.far - 0.3, -0.05, -0.25), V(TREE.x + 0.75, 1.6, 0.25)), az: 20, el: 12 },
-    full: { box: new THREE.Box3(V(EYE.min - 0.25, -1.55, -0.25), V(TREE.x + 0.75, 1.6, 0.25)), az: 20, el: 11 },
+    // the whole strip of sand, a finite table in the blue
+    scene: { box: new THREE.Box3(V(SAND.left, -SAND.thick, -SAND.depth / 2), V(SAND.right, 1.6, SAND.depth / 2)), az: 20, el: 12 },
+    // the eye's range, the tree and its image: the dashed line and the image's top, not the whole strip
+    full: { box: new THREE.Box3(V(EYE.min - 0.2, -1.5, -0.2), V(TREE.x + 0.7, 1.58, 0.2)), az: 20, el: 11 },
     bend: { box: new THREE.Box3(), az: 12, el: 7 },
   };
   const camDir = new THREE.Vector3();
@@ -419,12 +457,25 @@ export function createApp(root, options = {}) {
     return tweener.animate({ key: 'camera', duration: T.fly, onUpdate: (k) => ((camK = k), stage.invalidate()), onComplete: () => (camK = 1) })
       .finished;
   }
+  // the rays live in one vertical plane: seen edge-on they would be a meaningless line, so they fade there
+  const viewDir = new THREE.Vector3();
+  let raysAlpha = '1';
   stage.onBeforeRender(() => {
     applyCamera();
     camera.updateMatrixWorld();
     syncScene();
+    viewDir.copy(camera.position).sub(controls.target).normalize();
+    const k = THREE.MathUtils.clamp((Math.abs(viewDir.z) - 0.12) / 0.22, 0, 1);
+    const a = String(Math.round(k * 20) / 20);
+    if (a !== raysAlpha) {
+      raysAlpha = a;
+      rays.canvas.style.opacity = a;
+    }
   });
-  stage.onAfterRender(() => rays.draw());
+  stage.onAfterRender(() => {
+    rays.draw();
+    inset.draw();
+  });
   /** The panel is under the 3D on portrait frames (the kit's rule: beside it from 600 px wide and landscape). */
   function syncLayout() {
     const below = !(root.clientWidth >= 600 && root.clientWidth >= root.clientHeight);
@@ -625,6 +676,8 @@ export function createApp(root, options = {}) {
     }
     sheet.outcome(out);
     sheet.rule(rule);
+    const capHtml = calm ? '' : t(stepIndex() >= 4 ? 'cap_road' : 'cap_desert');
+    if (cap.innerHTML !== capHtml) cap.innerHTML = capHtml;
     sheet.choose(calm ? null : s.step);
     sheet.next({ intro: 'direct', direct: 'layers', layers: 'bend', bend: 'image', image: 'near' }[s.step] ?? null);
     const [word, step, icon] = ACTIONS[ph];
@@ -675,7 +728,7 @@ export function createApp(root, options = {}) {
     target: actionTarget,
     radius: 24,
     pad: 8,
-    avoid: [ui.corner, ui.hint, note, () => anno.boxes(), () => boxOf(rotateEl), () => rays.boxes()],
+    avoid: [ui.corner, ui.hint, note, () => anno.boxes(), () => boxOf(rotateEl), () => rays.boxes(), () => inset.box()],
     pulse: o.coach,
     onAct: () => {
       audio.unlock();
@@ -712,6 +765,7 @@ export function createApp(root, options = {}) {
     return true;
   });
   const raycaster = new THREE.Raycaster();
+  raycaster.layers.enable(MAIN_ONLY);
   const ndc = new THREE.Vector2();
   const hostXY = (e) => {
     const r = ui.canvasHost.getBoundingClientRect();
@@ -890,20 +944,20 @@ export function createApp(root, options = {}) {
       meta: { kind, answer: keys[0] },
     };
   }
-  /** The five questions: which layer has the higher n, r against i, why it turns back, the image, the hot road. */
-  const KINDS = ['n', 'r', 'tir', 'img', 'road'];
-  const SCENE_OF = { n: 'layers', r: 'bend', tir: 'bend', img: 'image', road: 'near' };
+  /** The five questions: what the eye sees up close, r against i, why it turns back, the image, the hot road. */
+  const KINDS = ['walk', 'r', 'tir', 'img', 'road'];
+  const SCENE_OF = { r: 'bend', tir: 'bend', img: 'image', walk: 'near', road: 'near' };
   const CHOICES = {
-    n: ['c_n_right', 'c_n_low', 'c_n_mid', 'c_n_same'],
+    walk: ['c_walk_right', 'c_walk_both', 'c_walk_water', 'c_walk_none'],
     r: ['c_r_right', 'c_r_small', 'c_r_same', 'c_r_zero'],
     tir: ['c_tir_right', 'c_tir_less', 'c_tir_sand', 'c_tir_push'],
     img: ['c_img_right', 'c_img_upright', 'c_img_above', 'c_img_none'],
-    road: ['c_road_right', 'c_road_crit', 'c_road_dry', 'c_road_cool'],
+    road: ['c_road_right', 'c_road_more', 'c_road_crit', 'c_road_dry'],
   };
   const MISTAKES = {
-    c_n_low: 'mis_n_low',
-    c_n_mid: 'mis_n_mid',
-    c_n_same: 'mis_n_same',
+    c_walk_both: 'mis_walk_both',
+    c_walk_water: 'mis_walk_water',
+    c_walk_none: 'mis_walk_none',
     c_r_small: 'mis_r_small',
     c_r_same: 'mis_r_same',
     c_r_zero: 'mis_r_zero',
@@ -913,9 +967,9 @@ export function createApp(root, options = {}) {
     c_img_upright: 'mis_img_upright',
     c_img_above: 'mis_img_above',
     c_img_none: 'mis_img_none',
+    c_road_more: 'mis_road_more',
     c_road_crit: 'mis_road_crit',
     c_road_dry: 'mis_road_dry',
-    c_road_cool: 'mis_road_cool',
   };
   let learnSaved = null;
   let current = null;
@@ -1110,8 +1164,14 @@ export function createApp(root, options = {}) {
     exportRoot() {
       const g = new THREE.Group();
       g.name = 'Mirage';
+      // the sand as a plain colour in the model (its grain and ripple maps would be most of the file)
+      const sand = new THREE.MeshStandardMaterial({ name: 'Sand', color: '#dcb782', roughness: 0.95 });
       for (const part of [setting.root, palm.tree, eye.root]) {
         const copy = part.clone(true);
+        copy.traverse((ob) => {
+          if (!ob.isMesh) return;
+          if (Array.isArray(ob.material)) ob.material = ob.material.map((m) => (m.name === 'Sand' ? sand : m));
+        });
         g.add(copy);
       }
       return g;

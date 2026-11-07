@@ -14,6 +14,7 @@ export const C = {
   r: '#2b8a3e',
   halo: 'rgba(255, 255, 255, 0.92)',
   sand: '#7a5a2e',
+  mirror: '#e7f5ff',
 };
 const NORMAL_H = 0.2; // half the length of a normal (scene units)
 
@@ -57,6 +58,12 @@ export function createRays({ stage, host }) {
     normals: 0, // 0…1: the normals at the first two bends
     arcs: 0, // 0…1: the angles there
     sandEnd: false, // the ray ends in the sand (no mirage)
+    mirror: 0, // 0…1: the "water's" surface, a pale line on the ground from mirrorFrom to mirrorTo
+    mirrorFrom: 0,
+    mirrorTo: 0,
+    sight: 0, // 0…1: too near for a mirage, the eye's line down to the sand, ending at sightTo
+    sightTo: 0,
+    hole: null, // { left, top, right, bottom }: a part of the view not to draw on (the inset)
   };
 
   const A = { x: 0, y: 0, ok: true };
@@ -216,6 +223,49 @@ export function createRays({ stage, host }) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     marks.length = 0;
+    ctx.save();
+    if (v.hole) {
+      // everything but the inset: a rectangle with a hole (even-odd)
+      const b = v.hole;
+      ctx.beginPath();
+      ctx.rect(0, 0, w, h);
+      ctx.rect(b.left, b.top, b.right - b.left, b.bottom - b.top);
+      ctx.clip('evenodd');
+    }
+    drawAll();
+    ctx.restore();
+    if (v.hole) {
+      // keep labels off the inset too: drop marks inside it
+      const b = v.hole;
+      let j = 0;
+      for (let k = 0; k + 1 < marks.length; k += 2) {
+        const x = marks[k];
+        const y = marks[k + 1];
+        if (x > b.left && x < b.right && y > b.top && y < b.bottom) continue;
+        marks[j++] = x;
+        marks[j++] = y;
+      }
+      marks.length = j;
+    }
+  }
+  const M0 = { x: 0, y: 0 };
+  const M1 = { x: 0, y: 0 };
+  function drawAll() {
+    // the "water's" surface on the ground: where the eye believes the reflecting water lies
+    if (v.mirror > 0) {
+      M0.x = v.mirrorFrom;
+      M1.x = v.mirrorTo;
+      ctx.globalAlpha = v.mirror;
+      dashed(M0, M1, 1, C.mirror, 2.2);
+      ctx.globalAlpha = 1;
+    }
+    // too near: the eye's line down to where it would look for water; there is only sand
+    if (v.sight > 0 && v.direct) {
+      M1.x = v.sightTo;
+      ctx.globalAlpha = v.sight;
+      dashed(v.direct[1], M1, 1, C.normal, 1.8);
+      ctx.globalAlpha = 1;
+    }
     // the straight ray (seen directly)
     if (v.direct && v.directK > 0 && v.directA > 0.02)
       piece(v.direct[0], v.direct[1], v.directK, { alpha: v.directA, trimEnd: EYE_R * pxPerUnit(v.direct[1]) });

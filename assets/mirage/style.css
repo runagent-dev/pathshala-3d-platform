@@ -87,3 +87,16 @@ body.bg-transparent { background: transparent; }
 /* the panel under the 3D (a phone held upright): the lead-in line goes (the action's verb says it), so the learn sheet is
    no taller than the test and the 3D keeps its size */
 .mg.mg-below .mg-lead:not(.pvc-note) { display: none; }
+
+/* the book's own sentences: only in a tall panel beside the 3D (1280 × 800), never under it */
+.mg .mg-cap { display: none; margin: 4px 0 0; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.mg .mg-cap:empty { display: none !important; }
+@container pvc (min-height: 640px) {
+  .mg:not(.mg-below) .mg-cap { display: block; }
+}
+
+/* "চোখ যা দেখে": the frame round the inset the stage draws, with its caption */
+.mg-inset[hidden] { display: none; }
+.mg-inset { position: absolute; z-index: 1; box-sizing: border-box; border: 2px solid #fff; border-radius: 6px; box-shadow: 0 1px 6px rgba(5, 20, 45, 0.45); pointer-events: none; }
+.mg-inset-cap { position: absolute; left: 4px; top: 4px; padding: 0 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.94); color: #1d2733; font-size: 12px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+.pvc[data-mode='quiz'] .mg-inset { display: none; }
