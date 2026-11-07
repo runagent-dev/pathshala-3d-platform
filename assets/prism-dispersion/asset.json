@@ -1,0 +1,90 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "prism-dispersion",
+  "title": "Prism (প্রিজম)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 254,
+  "topic": "9.3.2",
+  "placement": "Book page 254, topic 9.3.2 প্রিজম: beside চিত্র ৯.১২ (the ray bent toward the prism's base, 'আলোর মূল দিক' and 'প্রতিসরিত আলোর দিক') and the paragraph on colours separating (Newton).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for the prism, book page 254, topic 9.3.2, beside চিত্র ৯.১২. A 60° crown-glass prism lies on its base on a small prism table (apex up, as the book draws it), a ray box on an arc rail shines on its first face through a red glass, and a white screen stands beyond, on a plain sand table against a calm deep-blue backdrop. Light is traced face by face with Snell's law. Five steps, one tap each: red light goes in and bends toward the normal (লম্ব), comes out and bends away from it, and ends turned toward the base (ভূমি), beside the dashed original direction (আলোর মূল দিক) with the turning angle; the student drags the lamp along its rail (angle of incidence 45°–66°) and the light always bends toward the base. Then the red glass comes off: white light opens into its colours on the screen, violet bent most and red least (Cauchy dispersion of crown glass, n = 1.52 for yellow as the book's table; the spread drawn 6 times wider and labelled so). A graph in the panel shows the refractive index for each colour; tapping a colour lights its ray. Five test questions on the picture. Offline, Bangla and English.",
+  "tags": ["light", "refraction", "prism", "dispersion", "spectrum", "refractive-index", "newton", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Step",
+      "type": "select",
+      "options": [
+        ["intro", "the first screen"],
+        ["enter", "the light goes in"],
+        ["exit", "the light comes out"],
+        ["base", "toward the base"],
+        ["white", "white light"],
+        ["colours", "the colours"]
+      ],
+      "default": "intro"
+    },
+    { "name": "i", "label": "Angle of incidence (°)", "type": "number", "default": "50", "placeholder": "45 to 66" },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "base", "animate": false } },
+    { "name": "set", "payload": { "step": "colours", "colour": "green", "animate": false } },
+    { "name": "set", "payload": { "i": 60 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "step": "white" } },
+    "glb": [{ "name": "default" }],
+    "video": {
+      "kind": "script",
+      "seconds": 24,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 1, "command": "set", "payload": { "step": "enter" } },
+        { "at": 6, "command": "set", "payload": { "step": "exit" } },
+        { "at": 10, "command": "set", "payload": { "step": "base" } },
+        { "at": 14, "command": "set", "payload": { "step": "white" } },
+        { "at": 21, "command": "set", "payload": { "step": "colours", "colour": "green" } }
+      ]
+    }
+  }
+}
