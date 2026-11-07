@@ -1,0 +1,138 @@
+/* Lens and its types: the panel, and the labels on the view kept like the captions of a fine line drawing, as in the sister figures
+   (convex-lens-image, spherical-mirror-focus). The panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.lab .pvc-outcome { margin: 0; font-size: 15.5px; line-height: 1.4; }
+.lab .pvc-outcome b { font-size: 16.5px; font-weight: 600; color: var(--ink); }
+
+/* the line before the action: what the next tap will show; on the first screen, a calm card that sets the scene */
+.lab .lab-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.5; }
+.lab .lab-lead:empty { display: none; }
+.lab .lab-lead.pvc-note { font-size: 15px; line-height: 1.6; }
+.lab .lab-lead .lab-short { display: none; }
+.lab .pvc-learn.lab-calm .pvc-outcome,
+.lab .pvc-learn.lab-calm .pvc-rule { display: none; }
+
+/* the rule: the book's sentences */
+.lab .pvc-rule { font-size: 14.5px; line-height: 1.55; }
+.lab .pvc-rule b { color: var(--ink); font-weight: 600; }
+.lab sub { font-size: 0.72em; line-height: 0; }
+
+/* five words in a narrow column: each gets its share */
+.lab .pvc-examples button { flex: 1 1 0; padding-inline: 0; }
+.lab .pvc-act-slot .pvc-act { width: 100%; }
+
+/* the book's caption: only where the panel has room for it */
+.lab .lab-cap { display: none; margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--line, #dee2e6); color: var(--ink-2); font-size: 15px; line-height: 1.6; }
+.lab .lab-cap b { font-weight: 600; color: #1971c2; }
+.lab .lab-cap:empty { display: none !important; }
+
+/* the vector drawing over the view */
+.lt-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* labels on the picture: a plain white tab, a thin line, no dot */
+.lab .pvc-anno { transition: none; font-size: 13px; font-weight: 600; color: var(--c); border: 0; border-radius: 4px; background: #fff; padding: 1px 6px; box-shadow: none; white-space: nowrap; }
+.lab .pvc-anno-lines line { stroke-width: 1.2; stroke: rgba(255, 255, 255, 0.9) !important; }
+.lab .pvc-anno-lines circle { display: none; }
+@media (max-width: 480px) {
+  .lab .pvc-anno { font-size: 12.5px; }
+}
+/* F, O, C₁, C₂: big letters */
+.lab .pvc-anno .lab-letter { font-size: 18px; font-weight: 700; line-height: 1.1; }
+
+/* the note in a corner: what is drawn, not seen */
+.lab-note[hidden] { display: none; }
+.lab-note { position: absolute; left: 8px; bottom: 6px; z-index: 2; padding: 1px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.86); color: var(--ink-2); font-size: 11.5px; line-height: 1.4; pointer-events: none; white-space: nowrap; }
+.pvc[data-mode='quiz'] .lab-note { display: none; }
+
+/* the test */
+.lab .pvc-opt { padding: 0 3px; line-height: 1.18; }
+.lab .pvc-q-text { font-size: 15px; }
+.lab .pvc-q-feedback { font-size: 14px; line-height: 1.5; }
+.lab-why { color: var(--ink-2); }
+
+/* phones held upright: the learn sheet keeps one height in every step (the 3D view keeps its size) */
+@container pvc (max-width: 420px) {
+  .lab .pvc-learn { gap: 3px; height: 268px; overflow: hidden; }
+  .lab .pvc-examples button { min-height: 32px; padding: 1px 2px 3px; }
+  .lab .pvc-examples .pvc-ex-word { font-size: 14px; line-height: 1.2; white-space: nowrap; }
+  .lab .pvc-act-row { min-height: 44px; }
+  .lab .lab-lead { font-size: 13.5px; line-height: 1.4; }
+  .lab .lab-lead.pvc-note { font-size: 14px; line-height: 1.5; }
+  .lab .pvc-outcome { height: 2.8em; min-height: 0; overflow: hidden; font-size: 14px; line-height: 1.4; }
+  .lab .pvc-outcome b { font-size: 15px; }
+  .lab .pvc-rule { --pvc-rule-lines: 0; font-size: 13.5px; line-height: 19px; height: 76px; min-height: 0; overflow: hidden; }
+  .lab .pvc-q-ask { gap: 5px; }
+  .lab .pvc-q-text { font-size: 14px; line-height: 1.4; }
+  .lab .pvc-q-options { gap: 5px; }
+  .lab .pvc-opt { height: 40px; font-size: 13.5px; }
+  .lab .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 13px; line-height: 1.38; }
+  .lab .pvc-howto { margin: 2px 0; gap: 0 6px; flex-wrap: nowrap; }
+  .pvc.lab .pvc-howto-item { min-height: 28px; gap: 5px; padding: 2px 1px; white-space: nowrap; }
+  .lab .pvc-howto-item:not(.pvc-howto-drag) .pvc-howto-word { display: none; }
+}
+/* the tightest phone (390 × 520) */
+@container pvc (max-width: 420px) and (max-height: 600px) {
+  .lab .pvc-learn { height: 222px; }
+  .lab .pvc-examples button { min-height: 30px; }
+  .lab .pvc-act-row { min-height: 42px; }
+  .lab .pvc-learn:not(.lab-calm) .lab-lead { display: none; }
+  .lab .lab-lead .lab-long { display: none; }
+  .lab .lab-lead .lab-short { display: inline; }
+  .lab .pvc-outcome { font-size: 13px; height: 2.8em; }
+  .lab .pvc-outcome b { font-size: 14px; }
+  .lab .pvc-rule { font-size: 12.5px; line-height: 16.5px; height: 66px; }
+  .lab .pvc-q-ask { gap: 3px; }
+  .lab .pvc-q-head { min-height: 0; }
+  .lab .pvc-q-head .pvc-btn { height: 30px; }
+  .lab .pvc-q-text { font-size: 12.5px; line-height: 1.32; }
+  .lab .pvc-opt { height: 31px; font-size: 12.5px; }
+  .lab .pvc-q-options { gap: 3px; }
+  .lab .pvc-q-feedback { --pvc-q-feedback-min: 3lh; font-size: 12px; line-height: 1.3; }
+  .lab .pvc-rc-word { display: none; }
+}
+/* the side panel beside the 3D view (280–400 px wide; only it is a container with a height) */
+@container pvc-panel (min-height: 1px) {
+  .lab .pvc-learn { height: auto; overflow: visible; gap: 6px; }
+  .lab .pvc-examples button { min-height: 38px; }
+  .lab .pvc-act-row { min-height: 46px; }
+  .lab .pvc-learn:not(.lab-calm) .lab-lead { display: block; }
+  .lab .lab-lead .lab-long { display: inline; }
+  .lab .lab-lead .lab-short { display: none; }
+  .lab .pvc-outcome { font-size: 14.5px; height: auto; min-height: 2.8em; overflow: visible; }
+  .lab .pvc-outcome b { font-size: 15.5px; }
+  .lab .pvc-rule { font-size: 14px; line-height: 1.55; height: auto; overflow: visible; }
+  .lab .pvc-q-ask { gap: 6px; }
+  .lab .pvc-q-head .pvc-btn { height: 36px; }
+  .lab .pvc-q-text { font-size: 14px; }
+  .lab .pvc-q-options { gap: 5px; }
+  .lab .pvc-opt { font-size: 13.5px; height: 40px; }
+  .lab .pvc-q-feedback { font-size: 13.5px; line-height: 1.45; }
+  .lab .pvc-howto { margin: 0; flex-wrap: wrap; gap: 2px 8px; }
+  .pvc.lab .pvc-howto-item { white-space: normal; }
+}
+/* short side panels (a phone held sideways, 640 × 400): everything fits without scrolling; the how-to row and the lead step aside */
+@container pvc-panel (max-height: 430px) {
+  .lab .pvc-learn { gap: 4px; }
+  .lab .pvc-howto { display: none; }
+  .lab .pvc-learn:not(.lab-calm) .lab-lead { display: none; }
+  .lab .lab-lead.pvc-note { font-size: 13.5px; line-height: 1.45; }
+  .lab .pvc-examples button { min-height: 32px; }
+  .lab .pvc-act-row { min-height: 44px; }
+  .lab .pvc-outcome { font-size: 13.5px; line-height: 1.3; }
+  .lab .pvc-outcome b { font-size: 14.5px; }
+  .lab .pvc-rule { font-size: 13px; line-height: 1.4; }
+  .lab .pvc-q-text { font-size: 13px; line-height: 1.35; }
+  .lab .pvc-opt { height: 34px; font-size: 12.5px; }
+  .lab .pvc-q-feedback { font-size: 12.5px; line-height: 1.35; }
+}
+/* a tall side panel (1280 × 800): larger, the book's size, with the book's caption */
+@container pvc-panel (min-height: 620px) {
+  .lab .pvc-learn { gap: 14px; }
+  .lab .pvc-outcome { font-size: 16px; }
+  .lab .pvc-outcome b { font-size: 18px; }
+  .lab .pvc-rule { font-size: 16px; line-height: 1.65; }
+  .lab .lab-cap { display: block; }
+}

@@ -1,0 +1,106 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "lens-types",
+  "title": "Lens and its types (লেন্স ও লেন্সের প্রকারভেদ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 255,
+  "topic": "9.3.4",
+  "placement": "Book page 255, topic 9.3.4 লেন্স and 9.4 লেন্সের প্রকারভেদ, চিত্র ৯.১৪–৯.১৭ (pp. 255–257).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Interactive 3D figure for lenses and their kinds, book pages 255–257, topics 9.3.4 and 9.4, next to চিত্র ৯.১৪–৯.১৭. Two glass lenses stand in their rings on an optical bench with a printed cm scale. Cut through the middle in imagination, their sections show the convex lens thick in the middle and the concave one thin (চিত্র ৯.১৪); parallel light from a ray box meets at a point after the convex lens and spreads after the concave one (converging and diverging lenses); each face is drawn as part of a sphere with its centre of curvature C₁ or C₂ and the principal axis through them (চিত্র ৯.১৫); one face made flat is still a lens. A laser's ray through a thick glass slab comes out parallel but moved aside, less as the slab is dragged thinner (চিত্র ৯.১৬); through the centre of a thick lens the ray is moved aside, through a thin one it goes straight: the optical centre (চিত্র ৯.১৭). Every ray is traced with Snell's law at each face (n = 1.52). Five test questions on the picture. Offline, Bangla and English.",
+  "tags": [
+    "light",
+    "refraction",
+    "lens",
+    "convex lens",
+    "concave lens",
+    "centre of curvature",
+    "principal axis",
+    "optical centre",
+    "thin lens",
+    "optical bench",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "stage",
+      "label": "What is shown",
+      "type": "select",
+      "options": [
+        ["intro", "two lenses on the bench"],
+        ["kinds", "their sections: thick and thin in the middle"],
+        ["converge", "parallel light meets after the convex lens"],
+        ["diverge", "parallel light spreads after the concave lens"],
+        ["sphere", "the convex lens's faces as parts of two spheres"],
+        ["sphere2", "the concave lens's faces as parts of two spheres"],
+        ["plano", "one face flat"],
+        ["slab", "a ray moved aside by a thick slab"],
+        ["centre", "the ray through a convex lens's centre, thick then thin"],
+        ["centre2", "the ray through a concave lens's centre, thick then thin"]
+      ],
+      "default": "intro"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered ring on the part", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "stage": "centre", "animate": false, "thick": 1 } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": { "params": { "coach": "0", "stage": "kinds" } },
+    "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "stage": "intro", "animate": false } }] }],
+    "video": {
+      "kind": "script",
+      "seconds": 124,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.5, "command": "set", "payload": { "stage": "kinds" } },
+        { "at": 9, "command": "set", "payload": { "stage": "converge" } },
+        { "at": 21, "command": "set", "payload": { "stage": "diverge" } },
+        { "at": 35, "command": "set", "payload": { "stage": "sphere" } },
+        { "at": 50, "command": "set", "payload": { "stage": "sphere2" } },
+        { "at": 65, "command": "set", "payload": { "stage": "plano" } },
+        { "at": 76, "command": "set", "payload": { "stage": "slab" } },
+        { "at": 92, "command": "set", "payload": { "stage": "centre" } },
+        { "at": 107, "command": "set", "payload": { "stage": "centre2" } }
+      ]
+    }
+  }
+}
