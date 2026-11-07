@@ -18,7 +18,7 @@ to the weight of the water the body pushes aside (F = Ahρg = Vρg); a ship floa
 
 ## How the figure shows it (the owner's brief, 2026-10-31)
 One cargo ship in a sunny harbour, the near end of the water cut away (a glass-like cut face just behind the
-ship's flat stern) so the submerged hull and its arrows are visible. Four steps, one idea at a time (the row of words):
+ship's flat stern) so the submerged hull and its arrows are visible. Three steps, one idea at a time (the row of words):
 1. **চাপ**: pressure arrows on the hull, short near the waterline and long at the bottom (P = hρg); the arrows on the
    two sides are equal pairs and fade ("কাটাকাটি"); the bottom ones slide together into one bold প্লবতা arrow.
    F = P₂A = Ah₂ρg with the ship's numbers. The ship's top is out of the water, so h₁ = 0 and F₁ = 0 (said so).
@@ -27,12 +27,16 @@ ship's flat stern) so the submerged hull and its arrows are visible. Four steps,
    the water the reading drops by its প্লবতা; let go, it sinks: the same weight, but it pushes aside only 33 m³ of
    water, so its প্লবতা is a seventh of its weight (the book's চিত্র ৫.০৪ is a cylinder too). A light touch of p138
    (5.3.2, ভেসে থাকা বা ডুবে যাওয়া): ঘনত্ব of steel 7,850 vs water 1,000 kg m⁻³.
-3. **অপসারিত পানি**: a glowing "ghost" of the water the hull pushes aside (the submerged hull's shape, V = Ah) slides
-   out from under the ship, rises out of the water and hangs on a spring balance (the owner's spring-balance picture):
-   its weight Vρg equals the ship's প্লবতা. Marked "কল্পনা" (it is a thought experiment).
-4. **মাল বোঝাই**: containers (20 t each, 0 to 12) are lowered onto the deck; the ship settles deeper with a small bob
+3. **মাল বোঝাই**: containers (20 t each, 0 to 12) are lowered onto the deck; the ship settles deeper with a small bob
    (the weight arrow grows first, the buoyancy catches up), the waterline climbs the draft marks on the stern and the
-   load line (Plimsoll mark) on the side; at twelve containers the water reaches the load line.
+   load line (Plimsoll mark) on the side; at twelve containers the water reaches the load line. A one-line note points
+   to the next figure.
+
+The owner (2026-11-07) moved the step অপসারিত পানি (a glowing "ghost" of the displaced water on the balance) and its
+test question to a figure of its own, `displaced-water-ship` (same page and topic, `order` 2).
+The book's sentence (আর্কিমিডিসের নীতি) stays here, as the rule when the cylinder is lowered into the water. After a
+step's last action the next step's word carries the kit's dotted marker. Version 1.0.0: `step=displaced` is gone, an
+incompatible change to a URL parameter (it now falls back to `pressure`).
 
 The water's particles pushing on the hull (the owner's particle picture) are a few dots that drift up against the
 bottom during step 1 only.
