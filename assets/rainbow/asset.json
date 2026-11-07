@@ -1,0 +1,79 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "rainbow",
+  "title": "Rainbow (রংধনু)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 251,
+  "topic": "9.2.1",
+  "placement": "Book page 251, topic 9.2.1 রংধনু, চিত্র ৯.০৯.",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "mm",
+  "description": "The rainbow (page 251, topic 9.2.1, চিত্র ৯.০৯). The sky after rain on a calm deep-blue backdrop: an eye on a slim stand on a patch of light sand, the sun low behind it, a light curtain of water drops in front. Four steps, one tap each, slow: (1) the camera flies into one drop, drawn big and cut open: a white ray goes in, is refracted (প্রতিসরণ) and splits into colours, violet bending most; (2) it is reflected (প্রতিফলিত) at the back of the drop and the colours come out again, further apart (the spread between colours drawn wider than life, and said so); (3) the camera pulls back to the sky: parallel sunlight reaches two drops of the bow, the drop about 42° from the point opposite the sun sends red to the eye, the one about 41° violet, and the band of colours appears, red outside, violet inside, always in the sky opposite the sun; (4) the sun rises (the student can drag it): the bow sinks, and with the sun above about 42° it is below the horizon, the book's boxed question of why there is no rainbow at midday. Rays traced exactly with Snell's law for typical values of water's refractive index. The panel: a calm intro card, then per step a lead-in line, the result and the rule with the book's term in bold; the kit's how-to row. Test tab: 5 questions (where to look, which colour bends most, which colour comes from the outer drop, why not at midday, how high the top stands), each wrong choice with its own note. Phone-first, Bangla and English.",
+  "tags": ["light", "refraction", "dispersion", "rainbow", "water drop", "bangla"],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "in", "animate": false } },
+    { "name": "set", "payload": { "step": "back", "animate": false } },
+    { "name": "set", "payload": { "step": "bow", "animate": false } },
+    { "name": "set", "payload": { "step": "noon", "animate": false } },
+    { "name": "set", "payload": { "sun": 30 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "step": "bow", "animate": false } }]
+    },
+    "glb": [{ "name": "default", "setup": [] }],
+    "video": {
+      "kind": "script",
+      "seconds": 26,
+      "fps": 30,
+      "params": { "coach": "0" },
+      "script": [
+        { "at": 0.8, "command": "set", "payload": { "step": "in" } },
+        { "at": 6.5, "command": "set", "payload": { "step": "back" } },
+        { "at": 10.5, "command": "set", "payload": { "step": "bow" } },
+        { "at": 19, "command": "set", "payload": { "step": "noon" } }
+      ]
+    }
+  }
+}

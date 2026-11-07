@@ -1,0 +1,73 @@
+/* The rainbow: the page, the panel's calm first card and lead-in line, the labels on the picture (each in the colour of
+   what it names), the honest note in the corner, and the test's answers. The rest of the panel is the kit's clean sheet
+   (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.rb sub, .rb sup { font-size: 0.72em; line-height: 0; }
+.rb-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* the honest note: bottom left of the view, small and quiet */
+.rb-note { position: absolute; left: 10px; bottom: 10px; z-index: 3; max-width: calc(100% - 80px); padding: 2px 8px; border-radius: 5px; background: rgba(8, 24, 52, 0.72); color: #e7eef8; font-size: 12px; line-height: 1.5; pointer-events: none; }
+.pvc[data-mode="quiz"] .rb-note { display: none; }
+
+/* the line before the action: what the next tap will show; on the first screen, a calm card that sets the scene */
+.rb .rb-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+.rb .rb-lead:empty { display: none; }
+.rb .rb-lead.pvc-note { font-size: 15px; line-height: 1.6; }
+.rb .rb-lead .rb-short { display: none; }
+.rb .pvc-learn.rb-calm .pvc-outcome,
+.rb .pvc-learn.rb-calm .pvc-rule { display: none; }
+
+/* the result and the rule */
+.rb .pvc-outcome { font-size: 15px; line-height: 1.5; }
+.rb .pvc-outcome b { font-size: 1.1em; font-weight: 600; color: var(--ink); }
+.rb .pvc-rule { font-size: 14.5px; line-height: 1.6; }
+.rb .pvc-rule b { color: var(--ink); }
+
+/* labels on the picture: short words in their colour on a white chip */
+.pvc-anno-chip { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-lines .k-chip { display: none; }
+
+/* the test: answers in words or numbers */
+.rb .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.rb-opt { display: block; white-space: normal; text-align: center; }
+.rb .pvc-q-text { font-size: 15px; }
+.rb .pvc-q-feedback { font-size: 13.5px; }
+
+/* phones, and short frames: tighter type; the short calm words */
+@container pvc (max-width: 420px) {
+  .rb .pvc-rule { font-size: 14px; }
+  .rb .pvc-outcome { font-size: 14px; }
+  .rb .pvc-opt { height: 40px; font-size: 13px; line-height: 1.2; }
+  .rb .pvc-q-text { font-size: 14.5px; --pvc-q-text-min: calc(3 * 1.45em); }
+  .rb .pvc-q-feedback { font-size: 13.5px; --pvc-q-feedback-min: calc(3 * 1.45em); }
+  .rb .pvc-learn { gap: 6px; }
+}
+@container pvc (max-width: 560px) and (max-height: 600px) {
+  .rb .rb-lead .rb-long { display: none; }
+  .rb .rb-lead .rb-short { display: inline; }
+  .rb .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
+  .rb .pvc-rule { font-size: 13.5px; line-height: 1.5; --pvc-rule-lines: 4; }
+  .rb .pvc-q-text { font-size: 13.5px; }
+  .rb .pvc-opt { font-size: 12.5px; }
+  .pvc-anno-chip { font-size: 12.5px; }
+}
+/* short and wide (a phone held sideways): the panel is beside the scene */
+@container pvc (max-height: 460px) and (min-aspect-ratio: 3/2) {
+  .rb .rb-lead .rb-long { display: none; }
+  .rb .rb-lead .rb-short { display: inline; }
+  .rb .rb-lead { font-size: 13.5px; line-height: 1.45; }
+  .rb .rb-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 5px 10px; }
+  .rb .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
+  .rb .pvc-rule { font-size: 13.5px; line-height: 1.5; --pvc-rule-lines: 4; }
+  .rb .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
+  .rb .pvc-q-text { font-size: 13.5px; }
+  .rb .pvc-opt { font-size: 12.5px; height: 44px; }
+  .rb .pvc-q-feedback { font-size: 13.5px; }
+  .pvc-anno-chip { font-size: 12.5px; }
+}
+@container pvc-panel (max-width: 330px) {
+  .rb .pvc-rule { --pvc-rule-lines: 5; }
+}
