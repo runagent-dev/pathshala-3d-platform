@@ -1,0 +1,94 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "displaced-water-ship",
+  "title": "Displaced water: a model ship (অপসারিত পানি: জাহাজের মডেল)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 137,
+  "topic": "5.3.1",
+  "placement": "Book page 137, topic 5.3.1 আর্কিমিডিসের নীতি এবং প্লবতা: the sentence 'কোনো বস্তু তরলে নিমজ্জিত করলে সেটি যে পরিমাণ তরল অপসারণ করে সেইটুকু তরলের সমান ওজন বস্তুটির ওজন থেকে কমে যায়' and F = Vρg, shown with a model ship in an overflow can; beside buoyancy-ship.",
+  "order": 2,
+  "maintainers": ["RadeenXALNW"],
+  "units": "cm",
+  "description": "Displaced water with a toy cargo ship (page 137, topic 5.3.1, with page 138's 5.3.2), beside buoyancy-ship. On a plain sand table in a calm deep-blue setting: a clear glass tank filled to the lip of its spout (an overflow can), a low glass beaker with printed cm³ marks under the spout on a digital kitchen scale, and a toy cargo ship (buoyancy-ship's ship in its colours, 22 cm long, a prism hull of waterline area A = 100 cm²) hanging by four cords from a digital hanging scale on a lab stand; six toy containers of 50 g on the table. Four steps, one tap each. ওজন: both scales come on: the ship 200 g, the empty beaker 0 g (W = mg = 1.96 N). নামাও: the stand's arm slides down; as the hull goes under, the hanging scale reads less and exactly that much water runs out of the spout into the beaker (a thin stream), until the scale reads 0 g and the ship floats with 200 g of water in the beaker: the book's sentence that a body loses as much weight as the liquid it pushes aside. The arm can then be dragged both ways: lifting the ship lowers the water in the tank and the spilled water stays in the beaker (the tank's water is tracked as a volume, nothing fudged). প্লবতা: the cords are unhooked; ওজন W (violet, down) and প্লবতা F (orange, up) on the floating ship, equal; V = 200 cm³ in the beaker, m = Vρ = 200 g, F = Vρg = 1.96 N. বোঝাই: each tap lifts a container onto the deck; the ship settles 0.5 cm deeper and exactly 50 g more water runs out; two bars, ship + cargo and the water pushed aside, stay equal; V = Ah with the draft h read on the hull's draft marks, up to the load line at six. A calm intro card; per step a lead-in, the result and the book's words; the kit's how-to row and 360° view. Test: 4 questions read off the picture (the hanging scale's reading from the beaker's, what carries a floating ship, one more container, the buoyancy in newtons), every wrong choice a real mistake with its own note. Phone-first, Bangla and English.",
+  "tags": [
+    "buoyancy",
+    "archimedes",
+    "displacement",
+    "overflow can",
+    "eureka can",
+    "ship",
+    "floating",
+    "density",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The ring on the part pulses at first", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "weigh", "animate": false } },
+    { "name": "set", "payload": { "step": "lower", "animate": false } },
+    { "name": "set", "payload": { "lowered": 0.6 } },
+    { "name": "set", "payload": { "step": "buoy", "animate": false } },
+    { "name": "set", "payload": { "step": "load", "containers": 3 } },
+    { "name": "set", "payload": { "view": "3d" } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": {
+    "poster": {
+      "params": { "coach": "0" },
+      "setup": [{ "command": "set", "payload": { "step": "load", "containers": 2, "animate": false } }]
+    },
+    "glb": [
+      {
+        "name": "default",
+        "setup": [{ "command": "set", "payload": { "step": "load", "containers": 2, "animate": false } }]
+      }
+    ],
+    "video": {
+      "kind": "script",
+      "seconds": 24,
+      "fps": 30,
+      "script": [
+        { "at": 0.5, "command": "set", "payload": { "step": "weigh" } },
+        { "at": 3.2, "command": "set", "payload": { "step": "lower" } },
+        { "at": 10.4, "command": "set", "payload": { "step": "buoy" } },
+        { "at": 14.6, "command": "set", "payload": { "step": "load" } },
+        { "at": 18.4, "command": "set", "payload": { "step": "load" } }
+      ]
+    }
+  }
+}
