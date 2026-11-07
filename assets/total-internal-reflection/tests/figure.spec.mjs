@@ -22,7 +22,7 @@ test(`${ID}: one tap lights the ray; the three cases; water; the prism`, async (
   await frame.locator('.pvc-act').click();
   await fig.advance(4600);
   expect(await fig.call('get')).toMatchObject({ step: 'less', busy: false, light: true, theta2: 30, theta1: 48.6, case: 'less', outside: 'air' });
-  expect(await frame.locator('.pvc-rule b').first().textContent()).toBe('অভিলম্ব থেকে দূরে সরে যায়');
+  expect(await frame.locator('.pvc-rule b').first().textContent()).toBe('লম্ব থেকে দূরে সরে যায়');
 
   expect(await fig.call('set', { step: 'critical', animate: false })).toMatchObject({ theta2: 41.8, theta1: 90, case: 'critical', reflected: 1 });
   expect(await frame.locator('.pvc-rule b').first().textContent()).toBe('ক্রান্তি কোণ বা সংকট কোণ');

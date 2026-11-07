@@ -19,9 +19,11 @@ Going from a denser medium into a lighter one the ray bends away from the normal
 surface (θ₁ = 90°), and beyond it no light leaves at all, it is all reflected back inside: পূর্ণ অভ্যন্তরীণ প্রতিফলন, with sin θc = n₁/n₂.
 
 ## Terms (as in the book)
+- **The normal is "লম্ব" in the picture and the text (চিত্র/পাঠে লম্ব), as chapter 9 of the book** (৯.১.১: "একটি লম্ব কল্পনা কর…",
+  "লম্বের সাথে আপতিত রশ্মিটির কোণ"); chapter 8's অভিলম্ব is not used. English stays "normal". (Changed after round 2, as asked.)
 পূর্ণ অভ্যন্তরীণ প্রতিফলন, ঘন মাধ্যম, হালকা মাধ্যম, আলোক রশ্মি, প্রতিফলিত, প্রতিসরিত, ক্রান্তি কোণ বা সংকট কোণ θc, n₁ sinθ₁ = n₂ sin θ₂,
 sin θc = n₁/n₂, বিভেদতল (কাচ-বাতাস বিভেদতল), আপতন কোণ, প্রিজম, পরিপূর্ণ প্রতিফলন; the page writes "উপরের". From ৯.১.১ (the chapter's
-words): অভিলম্ব, প্রতিসরণাঙ্ক. Added by the figure, not on these pages: আলোর উৎস, চাকতি (the optical disc), "প্রতিসরিত রশ্মি নেই",
+words): লম্ব (the normal), প্রতিসরণাঙ্ক. Added by the figure, not on these pages: আলোর উৎস, চাকতি (the optical disc), "প্রতিসরিত রশ্মি নেই",
 "প্রতিসরণ নেই" (graph), "টেনে উৎস ঘোরাও".
 
 ## How the figure works
