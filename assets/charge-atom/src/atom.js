@@ -142,8 +142,11 @@ export function createAtom() {
   const root = new THREE.Group();
   root.name = 'ArgonAtomModel';
   root.rotation.x = -TILT; // the orbits' plane leans back
-  const ballGeo = new THREE.SphereGeometry(1, 24, 16);
-  const exportBall = new THREE.SphereGeometry(1, 16, 12);
+  // segments to match the size on a phone: a nucleon is a few pixels across until the camera flies in; an electron
+  // 8–16 px. (Most nucleons are inside the nucleus and never seen, so they are the cheapest to trim.)
+  const ballGeo = new THREE.SphereGeometry(1, 20, 14);
+  const electronGeo = new THREE.SphereGeometry(1, 16, 12);
+  const exportBall = electronGeo;
   const ball = (name, color, sign, extra = {}) =>
     new THREE.MeshStandardMaterial({ name, map: signTexture(color, sign), roughness: 0.32, metalness: 0, envMapIntensity: 1.1, ...extra });
   const mats = {
@@ -161,7 +164,7 @@ export function createAtom() {
   nucleus.name = 'Nucleus';
   nucleus.add(protons, neutrons);
 
-  const electrons = new THREE.InstancedMesh(ballGeo, mats.electron, 18);
+  const electrons = new THREE.InstancedMesh(electronGeo, mats.electron, 18);
   electrons.name = 'Electrons';
 
   // the orbits: three thin rings, one mesh
@@ -333,6 +336,9 @@ export function createAtom() {
       for (let i = 0; i < gapCount; i++) gapPos[i].copy(points[i]);
       gapScale = k;
     },
+    /** The turn that faces a ball to the viewer, in this model's space (as of the last commit). */
+    facing: qi,
+    electronGeo,
     /** Turn every ball (and empty place) to the viewer and write all instances: call before each frame. */
     commit(cameraQuaternion) {
       root.updateWorldMatrix(true, false);

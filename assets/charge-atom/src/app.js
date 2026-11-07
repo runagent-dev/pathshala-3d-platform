@@ -1,13 +1,14 @@
 // Charge (book pages 272–273, topic 10.1), student view. চিত্র ১০.০১ in 3D: a model of an argon atom over a plain round
 // stand in a calm blue setting: a nucleus of 18 protons (red, "+") and 22 neutrons (grey, no sign), three orbits with
-// 2, 8 and 8 electrons (blue, "−"). Four steps, one tap each, slow: ① the camera flies into the nucleus (প্রোটন +,
+// 2, 8 and 8 electrons (blue, "−"). Five steps, one tap each, slow: ① the camera flies into the nucleus (প্রোটন +,
 // নিউট্রন: no charge); ② back out, the 18 electrons come in one by one, filling one orbit before the next (2, 8, 8):
 // as many electrons as protons, total charge 0 (বিদ্যুৎ নিরপেক্ষ বা নিস্তড়িৎ); ③ one outer electron is taken away: the
 // atom has one positive charge (আয়নিত বা আহিত); the student may tap more outer electrons (inner ones are held tight),
 // or tap a taken one to bring it back; ④ the other way round, on a chlorine atom (2-8-7, the book's লবণ): a stray
-// electron joins its free place and the atom's total charge is negative. The panel counts the charges (a row of + and
-// a row of −, paired) and gives the charge in coulombs (e = 1.6 × 10⁻¹⁹ C). A calm card on the first screen; one
-// lead-in line, the result and the rule per step; the kit's how-to row; a five-question test.
+// electron joins its free place and the atom's total charge is negative; ⑤ page 273's last paragraph: a metal row whose
+// free electrons run beside a glass row whose electrons stay put (সুপরিবাহী, অপরিবাহী). The panel counts the charges (a
+// row of + and a row of −, paired) and gives the charge in coulombs (e = 1.6 × 10⁻¹⁹ C). A calm card on the first
+// screen; one lead-in line, the result and the rule per step; the kit's how-to row; a six-question test.
 import * as THREE from 'three';
 import { createStage } from '@shared/stage.js';
 import { createAction } from '@shared/student/action.js';
@@ -22,6 +23,7 @@ import { createTweener, ease } from '@shared/tween.js';
 import { COLORS, createAtom, FIRST_OUT_DEG, GAP_DEG, PARK_R, R_ELECTRON, R_NUCLEON, SHELL_R } from './atom.js';
 import { fitPose } from './camera.js';
 import { createI18n } from './i18n.js';
+import { createMatter } from './matter.js';
 import { ATOMS, coulombs, E_CHARGE, extraChoices, MAX_REMOVED, netCharge, removedChoices, STEPS } from './reading.js';
 import { backdrop, createStand } from './setting.js';
 
@@ -39,17 +41,19 @@ export const DEFAULTS = {
 const DOUBLE_TAP = 420; // ms
 const MARGIN = { top: 50, bottom: 12, side: 10 };
 /** How long things take (s): slow enough to follow. */
-const T = { fly: 2, fill: 4.8, back: 1.8, out: 2, swap: 1.6, hold: 0.8, join: 2, spinTail: 2.2 };
+const T = { fly: 2, fill: 4.8, back: 1.8, out: 2, swap: 1.6, hold: 0.8, join: 2, spinTail: 2.2, cond: 1.8, drift: 7 };
 /**
  * Where each step ends: the camera on the nucleus (focus) or wide enough for the electrons waiting outside (wide), the
- * electrons and orbits shown, the electrons in, argon or chlorine (swap), chlorine's stray electron in (join).
+ * electrons and orbits shown, the electrons in, argon or chlorine (swap), chlorine's stray electron in (join), the
+ * atom gone and the two rows of matter shown (cond).
  */
 const TARGET = {
-  intro: { focus: 0, wide: 0, eVis: 1, ringVis: 1, fill: 1, swap: 0, join: 0 },
-  nucleus: { focus: 1, wide: 0, eVis: 0, ringVis: 0.28, fill: 1, swap: 0, join: 0 },
-  shells: { focus: 0, wide: 0, eVis: 1, ringVis: 1, fill: 1, swap: 0, join: 0 },
-  less: { focus: 0, wide: 1, eVis: 1, ringVis: 1, fill: 1, swap: 0, join: 0 },
-  more: { focus: 0, wide: 1, eVis: 1, ringVis: 1, fill: 1, swap: 1, join: 1 },
+  intro: { focus: 0, wide: 0, eVis: 1, ringVis: 1, fill: 1, swap: 0, join: 0, cond: 0 },
+  nucleus: { focus: 1, wide: 0, eVis: 0, ringVis: 0.28, fill: 1, swap: 0, join: 0, cond: 0 },
+  shells: { focus: 0, wide: 0, eVis: 1, ringVis: 1, fill: 1, swap: 0, join: 0, cond: 0 },
+  less: { focus: 0, wide: 1, eVis: 1, ringVis: 1, fill: 1, swap: 0, join: 0, cond: 0 },
+  more: { focus: 0, wide: 1, eVis: 1, ringVis: 1, fill: 1, swap: 1, join: 1, cond: 0 },
+  conduct: { focus: 0, wide: 1, eVis: 1, ringVis: 1, fill: 1, swap: 1, join: 1, cond: 1 },
 };
 const ORDER = ['intro', ...STEPS];
 /** How fast each orbit turns while the electrons settle (rad/s), inner fastest. */
@@ -138,6 +142,14 @@ export function createApp(root, options = {}) {
   const REMOVE_ORDER = [45, 225, 0, 180, 315, 135, 90, 270].map((d) => SLOT_OF(2, d));
   const OUTER = new Set(REMOVE_ORDER);
   const STRAY = 17; // chlorine's stray electron
+  // ⑤ the two rows of matter (metal and insulator), in the same plane, hidden until then
+  const matter = createMatter(atom.mats.electron, atom.electronGeo);
+  atom.root.add(matter.root);
+  // the action's ring sits round this (invisible) ball: the nucleus at first, then the next outer electron to take
+  const marker = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), new THREE.MeshBasicMaterial());
+  marker.visible = false;
+  marker.userData.noExport = true;
+  atom.root.add(marker);
 
   const tweener = createTweener();
   stage.addTicker((dt) => tweener.tick(dt));
@@ -168,11 +180,18 @@ export function createApp(root, options = {}) {
   let joined = false; // chlorine's stray electron is (going) in its place
   const phase = [0, 0, 0];
   let spin = 0; // seconds of turning left
+  let drift = 0; // seconds the free electrons of ⑤ still run
   const shake = { i: -1, k: 0 };
   const now = () => performance.now();
   let lastAct = Number.NEGATIVE_INFINITY;
 
   // the orbits turn while the electrons settle, then stop (nothing draws while idle)
+  stage.addTicker((dt) => {
+    if (drift <= 0) return false;
+    drift = Math.max(0, drift - dt);
+    matter.setTime(matter.time + dt);
+    return true;
+  });
   stage.addTicker((dt) => {
     if (spin <= 0) return false;
     const k = Math.min(1, spin / 1.2);
@@ -195,11 +214,13 @@ export function createApp(root, options = {}) {
     const el = element();
     atom.setElement(el);
     const k0 = v.swap < 0.5 ? 1 - 2 * v.swap : 2 * v.swap - 1; // the old atom shrinks away, the new one grows
-    const k = ease.inOutCubic(clamp01(k0));
+    const gone = ease.inOutCubic(clamp01(v.cond)); // ⑤: the atom makes way for the rows of matter
+    const k = ease.inOutCubic(clamp01(k0)) * (1 - gone);
     atom.setNucleusScale(Math.max(1e-3, k));
-    atom.mats.electron.opacity = v.eVis;
-    atom.electrons.visible = v.eVis > 0.01;
-    atom.mats.ring.opacity = v.ringVis;
+    atom.mats.electron.opacity = v.cond > 0 ? 1 : v.eVis;
+    atom.electrons.visible = v.eVis > 0.01 && gone < 0.999;
+    atom.mats.ring.opacity = v.ringVis * (1 - gone);
+    atom.rings.visible = gone < 0.999;
     const slots = atom.SLOTS[el];
     gapList.length = 0;
     for (let i = 0; i < 18; i++) {
@@ -227,6 +248,30 @@ export function createApp(root, options = {}) {
       atom.setElectron(i, P, scale * k);
     }
     atom.setGaps(gapList, k);
+    // the action's ring: round the nucleus on the first screen, round the next outer electron to take in ②
+    if (s.step === 'shells') {
+      const i = nextOut();
+      marker.position.copy(atom.electronAt(i));
+      marker.scale.setScalar(R_ELECTRON * 1.15);
+    } else {
+      marker.position.set(0, 0, 0);
+      marker.scale.setScalar(Math.max(0.5, atom.nucleusRadius()));
+    }
+  }
+  /** The outer electron (still in its place) nearest the upper right of the atom now: the one the action takes next. */
+  function nextOut() {
+    let best = FIRST;
+    let bd = Number.POSITIVE_INFINITY;
+    for (const i of OUTER) {
+      if (removed.has(i)) continue;
+      const a = (((rad(atom.SLOTS.ar[i].deg) + phase[2] - rad(45)) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      const d = Math.min(a, 2 * Math.PI - a);
+      if (d < bd) {
+        bd = d;
+        best = i;
+      }
+    }
+    return best;
   }
 
   /** The counts now: protons, neutrons, electrons in the atom, electrons in each orbit. */
@@ -347,6 +392,7 @@ export function createApp(root, options = {}) {
     return c.net > 0 ? COLORS.proton : c.net < 0 ? COLORS.electron : '#343a40';
   };
   const firstRemoved = () => [...removed][0] ?? -1;
+  const M_P = V(0, 0, 0);
   const LABELS = {
     nucleus: {
       text: () => t('lbl_nucleus'),
@@ -409,6 +455,38 @@ export function createApp(root, options = {}) {
       color: COLORS.electron,
       spots: [...UP_LEFT, ...LEFT_OF, ...ABOVE],
       show: () => learning() && s.step === 'more' && element() === 'cl' && v.swap > 0.99 && v.join > 0.98,
+    },
+    // ② on: the nucleus's charge, so the + side of the sum is in the picture too
+    nucleusQ: {
+      text: () => t('lbl_nucleus_q', { p: counts().p }),
+      point: () => W(V(-0.55, -0.83, 0).multiplyScalar(atom.nucleusRadius())),
+      color: COLORS.proton,
+      spots: [spot(-26, 26), spot(-30, 0), spot(0, 30), spot(-36, 44)],
+      optional: true,
+      show: () => learning() && ['shells', 'less', 'more'].includes(s.step) && settled() && v.swap % 1 === 0,
+    },
+    // ⑤: the two rows and a free electron
+    metal: {
+      text: () => t('lbl_metal'),
+      point: () => W(matter.metalLabel(M_P)),
+      color: '#343a40',
+      spots: [spot(0, -16), spot(30, -16), spot(-10, -30)],
+      show: () => learning() && s.step === 'conduct' && settled(),
+    },
+    glass: {
+      text: () => t('lbl_glass'),
+      point: () => W(matter.glassLabel(M_P)),
+      color: '#343a40',
+      spots: [spot(0, -16), spot(30, -16), spot(-10, -30)],
+      show: () => learning() && s.step === 'conduct' && settled(),
+    },
+    free: {
+      text: () => t('lbl_free'),
+      point: () => W(matter.freeElectron(M_P)),
+      color: COLORS.electron,
+      spots: [spot(0, -58), spot(34, -58), spot(-34, -58), spot(0, -76)],
+      optional: true,
+      show: () => learning() && s.step === 'conduct' && settled() && drift === 0,
     },
     net: {
       text: netText,
@@ -591,6 +669,7 @@ export function createApp(root, options = {}) {
     camera.updateMatrixWorld();
     syncScene();
     atom.commit(camera.quaternion);
+    matter.commit(atom.facing, ease.inOutCubic(clamp01(v.cond)));
     // the panel's count follows the electrons as they come and go
     const c = counts();
     const key = `${c.el}|${c.e}`;
@@ -598,7 +677,7 @@ export function createApp(root, options = {}) {
       lastTally = key;
       syncLabels();
       writeTally();
-      if (!s.busy && s.mode !== 'quiz') sheet.outcome(outcome());
+      if (!s.busy && s.mode !== 'quiz') refresh();
     }
   });
   // the panel under the 3D (a phone held upright) or beside it: the figure's portrait rules apply only under it
@@ -637,6 +716,7 @@ export function createApp(root, options = {}) {
   function takeAway(i, duration = T.out) {
     if (removed.has(i)) return Promise.resolve(true);
     removed.add(i);
+    if (!s.busy) refresh(); // the lead's count (সরানো k/৩)
     if (rem[i] < 0.01) park[i] = rad(atom.SLOTS.ar[i].deg) + phase[2];
     return tweenRem(i, 1, duration * (1 - rem[i])).then((ok) => {
       if (ok) done();
@@ -647,6 +727,7 @@ export function createApp(root, options = {}) {
     if (!removed.has(i)) return Promise.resolve(true);
     removed.delete(i);
     syncLabels();
+    refresh();
     return tweenRem(i, 0, duration * rem[i]).then((ok) => {
       if (ok) done();
       return ok;
@@ -756,8 +837,15 @@ export function createApp(root, options = {}) {
       if (!(await wait(T.hold, my))) return false;
       return setJoin(true).then((ok) => ok && my === s.run);
     }
+    if (from === 'more' && to === 'conduct') {
+      matter.setTime(0);
+      if (!(await tweenTo({ cond: 1 }, T.cond, my))) return false;
+      drift = T.drift; // the free electrons run (not waited for: the student may go on)
+      return true;
+    }
     // a jump (a step word, back, several at once): everything together
     const goal = TARGET[to];
+    if (to === 'conduct') matter.setTime(0);
     const goalRemoved = to === 'less' ? [first] : [];
     if (to !== 'more') {
       joined = false;
@@ -779,12 +867,18 @@ export function createApp(root, options = {}) {
     }).finished;
     const ok = await tweenTo(goal, T.back, my);
     await remTween;
+    if (ok && to === 'conduct') drift = T.drift;
     return ok;
   }
-  async function go(step, { animate = true, first = FIRST } = {}) {
+  async function go(step, { animate = true, first = null } = {}) {
     if (!(step in TARGET)) return;
-    const from = s.step;
+    // a step chosen while another still plays: jump (from wherever things are) rather than play the next step's
+    // animation from a state it assumes (the electrons all in, the orbits still)
+    const from = s.busy ? null : s.step;
     stopAll();
+    spin = 0;
+    drift = 0;
+    if (first == null) first = nextOut();
     tweener.cancel('remAll');
     const my = s.run;
     s.step = step;
@@ -793,7 +887,8 @@ export function createApp(root, options = {}) {
     if (!animate || from === step) {
       Object.assign(v, TARGET[step]);
       phase.fill(0);
-      spin = 0;
+      matter.setSwapped(false);
+      matter.setTime(step === 'conduct' ? T.drift : 0);
       setRemoved(step === 'less' ? [first] : []);
       joined = step === 'more';
       s.busy = false;
@@ -821,14 +916,19 @@ export function createApp(root, options = {}) {
   // ── the count of charges in the panel ─────────────────────────────────────────
   let lastTallyWidth = 0;
   let lastTallyKey = '';
-  const showsTally = () => ['shells', 'less', 'more'].includes(s.step) && !(s.step === 'shells' && v.fill === 0 && s.busy);
+  const showsTally = () => ['nucleus', 'shells', 'less', 'more'].includes(s.step) && !(s.step === 'shells' && v.fill === 0 && s.busy);
+  /** ①: only the nucleus's row (the 18 protons the close-up can't show all of). */
+  const protonsOnly = () => s.step === 'nucleus' || (s.step === 'shells' && s.busy && v.fill < 0.02);
   function writeTally() {
     const on = s.mode !== 'quiz' && showsTally();
     tally.classList.toggle('ca-off', !on);
     // drawn even while hidden, so its room is always the same
     const c = counts();
+    const only = protonsOnly();
+    tally.classList.toggle('ca-ponly', only);
+    if (only) c.e = 0;
     const width = Math.round(tallySvg.clientWidth || 240);
-    const key = `${c.el}|${c.e}|${width}`;
+    const key = `${c.el}|${c.e}|${width}|${only}`;
     if (key === lastTallyKey && width === lastTallyWidth) return;
     lastTallyKey = key;
     lastTallyWidth = width;
@@ -858,7 +958,7 @@ export function createApp(root, options = {}) {
       if (hasE) {
         parts.push(`<circle class="ca-dot e${lone ? ' lone' : ''}" cx="${x}" cy="${y2}" r="${r}"/>`);
         parts.push(`<path class="ca-sign" d="M${x - arm} ${y2}H${x + arm}" stroke-width="${th}"/>`);
-      } else if (c.el === 'ar' && j < 18) parts.push(`<circle class="ca-dot gap" cx="${x}" cy="${y2}" r="${r - 0.6}"/>`);
+      } else if (!only && c.el === 'ar' && j < 18) parts.push(`<circle class="ca-dot gap" cx="${x}" cy="${y2}" r="${r - 0.6}"/>`);
     }
     tallySvg.innerHTML = parts.join('');
   }
@@ -869,8 +969,9 @@ export function createApp(root, options = {}) {
     intro: ['act_look', 1, ICONS.hand],
     nucleus: ['act_fill', 2, ICONS.hand],
     shells: ['act_remove', 3, ICONS.hand],
-    less: ['act_add', 4, ICONS.hand],
-    more: ['act_quiz', '', ICONS.chevR],
+    less: ['act_cl', 4, ICONS.hand],
+    more: ['act_conduct', 5, ICONS.hand],
+    conduct: ['act_quiz', '', ICONS.chevR],
   };
   const homeBtn = /** @type {HTMLButtonElement} */ ($('[data-act="home"]'));
   const steady = { lead: '', act: '' };
@@ -892,9 +993,19 @@ export function createApp(root, options = {}) {
     const sum = sumHtml(c);
     if (s.step === 'nucleus') return t('out_nucleus', { p: c.p, n: c.n });
     if (s.step === 'shells') return t('out_shells', { sum, a: c.shells[0], b: c.shells[1], c: c.shells[2] });
-    if (s.step === 'less') return c.net > 0 ? t('out_less', { sum, k: c.net, q: qHtml(c.net) }) : t('out_less_0', { sum });
+    if (s.step === 'less') return c.net > 0 ? t(`out_less_${Math.min(3, c.net)}`, { sum, q: qHtml(c.net) }) : t('out_less_0', { sum });
     if (s.step === 'more') return c.net < 0 ? t('out_more', { sum, q: qHtml(1) }) : t('out_more_0', { sum });
+    if (s.step === 'conduct') return t('out_conduct');
     return '';
+  }
+  /** The line before the action: what to do now (in ③ how many are taken, of how many). */
+  function leadOf() {
+    if (s.step === 'less') {
+      const k = removed.size;
+      const key = k >= MAX_REMOVED ? 'lead_less_max' : k === 0 ? 'lead_less_0' : 'lead_less';
+      return t(key, { k, n: MAX_REMOVED });
+    }
+    return t(`lead_${s.step}`);
   }
   function refresh() {
     if (s.mode === 'quiz') return;
@@ -904,7 +1015,7 @@ export function createApp(root, options = {}) {
       ? `<span class="ca-long">${t('intro')}</span><span class="ca-short">${t('intro_short')}</span>`
       : s.busy
         ? steady.lead
-        : t(`lead_${s.step}`);
+        : leadOf();
     if (steady.lead !== leadHtml) {
       steady.lead = leadHtml;
       lead.innerHTML = leadHtml;
@@ -912,9 +1023,10 @@ export function createApp(root, options = {}) {
       ui.learn.classList.toggle('ca-calm', calm);
     }
     sheet.outcome(calm || s.busy ? '' : outcome());
+    ui.learn.classList.toggle('ca-o1', s.step === 'shells'); // ② its result is one line: the longest rule gets the room
     sheet.rule(calm || s.busy ? '' : t(`rule_${s.step}`, { q: qHtml(1) }));
     sheet.choose(calm ? null : s.step);
-    sheet.next({ intro: 'nucleus', nucleus: 'shells', shells: 'less', less: 'more' }[s.step] ?? null);
+    sheet.next({ intro: 'nucleus', nucleus: 'shells', shells: 'less', less: 'more', more: 'conduct' }[s.step] ?? null);
     const [word, step, icon] = ACTIONS[ph];
     const enabled = ph !== 'busy';
     const key = `${word}|${step}|${enabled}`;
@@ -923,7 +1035,8 @@ export function createApp(root, options = {}) {
       action.set({ label: word, step, enabled, icon });
     }
     if (action) {
-      if (step !== '' && enabled && s.mode === 'explore' && o.coach && s.step === 'intro') action.show('scene');
+      // the ring on what to tap: the nucleus on the first screen, the next outer electron in ② (a tap there does it too)
+      if (step !== '' && enabled && s.mode === 'explore' && (s.step === 'intro' || s.step === 'shells')) action.show('scene');
       else action.hide('scene');
     }
     homeBtn.hidden = s.step === 'intro';
@@ -952,8 +1065,8 @@ export function createApp(root, options = {}) {
     step: 1,
     label: 'act_look',
     icon: ICONS.hand,
-    target: () => atom.root.localToWorld(V(0, 0, 0)),
-    radius: 30,
+    target: () => marker,
+    pad: 6,
     avoid: [ui.corner, ui.hint, () => anno.boxes()],
     pulse: o.coach,
     onAct: () => {
@@ -996,6 +1109,13 @@ export function createApp(root, options = {}) {
     if (s.locked) return lockedNudge();
     if (s.busy) return showHint(t('hint_wait'), { duration: 2000 });
     const step = s.step;
+    if (step === 'conduct') {
+      // ⑤: the free electrons run again
+      if (drift < 1) matter.setTime(0);
+      drift = T.drift;
+      stage.invalidate();
+      return;
+    }
     if (hit.kind === 'electron') {
       const i = hit.i;
       const el = element();
@@ -1073,8 +1193,9 @@ export function createApp(root, options = {}) {
     [
       { kind: 'orbit', cue: rotate },
       { kind: 'front' },
-      { kind: 'tap', text: t('howto_tap'), when: () => !['less', 'more'].includes(s.step), onTap: () => action?.show('scene') },
-      { kind: 'tap', text: t('howto_tap_e'), when: () => ['less', 'more'].includes(s.step) },
+      { kind: 'tap', text: t('howto_tap'), when: () => ['intro', 'nucleus'].includes(s.step), onTap: () => action?.show('scene') },
+      { kind: 'tap', text: t('howto_tap_e'), when: () => ['shells', 'less', 'more'].includes(s.step) },
+      { kind: 'tap', text: t('howto_tap_row'), when: () => s.step === 'conduct' },
     ],
     { stage, after: $('.pvc-rule'), collapse: true },
   );
@@ -1112,7 +1233,9 @@ export function createApp(root, options = {}) {
       removed: c.el === 'ar' ? removed.size : 0,
       joined: c.el === 'cl' ? joined : false,
       busy: s.busy,
-      next: { intro: 'nucleus', nucleus: 'shells', shells: 'less', less: 'more', more: 'quiz' }[s.step],
+      next: { intro: 'nucleus', nucleus: 'shells', shells: 'less', less: 'more', more: 'conduct', conduct: 'quiz' }[s.step],
+      metalRow: s.step === 'conduct' ? (matter.swapped ? 'bottom' : 'top') : null, // ⑤: where the free electrons run
+      running: drift > 0,
       view: s.view,
       mode: s.mode,
       question: s.mode === 'quiz' && question ? { kind: question.kind, right: question.right ?? null } : null, // the place of the right choice
@@ -1158,10 +1281,16 @@ export function createApp(root, options = {}) {
   let learnSaved = null;
   let question = null;
   let picked = -1;
-  /** The five questions: the unsigned balls, why neutral, what moves, electrons taken away, one electron more. */
-  const KINDS = ['unsigned', 'zero', 'move', 'removed', 'extra'];
-  const SCENE_OF = { unsigned: 'nucleus', zero: 'shells', move: 'intro', removed: 'less', extra: 'more' };
+  /**
+   * The six questions, each read off its own picture: the unsigned balls of the nucleus (close up), the inner orbit's
+   * electrons, which particle left (one electron outside, its place dashed), the charge with two taken away, the charge
+   * once the waiting stray electron joins chlorine (it joins on the reveal), which row of matter conducts (the metal row
+   * at the top or the bottom at random, its free electrons running).
+   */
+  const KINDS = ['unsigned', 'inner', 'move', 'removed', 'extra', 'conduct'];
+  const SCENE_OF = { unsigned: 'nucleus', inner: 'shells', move: 'less', removed: 'less', extra: 'more', conduct: 'conduct' };
   const QUIZ_REMOVED = [SLOT_OF(2, 45), SLOT_OF(2, 225)];
+  const rowWord = (top) => t(top ? 'row_top' : 'row_bottom');
 
   const quiz = createQuiz({
     ui,
@@ -1194,41 +1323,68 @@ export function createApp(root, options = {}) {
         question = null;
         const kind = KINDS[i % KINDS.length];
         s.quizKind = kind;
-        await go(SCENE_OF[kind], { animate: false });
+        await go(SCENE_OF[kind], { animate: false, first: FIRST });
         if (kind === 'removed') {
           setRemoved(QUIZ_REMOVED);
           done();
         }
+        if (kind === 'extra') await setJoin(false, 0);
+        if (kind === 'conduct') {
+          matter.setSwapped(Math.random() < 0.5);
+          matter.setTime(0);
+          drift = T.drift;
+        }
+        done();
         await tweener.animate({ key: 'wait', duration: 0.3 }).finished;
         if (!alive()) return null;
         const c = counts();
         question = { kind, c };
         if (kind === 'unsigned')
-          return { text: t('q_unsigned'), ...choicesOf(words(['c_un_right', 'c_un_proton', 'c_un_electron', 'c_un_neg']), kind, (x) => t(x.key)) };
-        if (kind === 'zero')
-          return { text: t('q_zero'), ...choicesOf(words(['c_z_right', 'c_z_neutron', 'c_z_spin', 'c_z_small']), kind, (x) => t(x.key)) };
+          return { text: t('q_unsigned'), ...choicesOf(words(['c_un_right', 'c_un_proton', 'c_un_electron', 'c_un_pos']), kind, (x) => t(x.key)) };
+        if (kind === 'inner') {
+          const items = [
+            { key: 'right', v: c.shells[0] },
+            { key: 'eight', v: c.shells[1] },
+            { key: 'all', v: c.e },
+            { key: 'one', v: 1 },
+          ];
+          return { text: t('q_inner'), ...choicesOf(items, kind, (x) => t('lbl_shell', { n: x.v })) };
+        }
         if (kind === 'move')
           return { text: t('q_move'), ...choicesOf(words(['c_mv_right', 'c_mv_proton', 'c_mv_neutron', 'c_mv_inner']), kind, (x) => t(x.key)) };
         if (kind === 'removed') return { text: t('q_removed'), ...choicesOf(removedChoices(c.p, c.p - c.e), kind, (x) => signed(x.v)) };
-        return { text: t('q_extra'), ...choicesOf(extraChoices(), kind, (x) => cLabel(x.q)) };
+        if (kind === 'extra') return { text: t('q_extra'), ...choicesOf(extraChoices(), kind, (x) => cLabel(x.q)) };
+        const top = !matter.swapped;
+        question.top = top;
+        const items = [{ key: 'right', top }, { key: 'other', top: !top }, { key: 'both' }, { key: 'none' }];
+        return {
+          text: t('q_conduct'),
+          ...choicesOf(items, kind, (x) => (x.key === 'both' ? t('row_both') : x.key === 'none' ? t('row_none') : rowWord(x.top))),
+        };
       },
       reveal(q, correct) {
         const { kind: k, c } = question;
         const wrongKey = correct ? null : q.list?.[picked]?.key;
         const note = (map, vars) => (wrongKey && map[wrongKey] ? ` ${t(map[wrongKey], vars)}` : '');
         if (k === 'unsigned')
-          return t('why_unsigned') + note({ c_un_proton: 'mis_un_proton', c_un_electron: 'mis_un_electron', c_un_neg: 'mis_un_neg' });
-        if (k === 'zero') return t('why_zero', { n: c.p }) + note({ c_z_neutron: 'mis_z_neutron', c_z_spin: 'mis_z_spin', c_z_small: 'mis_z_small' });
+          return t('why_unsigned') + note({ c_un_proton: 'mis_un_proton', c_un_electron: 'mis_un_electron', c_un_pos: 'mis_un_pos' });
+        if (k === 'inner')
+          return t('why_inner', { a: c.shells[0] }) + note({ eight: 'mis_in_eight', all: 'mis_in_all', one: 'mis_in_one' }, { e: c.e });
         if (k === 'move') return t('why_move') + note({ c_mv_proton: 'mis_mv_proton', c_mv_neutron: 'mis_mv_neutron', c_mv_inner: 'mis_mv_inner' });
         if (k === 'removed')
           return (
             t('why_removed', { v: signed(c.net), p: c.p, e: c.e, k: c.net }) +
             note({ flip: 'mis_rm_flip', zero: 'mis_rm_zero', protons: 'mis_rm_protons' })
           );
-        return (
-          t('why_extra', { v: cLabel(coulombs(-1)), q: qHtml(1) }) +
-          note({ flip: 'mis_ex_flip', one: 'mis_ex_one', zero: 'mis_ex_zero' }, { p: c.p, e: c.e, one: 1 })
-        );
+        if (k === 'extra') {
+          // the stray electron joins, so the picture shows what the answer says
+          setJoin(true);
+          return (
+            t('why_extra', { v: cLabel(coulombs(-1)), q: qHtml(1) }) +
+            note({ flip: 'mis_ex_flip', one: 'mis_ex_one', zero: 'mis_ex_zero' }, { p: c.p, e: c.e + 1, one: 1 })
+          );
+        }
+        return t('why_conduct', { row: rowWord(question.top) }) + note({ other: 'mis_cd_other', both: 'mis_cd_both', none: 'mis_cd_none' });
       },
       done() {
         s.locked = false;
@@ -1305,7 +1461,7 @@ export function createApp(root, options = {}) {
     }
     if ((k === ' ' || k === 'Enter') && !onButton) doAction();
     else if (k === 'ArrowRight' && !onButton) {
-      if (s.step !== 'more') doAction();
+      if (s.step !== 'conduct') doAction();
     } else if (k === 'ArrowLeft' && !onButton) go(ORDER[Math.max(1, ORDER.indexOf(s.step) - 1)]);
     else if (k === 'ArrowUp' && !onButton) keyMore(1);
     else if (k === 'ArrowDown' && !onButton) keyMore(-1);
@@ -1324,7 +1480,7 @@ export function createApp(root, options = {}) {
   syncScene();
   refresh();
   // compile what later steps show before the first tap
-  stage.warmUp({ show: [atom.gaps] });
+  stage.warmUp({ show: [atom.gaps, matter.root] });
   // and upload the empty place's dashes now, not on the frame that first shows one
   stage.renderer.initTexture(atom.mats.gap.alphaMap);
   const ready = (async () => {
@@ -1340,7 +1496,7 @@ export function createApp(root, options = {}) {
     },
     getState: snapshot,
     /**
-     * Change any of: step ('intro' | 'nucleus' | 'shells' | 'less' | 'more'); removed (in 'less': how many outer
+     * Change any of: step ('intro' | 'nucleus' | 'shells' | 'less' | 'more' | 'conduct'); removed (in 'less': how many outer
      * electrons of argon are taken away, 0–3); joined (in 'more': the stray electron in chlorine's free place); view
      * ('front' | '3d'). animate: false lands at once.
      */

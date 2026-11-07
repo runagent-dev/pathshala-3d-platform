@@ -20,6 +20,8 @@ body.bg-transparent { background: transparent; }
 .ca .ca-tally { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 1fr 1fr; align-items: center; column-gap: 8px; min-height: 38px; }
 .ca .ca-tally-svg { grid-column: 2; grid-row: 1 / 3; max-height: none; }
 .ca .ca-tally.ca-off { visibility: hidden; }
+/* ①: only the nucleus's row */
+.ca .ca-tally.ca-ponly .ca-tl.e { visibility: hidden; }
 .ca .pvc-learn.ca-calm .ca-tally { display: none; }
 .ca .ca-tally-svg { display: block; width: 100%; height: auto; overflow: visible; align-self: center; }
 .ca .ca-tl { grid-column: 1; font-size: 12.5px; font-weight: 600; line-height: 1.2; }
@@ -64,6 +66,9 @@ body.bg-transparent { background: transparent; }
 /* a side panel (laptops, tablets, a phone held sideways) */
 @container pvc (max-width: 420px) {
   .ca .pvc-opt { height: 40px; font-size: 13px; line-height: 1.2; }
+  /* five step words in a narrow column */
+  .ca .pvc-examples button { padding-left: 1px; padding-right: 1px; }
+  .ca .pvc-examples .pvc-ex-word { font-size: 14px; }
 }
 /* short and wide (a phone held sideways, 640 × 400): no how-to row (the view's pill says the same), the short card,
    tighter type, so the panel never scrolls */
@@ -82,20 +87,21 @@ body.bg-transparent { background: transparent; }
   .pvc-anno-tag,
   .pvc-anno-net { font-size: 12.5px; }
 }
-/* a phone held upright: the panel under the 3D takes a fixed 44 % of the height in every state and in the test (the 3D
+/* a phone held upright: the panel under the 3D takes a fixed 43 % of the height in every state and in the test (the 3D
    view never changes size), every line as low as it reads well, no how-to row (the view's pill says the same) */
 @container pvc (max-aspect-ratio: 1/1) {
-  .ca.ca-stack .pvc-panel { height: 44cqh; box-sizing: border-box; overflow: hidden; gap: 4px; padding-top: 6px; padding-bottom: 6px; }
+  .ca.ca-stack .pvc-panel { height: 43cqh; box-sizing: border-box; overflow: hidden; gap: 4px; padding-top: 4px; padding-bottom: 3px; }
   .ca.ca-stack .pvc-tabs button { height: 32px; }
   .ca.ca-stack .pvc-learn { gap: 4px; }
   .ca.ca-stack .pvc-howto { display: none; }
-  .ca.ca-stack .pvc-examples button { min-height: 32px; padding-top: 1px; padding-bottom: 2px; }
-  .ca.ca-stack .pvc-act-row { min-height: 40px; }
-  .ca.ca-stack .pvc-act { min-height: 40px; }
+  .ca.ca-stack .pvc-examples button { min-height: 28px; padding-top: 0; padding-bottom: 1px; }
+  .ca.ca-stack .pvc-act-row { min-height: 38px; }
+  .ca.ca-stack .pvc-act { min-height: 38px; }
   .ca.ca-stack .ca-lead { font-size: 13px; line-height: 1.45; }
-  .ca.ca-stack .ca-lead.pvc-note { font-size: 13.5px; line-height: 1.5; padding: 5px 10px; }
+  .ca.ca-stack .ca-lead.pvc-note { font-size: 14.5px; line-height: 1.6; padding: 8px 12px; }
   .ca.ca-stack .ca-tally { min-height: 38px; }
   .ca.ca-stack .pvc-outcome { font-size: 13px; line-height: 1.42; --pvc-outcome-lines: 2; }
+  .ca.ca-stack .pvc-learn.ca-o1 .pvc-outcome { --pvc-outcome-lines: 1; }
   .ca.ca-stack .pvc-rule { font-size: 12.5px; line-height: 1.42; --pvc-rule-lines: 3; }
   .ca.ca-stack .pvc-q-text { font-size: 13.5px; line-height: 1.42; --pvc-q-text-min: 2lh; }
   .ca.ca-stack .pvc-q-feedback { font-size: 12.5px; line-height: 1.42; --pvc-q-feedback-min: 3lh; }
@@ -103,12 +109,12 @@ body.bg-transparent { background: transparent; }
   .pvc-anno-tag,
   .pvc-anno-net { font-size: 12px; }
 }
-/* a short phone embed (390 × 520): half the height, and the step words go (the action walks the steps) */
+/* a short phone embed (390 × 520): half the height, and the step words go (the action walks the steps); the whole calm
+   card still fits, so it keeps its comb and lightning instead of leaving white under a short one */
 @container pvc (max-aspect-ratio: 1/1) and (max-height: 600px) {
-  .ca.ca-stack .pvc-panel { height: 52cqh; }
+  .ca.ca-stack .pvc-panel { height: 50cqh; }
   .ca.ca-stack .pvc-examples { display: none; }
-  .ca.ca-stack .pvc-opt { height: 34px; }
+  .ca.ca-stack .pvc-learn { gap: 3px; }
+  .ca.ca-stack .pvc-opt { height: 32px; }
   .ca.ca-stack .pvc-q-feedback { font-size: 12px; line-height: 1.38; }
-  .ca.ca-stack .ca-lead .ca-long { display: none; }
-  .ca.ca-stack .ca-lead .ca-short { display: inline; }
 }

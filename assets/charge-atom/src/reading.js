@@ -56,8 +56,11 @@ export function coulombs(n) {
 /** What the net charge makes of the atom: 'neutral' (বিদ্যুৎ নিরপেক্ষ), 'positive' or 'negative' (আয়নিত বা আহিত). */
 export const kindOf = (net) => (net === 0 ? 'neutral' : net > 0 ? 'positive' : 'negative');
 
-/** The steps of the figure: the nucleus, the electrons in their shells, fewer electrons (+), more electrons (−). */
-export const STEPS = ['nucleus', 'shells', 'less', 'more'];
+/**
+ * The steps of the figure: the nucleus, the electrons in their shells, fewer electrons (+), more electrons (−), and
+ * matter with free electrons (a conductor) or without (an insulator).
+ */
+export const STEPS = ['nucleus', 'shells', 'less', 'more', 'conduct'];
 
 /** At most this many outer electrons can be taken from the argon atom in the figure (the book speaks of one or two). */
 export const MAX_REMOVED = 3;
