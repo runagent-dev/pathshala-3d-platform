@@ -34,6 +34,9 @@ ship's flat stern) so the submerged hull and its arrows are visible. Three steps
 
 The owner (2026-11-07) moved the step অপসারিত পানি (a glowing "ghost" of the displaced water on the balance) and its
 test question to a figure of its own, `displaced-water-ship` (same page and topic, `order` 2).
+The book's sentence (আর্কিমিডিসের নীতি) stays here, as the rule when the cylinder is lowered into the water. After a
+step's last action the next step's word carries the kit's dotted marker. Version 1.0.0: `step=displaced` is gone, an
+incompatible change to a URL parameter (it now falls back to `pressure`).
 
 The water's particles pushing on the hull (the owner's particle picture) are a few dots that drift up against the
 bottom during step 1 only.

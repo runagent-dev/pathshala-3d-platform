@@ -18,16 +18,24 @@ test('buoyancy-ship: weight = buoyancy at every load, three steps', async ({ pag
   const summed = await fig.call('set', { step: 'pressure', phase: 2, animate: false });
   expect(summed).toMatchObject({ step: 'pressure', phase: 2, next: 'again_p' });
   expect(summed.found).toMatchObject({ pressure: true, sum: true });
+  // the step is done: the next word carries the dotted marker
+  const nextWords = () =>
+    frameOf(page)
+      .locator('[data-example].next')
+      .evaluateAll((els) => els.map((e) => e.dataset.example));
+  expect(await nextWords()).toEqual(['weight']);
 
   // ওজন ও প্লবতা: the cylinder on the balance in air, in the water (lighter by its buoyancy), let go (sunk)
   const air = await fig.call('set', { step: 'weight', phase: 0, animate: false });
   expect(air).toMatchObject({ steel: 'air', reading: 2548000 });
+  expect(await nextWords()).toEqual([]);
   const water = await fig.call('set', { phase: 1, animate: false });
   expect(water.steel).toBe('water');
   expect(water.reading).toBeGreaterThan(2548000 - 330000);
   expect(water.reading).toBeLessThan(2548000 - 320000);
   const sunk = await fig.call('set', { phase: 2, animate: false });
   expect(sunk).toMatchObject({ steel: 'bottom', reading: 0 });
+  expect(await nextWords()).toEqual(['load']);
 
   // the water pushed aside is its own figure now: no such step, and the panel points there from মাল বোঝাই
   const words = frameOf(page).locator('[data-example]');
@@ -38,6 +46,7 @@ test('buoyancy-ship: weight = buoyancy at every load, three steps', async ({ pag
   const six = await fig.call('set', { step: 'load', load: 6, animate: false });
   expect(six).toMatchObject({ load: 6, draft: 1.9, mass: 380000, W: 3724000, B: 3724000 });
   await expect(frameOf(page).locator('.by-note-x')).toBeVisible();
+  expect(await nextWords()).toEqual([]);
   // the action loads one more; the ship settles
   await frameOf(page).locator('.pvc-act').click();
   await fig.advance(3500);

@@ -77,7 +77,7 @@ export const STRINGS = {
     rule_sum:
       '<span class="pvc-formula"><i>F</i> = <i>F</i><sub>2</sub> − <i>F</i><sub>1</sub> = <i>A</i>(<i>h</i><sub>2</sub> − <i>h</i><sub>1</sub>)<i>ρg</i> = <i>Ahρg</i></span>জাহাজের উপরের অংশ পানির বাইরে, তাই h<sub>1</sub> = {zero}। ঊর্ধ্বমুখী এই বলকে <b>প্লবতা</b> বলে।',
     rule_weight: 'ওজন নিচের দিকে, প্লবতা উপরের দিকে। ভাসমান জাহাজে দুটো <b>সমান</b>। পাশে খালি জাহাজের সমান ভরের একটি নিরেট স্টিলের সিলিন্ডার নিক্তিতে ঝুলছে।',
-    rule_lower: 'তরলে নিমজ্জিত বস্তুর <b>ওজন কমে</b> যায় বলে মনে হয়। কমে ঠিক ততটা, যতটা তার অপসারিত তরলের ওজন। সিলিন্ডার সরায় অল্প পানি।',
+    rule_archimedes: '<b>আর্কিমিডিসের নীতি:</b> কোনো বস্তু তরলে নিমজ্জিত করলে সেটি যে পরিমাণ তরল অপসারণ করে সেইটুকু তরলের সমান ওজন বস্তুটির ওজন থেকে কমে যায়।',
     rule_drop:
       'ভর একই, তবু সিলিন্ডার ডোবে, জাহাজ ভাসে। স্টিলের ঘনত্ব {rs} kg m<sup>−3</sup>, পানির চেয়ে অনেক বেশি। ফাঁপা জাহাজ অনেক পানি সরায়, তার <b>গড় ঘনত্ব</b> পানির চেয়ে কম।',
     rule_load: 'মাল বাড়লে <b>ওজন</b> বাড়ে। জাহাজ আরও ডোবে, আরও পানি সরায়। প্লবতা বাড়তে থাকে, যতক্ষণ না আবার ওজনের সমান হয়।',
@@ -222,10 +222,9 @@ export const STRINGS = {
       '<span class="pvc-formula"><i>F</i> = <i>F</i><sub>2</sub> − <i>F</i><sub>1</sub> = <i>A</i>(<i>h</i><sub>2</sub> − <i>h</i><sub>1</sub>)<i>ρg</i> = <i>Ahρg</i></span>The top of the ship is out of the water, so h<sub>1</sub> = {zero}. This upward force is called <b>buoyancy</b>.',
     rule_weight:
       'Weight acts down, buoyancy up. For a floating ship they are <b>equal</b>. Beside it, a solid steel cylinder with the empty ship’s mass hangs on a balance.',
-    rule_lower:
-      'A body sunk in a liquid seems to <b>lose weight</b>, by as much as the weight of the liquid it pushes aside. The cylinder pushes aside little water.',
+    rule_archimedes: '<b>Archimedes’ principle:</b> a body immersed in a liquid loses as much weight as the weight of the liquid it pushes aside.',
     rule_drop:
-      'The same mass, yet the cylinder sinks and the ship floats. Steel’s density, {rs} kg m<sup>−3</sup>, is far more than water’s. The hollow ship pushes aside a lot of water: its <b>average density</b> is less than water’s.',
+      'Same mass, yet the cylinder sinks and the ship floats. Steel’s density, {rs} kg m<sup>−3</sup>, is far above water’s; the hollow ship’s <b>average density</b> is below it.',
     rule_load:
       'More cargo means more <b>weight</b>. The ship sinks deeper and pushes aside more water. The buoyancy grows until it equals the weight again.',
     rule_full:

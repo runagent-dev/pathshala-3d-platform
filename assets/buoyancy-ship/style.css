@@ -62,6 +62,11 @@ body.bg-transparent { background: transparent; }
   .by .pvc-outcome { font-size: 14px; line-height: 1.5; }
   .by .pvc-examples .pvc-ex-word { font-size: 14px; }
 }
+/* a tall phone held upright: room for the fullest state, so the 3D keeps one height in every state and question */
+@container pvc (max-width: 420px) and (min-height: 640px) {
+  .by .pvc-panel { min-height: 338px; }
+  .by:lang(en) .pvc-panel { min-height: 364px; }
+}
 /* phones that are not tall: one line of sums, the result line goes (the sums carry the number) */
 @container pvc (max-width: 560px) and (max-height: 600px) {
   .by-eq { font-size: 12.5px; line-height: 1.4; gap: 0; }
@@ -92,6 +97,9 @@ body.bg-transparent { background: transparent; }
 /* a short panel beside the 3D: in মাল বোঝাই the note about the next figure takes the place of the water's numbers */
 @container pvc-panel (max-height: 420px) {
   .by-eq[data-step='load'] .by-note:not(.by-note-x) { display: none; }
+  .by-eq:lang(en) .by-note:not(.by-note-x) { display: none; }
+  .by-ctl { height: 36px; }
+  .by .by-pm { width: 40px; }
 }
 @container pvc-panel (max-width: 330px) {
   .by-eq { font-size: 12.5px; }

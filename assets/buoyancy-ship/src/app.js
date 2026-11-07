@@ -505,13 +505,26 @@ export function createApp(root, options = {}) {
     const f = s.found;
     if (s.step === 'pressure') return s.phase >= 2 || (s.phase === 0 && f.sum) ? t('rule_sum', { zero: N(0) }) : t('rule_pressure');
     if (s.step === 'weight')
-      return s.phase >= 2 || (s.phase === 0 && f.drop) ? t('rule_drop', { rs: G_(RHO_STEEL) }) : s.phase === 1 ? t('rule_lower') : t('rule_weight');
+      return s.phase >= 2 || (s.phase === 0 && f.drop)
+        ? t('rule_drop', { rs: G_(RHO_STEEL) })
+        : s.phase === 1
+          ? t('rule_archimedes')
+          : t('rule_weight');
     return s.n >= MAX_CONTAINERS ? t('rule_full') : t('rule_load');
+  }
+
+  /** The word to tap next: once a step's last action has played out (the dotted marker; মাল বোঝাই is the last word). */
+  function nextWord() {
+    if (s.mode !== 'explore') return null;
+    if (s.step === 'pressure' && s.sum >= 1) return 'weight';
+    if (s.step === 'weight' && s.phase >= 2 && s.steelY <= steelFloorY()) return 'load';
+    return null;
   }
 
   let lastNotes = '';
   function refresh() {
     sheet.choose(s.step);
+    sheet.next(nextWord());
     sheet.outcome(outcomeHtml());
     sheet.rule(ruleHtml());
     const [a, b] = linesHtml();
