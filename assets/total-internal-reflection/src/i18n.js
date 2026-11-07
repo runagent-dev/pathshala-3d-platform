@@ -85,7 +85,7 @@ export const STRINGS = {
     out_zero: '{T2} = ০° হলে {T1} = <b>০°</b>: লম্ব বরাবর আলো না বেঁকে বের হয়। প্রায় {r}% আলো প্রতিফলিত হয়।',
     out_critical: '{T2} = <b>{a}°</b> হলে {T1} = <b>{b}°</b>: প্রতিসরিত রশ্মি বিভেদতল ঘেঁষে যায়।',
     out_more: '{T2} = {a}°: sin {T1} = {f} = <b>{s}</b> &gt; ১, তাই <b>কোনো আলো বের হয় না</b>।',
-    out_prism: 'লম্বা তলে আপতন কোণ <b>{a}°</b> &gt; {c}°: পুরো আলো প্রতিফলিত হয়ে <b>{b}°</b> ঘুরে গেল।',
+    out_prism: 'অতিভুজ তলে আপতন কোণ <b>{a}°</b> &gt; {c}°: পুরো আলো প্রতিফলিত হয়ে <b>{b}°</b> ঘুরে গেল।',
 
     // the rule: the book's words, the term in bold
     f_snell: '{N1} sin {T1} = {N2} sin {T2}',
@@ -99,10 +99,10 @@ export const STRINGS = {
     rule_water_critical: 'পানিতে ক্রান্তি কোণ বড়: {c}°। এই কোণে রশ্মি বিভেদতল ঘেঁষে যায়।',
     rule_water_more: 'আপতন কোণ {a}°, পানির ক্রান্তি কোণ {c}° থেকেও বেশি: এবার পানিতেও <b>পূর্ণ অভ্যন্তরীণ প্রতিফলন</b>।',
     rule_prism: 'প্রিজম তাই আয়নার কাজ করে, আরও ভালোভাবে: <b>সবচেয়ে পরিপূর্ণ প্রতিফলন হয় পূর্ণ অভ্যন্তরীণ প্রতিফলনে।</b>',
-    tbl_inc: 'লম্বা তলে আপতন কোণ',
+    tbl_inc: 'অতিভুজ তলে আপতন কোণ',
     tbl_crit: 'কাচ-বাতাসের ক্রান্তি কোণ',
     tbl_refl: 'প্রতিফলিত আলো',
-    tbl_label: 'প্রিজমের লম্বা তলে কী হয়',
+    tbl_label: 'প্রিজমের অতিভুজ তলে কী হয়',
 
     // labels on the picture (short)
     lbl_glass0: 'কাচ (ঘন মাধ্যম)',
@@ -184,9 +184,9 @@ export const STRINGS = {
     mis_water_tir: '৪১.৮° কাচ-বাতাসের ক্রান্তি কোণ; কাচ-পানিতে sin {TC} = ১.৩৩ ÷ ১.৫০।',
     mis_water_graze: 'কোণটি ৫০° ঠিকই, কিন্তু ক্রান্তি কোণ সূত্র থেকে আসে, ৫০° নয়।',
 
-    q_prism: 'প্রিজমের লম্বা তলে কাচের ভেতর থেকে আলো তেরছা করে পড়ছে। আলো কোথায় যাবে?',
+    q_prism: 'প্রিজমের অতিভুজ তলে কাচের ভেতর থেকে আলো তেরছা করে পড়ছে। আলো কোথায় যাবে?',
     c_prism_right: 'পুরোটা ফিরে, ৯০° ঘুরে ডানে',
-    c_prism_out: 'লম্বা তল দিয়ে বেরিয়ে যাবে',
+    c_prism_out: 'অতিভুজ তল দিয়ে বেরিয়ে যাবে',
     c_prism_straight: 'না বেঁকে সোজা উপরে',
     c_prism_half: 'অর্ধেক বেরোবে, অর্ধেক ঘুরবে',
     why_prism: '<b>পুরোটা ফিরে, ৯০° ঘুরে ডানে</b>: ৪৫° কাচ-বাতাসের ক্রান্তি কোণ ৪১.৮° থেকে বেশি, তাই পূর্ণ অভ্যন্তরীণ প্রতিফলন; প্রিজম আয়নার কাজ করে (চিত্র ৯.০৭)।',
@@ -259,7 +259,7 @@ export const STRINGS = {
     out_zero: '{T2} = 0° → {T1} = <b>0°</b>: along the normal it goes straight; about {r}% reflects.',
     out_critical: 'At {T2} = <b>{a}°</b>, {T1} = <b>{b}°</b>: the refracted ray grazes the surface.',
     out_more: '{T2} = {a}°: sin {T1} = {f} = <b>{s}</b> &gt; 1, so <b>no light leaves</b>.',
-    out_prism: 'At the long face <b>{a}°</b> &gt; {c}°: all the light is reflected and turns by <b>{b}°</b>.',
+    out_prism: 'At the long (hypotenuse) face <b>{a}°</b> &gt; {c}°: all the light is reflected and turns by <b>{b}°</b>.',
 
     f_snell: '{N1} sin {T1} = {N2} sin {T2}',
     f_crit_air:
@@ -273,10 +273,10 @@ export const STRINGS = {
     rule_water_critical: 'In water the critical angle is larger: {c}°. At this angle the ray grazes the surface.',
     rule_water_more: '{a}° is more than even the water\u2019s critical angle {c}°: <b>total internal reflection</b> in water too.',
     rule_prism: 'So the prism works as a mirror, and a better one: <b>the most complete reflection is total internal reflection.</b>',
-    tbl_inc: 'Angle of incidence on the long face',
+    tbl_inc: 'Angle of incidence on the long (hypotenuse) face',
     tbl_crit: 'Critical angle, glass to air',
     tbl_refl: 'Light reflected',
-    tbl_label: 'What happens at the prism’s long face',
+    tbl_label: 'What happens at the prism’s long (hypotenuse) face',
 
     lbl_glass0: 'Glass (dense medium)',
     lbl_air0: 'Air (light medium)',
@@ -357,9 +357,9 @@ export const STRINGS = {
     mis_water_tir: '41.8° is the glass–air critical angle; glass–water has sin {TC} = 1.33 ÷ 1.50.',
     mis_water_graze: 'The angle is 50°, but the critical angle comes from the formula, not from the angle now.',
 
-    q_prism: 'Inside the prism the light meets the long face slantwise. Where does it go?',
+    q_prism: 'In the prism, light meets the long (hypotenuse) face slantwise. Where does it go?',
     c_prism_right: 'All back, turned 90° to the right',
-    c_prism_out: 'Out through the long face',
+    c_prism_out: 'Out through the long (hypotenuse) face',
     c_prism_straight: 'Straight up, unbent',
     c_prism_half: 'Half leaves, half turns',
     why_prism: '<b>All back, turned 90° to the right</b>: 45° &gt; 41.8°, so total internal reflection; the prism works as a mirror (fig. 9.07).',

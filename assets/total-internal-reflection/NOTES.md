@@ -19,6 +19,8 @@ Going from a denser medium into a lighter one the ray bends away from the normal
 surface (θ₁ = 90°), and beyond it no light leaves at all, it is all reflected back inside: পূর্ণ অভ্যন্তরীণ প্রতিফলন, with sin θc = n₁/n₂.
 
 ## Terms (as in the book)
+- **The prism's long face is "অতিভুজ তল"**, the NCTB maths word for a right triangle's hypotenuse, which class 9 students
+  already know (English "the long (hypotenuse) face"). The book names no face; an earlier "লম্বা তল" read too much like লম্ব (the normal).
 - **The normal is "লম্ব" in the picture and the text (চিত্র/পাঠে লম্ব), as chapter 9 of the book** (৯.১.১: "একটি লম্ব কল্পনা কর…",
   "লম্বের সাথে আপতিত রশ্মিটির কোণ"); chapter 8's অভিলম্ব is not used. English stays "normal". (Changed after round 2, as asked.)
 পূর্ণ অভ্যন্তরীণ প্রতিফলন, ঘন মাধ্যম, হালকা মাধ্যম, আলোক রশ্মি, প্রতিফলিত, প্রতিসরিত, ক্রান্তি কোণ বা সংকট কোণ θc, n₁ sinθ₁ = n₂ sin θ₂,
@@ -37,7 +39,7 @@ words): লম্ব (the normal), প্রতিসরণাঙ্ক. Added b
   ② the source turns (2.6 s) to θc = 41.8°: θ₁ = 90°, the ray grazes the surface → ③ on to 60°: "প্রতিসরিত রশ্মি নেই", all the light reflected →
   ④ the book's question: the source to 45° (TIR in air), the lamp dims, a clear half-round cell comes down onto the flat face, water fills
   it (2.2 s), the lamp again: θc = 62.5°, so at 45° the light now leaves into the water (θ₁ = 52.9°) → ⑤ চিত্র ৯.০৭: the cell lifts away,
-  the block slides out and a right-angle prism slides in with its long face through O; the light rises from straight below, meets the long
+  the block slides out and a right-angle prism slides in with its long face, the hypotenuse (অতিভুজ তল), through O; the light rises from straight below, meets the long
   face at 45° and turns by 90°. Then the test is offered. Each step can be replayed (▶), and the step words jump.
 - **The student turns the source** from step ① to ④: by its handle on the rim (the kit's turn handle with its dashed track), by the ray box
   itself, or by the arrow keys (→/↑ further from the normal). A drag lands on whole degrees, and on θc exactly within half a degree (keys stop
