@@ -302,23 +302,47 @@ export function createDrawing({ stage, host }) {
   }
 
   /** A numbered marker (a reflection): a white disc with an amber ring and the number. */
-  function marker(p, text, alpha) {
+  /**
+   * A numbered marker (a reflection): a white disc with a dark ring and the number, set beside its corner on the side
+   * `out` (world direction, away from the turn) with a short tick to the corner; it pops in as alpha goes 0 → 1. Smaller
+   * on small views, so neighbouring numbers stay apart.
+   */
+  function marker(p, text, alpha, out) {
     if (alpha <= 0 || !P(p.x, p.y, p.z)) return;
-    const r = 9.5 * unit;
-    mark(S.x, S.y, S.x, S.y, r + 2);
-    ctx.globalAlpha = alpha;
+    const cx = S.x;
+    const cy = S.y;
+    const small = Math.min(w, h) < 450;
+    const r = (small ? 7.2 : 9.5) * unit * (alpha < 1 ? 1 + 0.45 * Math.sin(Math.PI * alpha) : 1);
+    let x = cx;
+    let y = cy;
+    if (out && P(p.x + out.x, p.y + out.y, p.z + out.z)) {
+      const dx = S.x - cx;
+      const dy = S.y - cy;
+      const l = Math.hypot(dx, dy) || 1;
+      const gap = r + (small ? 4 : 6);
+      x = cx + (dx / l) * gap;
+      y = cy + (dy / l) * gap;
+    }
+    mark(x, y, x, y, r + 2);
+    ctx.globalAlpha = Math.min(1, alpha * 1.5);
     ctx.beginPath();
-    ctx.arc(S.x, S.y, r, 0, Math.PI * 2);
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
+    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = C.edge;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
-    ctx.lineWidth = 2.4;
+    ctx.lineWidth = small ? 1.8 : 2.4;
     ctx.strokeStyle = C.edge;
     ctx.stroke();
     ctx.fillStyle = C.ink;
-    ctx.font = `600 ${Math.round(12.5 * unit)}px "Noto Sans Bengali", sans-serif`;
+    ctx.font = `600 ${Math.round(r * 1.3)}px "Noto Sans Bengali", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, S.x, S.y + 0.5);
+    ctx.fillText(text, x, y + 0.5);
     ctx.globalAlpha = 1;
   }
 

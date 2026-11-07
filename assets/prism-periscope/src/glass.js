@@ -62,7 +62,7 @@ export function glassPiece(name, geo) {
 }
 
 /** A lens about the x axis: radius r, thickness at the middle `mid`, at the rim `rim` (a lathe of two arcs). */
-export function lensGeometry(r, mid, rim, seg = 28) {
+export function lensGeometry(r, mid, rim, seg = 24) {
   const pts = [];
   const n = 8;
   for (let i = 0; i <= n; i++) {

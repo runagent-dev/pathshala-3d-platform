@@ -25,7 +25,7 @@ import { fitPose } from './camera.js';
 import { C, createDrawing } from './draw.js';
 import { createI18n } from './i18n.js';
 import { createPeriscope, HEAD_TOP } from './periscope.js';
-import { BINO, binocularPath, blockedLight, criticalAngle, headK, headY, PERI, periscopePath, round, SCENE, STEPS } from './reading.js';
+import { BINO, binocularPath, blockedLight, criticalAngle, headK, headY, PERI, periscopePath, round, SCENE, STEPS, Z_LIGHT } from './reading.js';
 import { backdrop, createSetting } from './setting.js';
 
 export const DEFAULTS = {
@@ -42,7 +42,7 @@ export const DEFAULTS = {
 const DOUBLE_TAP = 420; // ms
 const MARGIN = { top: 50, bottom: 14, side: 10 };
 /** How long things take (s): slow enough to follow. */
-const T = { block: 1.8, raise: 2.2, light: 3.2, fly: 2, normal: 0.9, arcs: 1.1, bino: 4.2, marks: 0.9, back: 1.4 };
+const T = { block: 1.8, raise: 2.2, light: 3.2, fly: 2, normal: 0.9, arcs: 1.1, hold: 1.2, down: 1.8, back: 1.4 };
 /** Where each step ends: what is drawn, the head's place (0 down … 1 up) and the camera's pose. */
 const TARGET = {
   intro: { v: { block: 0, light: 0, normal: 0, arcs: 0, bino: 0, marks: 0, head: 0 }, pose: 'scene' },
@@ -185,17 +185,40 @@ export function createApp(root, options = {}) {
     peri.root.visible = !away;
     setting.wall.visible = !away;
     setting.flower.visible = !away;
+    // from the far side of the binoculars, their solid half would sit in front of the drawn light
+    if (bino.root.visible && bino.seeThrough(camera.position.z < BINO_AT.z)) stage.invalidate();
   }
 
   // ── the drawing over the view: light, the blocked light, the normal, the angle, the eyes ──
-  const EYE = V(SCENE.eyeX, PERI.low, 0);
+  const EYE = V(SCENE.eyeX, PERI.low, Z_LIGHT);
   const BINO_EYE = binoWorld({ x: BINO.back + 1.9, y: BINO.s, z: BINO.wb - BINO.s });
   const LOOK = V(-1, 0, 0);
-  const W = (p, z = 0) => ({ x: p.x, y: p.y, z });
+  const W = (p, z = Z_LIGHT) => ({ x: p.x, y: p.y, z });
   const bPts = [binoWorld({ x: -7, y: -BINO.s, z: BINO.wb + BINO.s }), ...BPATH.points.map((p) => binoWorld(p)), BINO_EYE.clone()];
   const bMarks = BPATH.at.map((i) => bPts[i + 1]);
-  const HIT_UP = { x: 0, y: 0, z: 0 };
-  const HIT_LOW = { x: 0, y: PERI.low, z: 0 };
+  /** How far along the drawn light (0…1) each point of bPts is: the numbers come in there, a prism's replay starts there. */
+  const bAt = (() => {
+    const out = [0];
+    let total = 0;
+    for (let i = 1; i < bPts.length; i++) out.push((total += bPts[i].distanceTo(bPts[i - 1])));
+    return out.map((x) => x / total);
+  })();
+  const markAt = BPATH.at.map((i) => bAt[i + 1]);
+  let BPATH_DRAWN = 0; // the drawn light's whole length (cm)
+  for (let i = 1; i < bPts.length; i++) BPATH_DRAWN += bPts[i].distanceTo(bPts[i - 1]);
+  /** Each corner's outside (away from the turn), so a number sits beside its corner, not on the light. */
+  const markOut = BPATH.at.map((_, i) =>
+    V(BPATH.dirs[i].x - BPATH.dirs[i + 1].x, BPATH.dirs[i].y - BPATH.dirs[i + 1].y, BPATH.dirs[i].z - BPATH.dirs[i + 1].z).normalize(),
+  );
+  /** Where each prism's light starts and ends (bPts indices: A from its hypotenuse in to out, then B). */
+  const PRISM_SPAN = [
+    [bAt[2], bAt[5]],
+    [bAt[6], bAt[9]],
+  ];
+  const OUT_UP = { x: 0, y: -1, z: 0 }; // the reflected light, down
+  const OUT_LOW = { x: 1, y: 0, z: 0 };
+  const HIT_UP = { x: 0, y: 0, z: Z_LIGHT };
+  const HIT_LOW = { x: 0, y: PERI.low, z: Z_LIGHT };
   const N_UP = { x: SQ, y: SQ, z: 0 }; // the upper hypotenuse's normal
   const IN_UP = { x: -1, y: 0, z: 0 }; // back along the incoming light
   const INTO_UP = { x: -SQ, y: -SQ, z: 0 }; // the normal into the glass
@@ -223,12 +246,16 @@ export function createApp(root, options = {}) {
       HIT_UP.y = yw();
       drawing.normal(HIT_UP, N_UP, 3.3, v.normal, 2.3);
       drawing.normal(HIT_LOW, N_UP, 2.3, v.normal, 3.3);
+      // the angle of incidence, and the equal angle of reflection (চিত্র ৯.০৭'s inset marks both 45°)
       drawing.angle(HIT_UP, IN_UP, INTO_UP, 2.1, v.arcs, C.ti);
+      drawing.angle(HIT_UP, INTO_UP, OUT_UP, 1.5, v.arcs, C.ti);
       drawing.angle(HIT_LOW, IN_LOW, INTO_LOW, 2.1, v.arcs, C.ti);
+      drawing.angle(HIT_LOW, INTO_LOW, OUT_LOW, 1.5, v.arcs, C.ti);
     }
     // ④ the binoculars' light, and its four reflections numbered
     if (v.bino > 0) drawing.lightPath(bPts, v.bino, { fadeFirst: true, minChevron: 28, width: 3.6 });
-    if (v.marks > 0) bMarks.forEach((p, i) => drawing.marker(p, N(i + 1), v.marks));
+    if (v.marks > 0)
+      bMarks.forEach((p, i) => drawing.marker(p, N(i + 1), v.marks * Math.min(1, Math.max(0, (v.bino - markAt[i]) / 0.03)), markOut[i]));
     // the eyes, looking into the eyepieces
     if (s.pose !== 'bino') drawing.eye(EYE, LOOK, Math.min(48, Math.max(22, drawing.pxPerUnit(EYE) * 3.4)));
     if (v.bino > 0 || s.pose === 'bino') drawing.eye(BINO_EYE, LOOK, Math.min(44, Math.max(20, drawing.pxPerUnit(BINO_EYE) * 2.6)));
@@ -279,50 +306,49 @@ export function createApp(root, options = {}) {
     flower: {
       text: 'lbl_flower',
       point: pt(SCENE.flower.x, SCENE.flower.y + SCENE.flower.r, 0),
-      spots: ABOVE,
+      spots: [...ABOVE, ...RIGHT_OF, ...LEFT_OF],
       show: (st) => st === 'intro' || st === 'wall',
     },
     wall: {
       text: 'lbl_wall',
       point: pt(SCENE.wall.x1, 9, SCENE.wall.z),
-      spots: [...BELOW, ...RIGHT_OF],
+      spots: [...BELOW, ...LEFT_OF, ...RIGHT_OF],
       show: (st) => st === 'intro' || st === 'wall',
     },
     peri: { text: 'lbl_peri', point: pt(PERI.outer, 15, PERI.outer), spots: [...RIGHT_OF, ...ABOVE], show: (st) => st === 'intro' },
     eye: { text: 'lbl_eye', point: () => EYE, spots: [...BELOW, ...RIGHT_OF], show: (st) => st === 'wall' || st === 'peri' },
-    prismUp: {
-      text: 'lbl_prism',
-      point: () => upPrismPt.set(1.4, yw() - 1.7, PERI.depth / 2),
-      spots: [...RIGHT_OF, ...ABOVE],
-      // in the periscope's step the action's ring is round this prism already; the lower one carries the word
-      show: (st) => st === 'prism',
+    // the long face the text speaks of: named on the picture in the prism's step
+    hyp: {
+      text: 'lbl_hyp',
+      point: () => upPrismPt.set(1.6, yw() - 1.6, PERI.depth / 2),
+      spots: [...RIGHT_OF, ...BELOW],
+      show: (st) => st === 'prism' && s.v.arcs > 0.9 && s.quiz === '',
     },
     prismLow: { text: 'lbl_prism', point: pt(-1.4, PERI.low + 1.7, PERI.depth / 2), spots: [...LEFT_OF, ...ABOVE], show: (st) => st === 'peri' },
     normal: {
       text: 'lbl_normal',
-      point: () => upPrismPt.set(3.3 * SQ, yw() + 3.3 * SQ, 0),
+      point: () => upPrismPt.set(3.3 * SQ, yw() + 3.3 * SQ, Z_LIGHT),
       spots: [...RIGHT_OF, ...ABOVE],
       show: (st) => st === 'prism' && s.v.normal > 0.9,
       color: C.normal,
     },
     angle: {
       text: () => t('lbl_angle', { a: 45 }),
-      point: () => V(-1.5, yw() - 1.3, 0),
+      point: () => V(-1.5, yw() - 1.3, Z_LIGHT),
       spots: [spot(-34, 24), spot(-52, 8), spot(-20, 40), spot(-60, 40), ...BELOW, ...LEFT_OF],
       show: (st) => st === 'prism' && s.v.arcs > 0.9 && s.quiz !== 'angle',
       color: C.ti,
     },
-    bino: { text: 'lbl_bino', point: pt(BINO_AT.x + 5, BINO_AT.y + 2.4, BINO_AT.z - BINO.wb - 2), spots: ABOVE, show: (st) => st === 'bino' },
     prismA: {
-      text: 'lbl_prism',
-      point: () => binoWorld({ x: BINO.a + BINO.h * 0.6, y: BINO.h * 0.9, z: BINO.wb + BINO.s }),
-      spots: [...ABOVE, ...RIGHT_OF],
+      text: 'lbl_prism_1',
+      point: () => binoWorld({ x: BINO.a + BINO.h, y: 0, z: BINO.wb + BINO.s + BINO.t }),
+      spots: [...RIGHT_OF, ...BELOW],
       show: (st) => st === 'bino' && s.v.bino > 0.99,
     },
     prismB: {
-      text: 'lbl_prism',
-      point: () => binoWorld({ x: BINO.b - BINO.h * 0.6, y: BINO.s, z: BINO.wb + BINO.h }),
-      spots: [...BELOW, ...LEFT_OF],
+      text: 'lbl_prism_2',
+      point: () => binoWorld({ x: BINO.b - BINO.h, y: BINO.s + BINO.t, z: BINO.wb }),
+      spots: [...LEFT_OF, ...ABOVE],
       show: (st) => st === 'bino' && s.v.bino > 0.99,
     },
   };
@@ -337,11 +363,12 @@ export function createApp(root, options = {}) {
   }
 
   // ── camera: a gentle three-quarter view per pose; flights between them ─────
-  const DIRS = { scene: V(0.36, 0.3, 1), prism: V(0.24, 0.13, 1), bino: V(0.28, 0.6, 1) };
+  const DIRS = { scene: V(0.36, 0.3, 1), prism: V(0.16, 0.13, 1), prismLow: V(0.16, 0.13, 1), bino: V(0.3, 1.02, 1) };
   const BOXES = {
-    scene: new THREE.Box3(V(-35, 0, -5), V(13.5, 34, 5)),
+    scene: new THREE.Box3(V(-28.5, 0, -5), V(13.5, 32, 5)),
     prism: new THREE.Box3(V(-4.4, PERI.ywMax - 3.9, -2.6), V(4.4, PERI.ywMax + 4.4, 2.6)),
-    bino: new THREE.Box3(V(BINO_AT.x - 4.5, 0.4, BINO_AT.z + 0.6), V(BINO_AT.x + 15.6, 6, BINO_AT.z + 7.2)),
+    prismLow: new THREE.Box3(V(-4.4, PERI.low - 4.2, -2.6), V(6.5, PERI.low + 4.2, 2.6)),
+    bino: new THREE.Box3(V(BINO_AT.x - 2.5, 0.6, BINO_AT.z + 1), V(BINO_AT.x + 15, 5.4, BINO_AT.z + 7)),
   };
   const poses = {};
   function fitPoses() {
@@ -484,6 +511,21 @@ export function createApp(root, options = {}) {
       })
       .finished.then((ok) => ok && my === s.run);
   }
+  /**
+   * The binoculars' light from `a` to `b` (parts of its length) as plan parts: at an even pace (about 5 cm a second,
+   * at least 0.7 s a stretch), stopping 0.6 s at each corner it reaches so its number can be read before the next.
+   */
+  function binoRun(a, b) {
+    const plan = [];
+    let at = a;
+    for (const f of [...markAt.map((m) => m + 0.035), b]) {
+      if (f <= at + 1e-6 || f > b + 1e-6) continue;
+      plan.push([{ bino: f }, Math.max(0.7, ((f - at) * BPATH_DRAWN) / 5)]);
+      if (f < b) plan.push([{}, 0.6]);
+      at = f;
+    }
+    return plan;
+  }
   /** The plan from one step to another: a list of [values, seconds, pose?], played one after the other. */
   function planFor(from, to) {
     const goal = TARGET[to].v;
@@ -497,14 +539,23 @@ export function createApp(root, options = {}) {
     if (from === 'peri' && to === 'prism') {
       const plan = [];
       if (s.v.head < 1) plan.push([{ head: 1 }, 1.2]);
-      plan.push([{ block: 0 }, T.fly, 'prism'], [{ normal: 1 }, T.normal], [{ arcs: 1 }, T.arcs]);
+      // the top prism, then a look at the bottom one (the same 45° and the same turn), and back up
+      plan.push(
+        [{ block: 0 }, T.fly, 'prism'],
+        [{ normal: 1 }, T.normal],
+        [{ arcs: 1 }, T.arcs],
+        [{}, T.hold],
+        [{}, T.down, 'prismLow'],
+        [{}, T.hold],
+        [{}, T.down, 'prism'],
+      );
       return plan;
     }
     if (from === 'prism' && to === 'bino')
       return [
-        [{ normal: 0, arcs: 0, light: 0 }, 2.4, 'bino'],
-        [{ bino: 1 }, T.bino],
-        [{ marks: 1 }, T.marks],
+        [{ normal: 0, arcs: 0, light: 0, marks: 1 }, 2.4, 'bino'],
+        // the light runs on, stopping a moment at each corner as its number comes in: ১, ২, ৩, ৪, then out to the eye
+        ...binoRun(0, 1),
       ];
     // a jump (a step word, back, several at once): everything together while the camera flies there
     const all = {};
@@ -563,6 +614,48 @@ export function createApp(root, options = {}) {
     Object.assign(s.v, TARGET[prev].v);
     if (s.pose !== TARGET[prev].pose || s.userMovedCamera) flyTo(TARGET[prev].pose, 0);
     go(s.step, { from: prev });
+  }
+
+  /** In the binoculars' step: the light again through one prism, slowly (a tap on it, or the how-to row's tap). */
+  let nextPrism = 0;
+  async function playPrism(i) {
+    if (s.locked) return lockedNudge();
+    if (s.step !== 'bino' || s.busy || s.mode !== 'explore') return;
+    stopAll();
+    const my = s.run;
+    s.busy = true;
+    nextPrism = 1 - i;
+    refresh();
+    const [a, b] = PRISM_SPAN[i];
+    s.v.bino = a;
+    stage.invalidate();
+    audio.tick?.();
+    for (const [to, sec] of [...binoRun(a, b), [{}, 0.8], [{ bino: 1 }, 1.4]]) if (!(await tweenTo(to, sec, my))) return;
+    s.busy = false;
+    done();
+  }
+  const prismBox = new THREE.Box3();
+  /** Which of the binoculars' prisms is under a point of the view (its box on the screen, a finger's width round it). */
+  function prismAt(p) {
+    if (s.step !== 'bino' || !bino.root.visible) return -1;
+    for (let i = 0; i < 2; i++) {
+      prismBox.setFromObject(bino.prisms[i].body);
+      let x0 = Number.POSITIVE_INFINITY;
+      let y0 = Number.POSITIVE_INFINITY;
+      let x1 = Number.NEGATIVE_INFINITY;
+      let y1 = Number.NEGATIVE_INFINITY;
+      for (const x of [prismBox.min.x, prismBox.max.x])
+        for (const y of [prismBox.min.y, prismBox.max.y])
+          for (const z of [prismBox.min.z, prismBox.max.z]) {
+            const q = drawing.screen(x, y, z);
+            x0 = Math.min(x0, q.x);
+            y0 = Math.min(y0, q.y);
+            x1 = Math.max(x1, q.x);
+            y1 = Math.max(y1, q.y);
+          }
+      if (p.x > x0 - 12 && p.x < x1 + 12 && p.y > y0 - 12 && p.y < y1 + 12) return i;
+    }
+    return -1;
   }
 
   // ── the panel ───────────────────────────────────────────────────────────────
@@ -669,16 +762,15 @@ export function createApp(root, options = {}) {
   // ── dragging the periscope's head (↕); a tap on the marked part is the action ──
   const canDrag = () => s.mode === 'explore' && !s.locked && !s.busy && (s.step === 'wall' || s.step === 'peri') && s.pose === 'scene' && camK >= 1;
   const handleAt = V(0, 0, 0);
-  // beside the head on the eye's side, a little below its top window: clear of the light (which runs on the
-  // flower's side and down the middle) and of the action's badge (above the ring)
-  const HANDLE_UP = -2.6;
+  // beside the head on the eye's side, well below its top window: clear of the light (which runs on the flower's side
+  // and down the middle) and of the action's ring and badge (round the top of the head). No word beside it: the
+  // how-to row and the action say what it does, and a word could not sit clear of the ring on a phone.
+  const HANDLE_UP = -4.6;
   const HANDLE_X = PERI.inner + 1.6;
   headHandle = createDragHandle(stage, {
     point: () => handleAt.set(HANDLE_X, yw() + HANDLE_UP, PERI.inner),
     axis: 'y',
     track: { from: V(HANDLE_X, PERI.ywMin + HANDLE_UP, PERI.inner), to: V(HANDLE_X, PERI.ywMax + HANDLE_UP, PERI.inner) },
-    label: t('drag_me'),
-    labelAt: 'right',
     aria: t('aria_drag_head'),
     pulse: Boolean(o.coach),
     when: canDrag,
@@ -760,6 +852,8 @@ export function createApp(root, options = {}) {
     const quick = now() - down.at < 600;
     down = null;
     if (moved > 8 || !quick || s.mode !== 'explore') return;
+    const which = prismAt(p);
+    if (which >= 0) return playPrism(which);
     const r = action.ringBox();
     if (r && p.x > r.left - 8 && p.x < r.right + 8 && p.y > r.top - 8 && p.y < r.bottom + 8) doAction();
   });
@@ -787,8 +881,11 @@ export function createApp(root, options = {}) {
         handle: headHandle,
         when: () => s.step === 'wall' || s.step === 'peri',
       },
+      // in the binoculars' step: the light again through the first prism, then the second
+      { kind: 'tap', text: t('howto_prisms'), when: () => s.step === 'bino', onTap: () => playPrism(nextPrism) },
     ],
-    { stage },
+    // the drag and the tap never show together: each takes the room the other leaves, so the row stays one line
+    { stage, collapse: true },
   );
 
   // ── hint line ───────────────────────────────────────────────────────────────
@@ -824,6 +921,7 @@ export function createApp(root, options = {}) {
       total: p.total[0] && p.total[1],
       turn: round(p.turns[0]),
       reflections: s.v.bino >= 1 ? BPATH.at.length : 0,
+      numbers: s.v.marks > 0 ? markAt.filter((f) => s.v.bino >= f + 0.03).length : 0, // the numbers shown so far, in order
       path: PATH_CM,
       body: BODY_CM,
       busy: s.busy,
@@ -914,7 +1012,7 @@ export function createApp(root, options = {}) {
         question = { kind };
         stage.invalidate();
         if (kind === 'see')
-          return { text: t('q_see'), ...choicesOf(words(['c_see_right', 'c_see_flower', 'c_see_table', 'c_see_dark']), kind, (x) => t(x.key)) };
+          return { text: t('q_see'), ...choicesOf(words(['c_see_right', 'c_see_flower', 'c_see_upside', 'c_see_dark']), kind, (x) => t(x.key)) };
         if (kind === 'angle') {
           const items = [
             { key: 'a45', v: 45 },
@@ -941,7 +1039,7 @@ export function createApp(root, options = {}) {
         const k = question.kind;
         const wrong = correct ? null : q.list?.[picked]?.key;
         const note = (map) => (wrong && map[wrong] ? ` ${t(map[wrong], VARS)}` : '');
-        if (k === 'see') return t('why_see') + note({ c_see_flower: 'mis_see_flower', c_see_table: 'mis_see_table', c_see_dark: 'mis_see_dark' });
+        if (k === 'see') return t('why_see') + note({ c_see_flower: 'mis_see_flower', c_see_upside: 'mis_see_upside', c_see_dark: 'mis_see_dark' });
         if (k === 'angle') return t('why_angle', VARS) + note({ a90: 'mis_angle_90', a0: 'mis_angle_0', ac: 'mis_angle_c' });
         if (k === 'why')
           return t('why_why', VARS) + note({ c_why_small: 'mis_why_small', c_why_silver: 'mis_why_silver', c_why_into: 'mis_why_into' });

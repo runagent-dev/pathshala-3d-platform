@@ -4,12 +4,12 @@
 // side. Its own frame (u, v, w) is reading.js's BINO frame: x = u along the barrel, y = v up, z = w away from the hinge.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries as mergeAll } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries as mergeAll, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { glassPiece, lensGeometry, prismGeometry } from './glass.js';
 import { BINO } from './reading.js';
 
-/** Merges geometries whether or not they are indexed (the rounded box is not). */
-const mergeGeometries = (list) => mergeAll(list.map((g) => (g.index ? g.toNonIndexed() : g)));
+/** Merges geometries whether or not they are indexed (the rounded box is not), then welds them (a smaller GLB). */
+const mergeGeometries = (list) => mergeVertices(mergeAll(list.map((g) => (g.index ? g.toNonIndexed() : g))));
 
 /** Where the binoculars lie: their frame's origin (the near objective's centre is at u = 0). */
 export const BINO_AT = { x: 25, y: 3.35, z: 12 };
@@ -120,12 +120,32 @@ export function createBinocular() {
   near.add(nearShell, nearEdges, nearCup, nearRings, objective.group, prismA.group, prismB.group, eyepiece.group);
 
   root.add(far, hinge, wheel, near);
+  /**
+   * Seen from the far side, the whole far barrel and the hinge stand between the eye and the light (which is drawn over
+   * everything): then they turn into the same faint shell as the cut-away, so nothing seems to float on a solid body.
+   */
+  const solid = [
+    [farBody, armour],
+    [hinge, armour],
+    [farRings, trim],
+    [wheel, trim],
+  ];
+  let through = false;
+  function seeThrough(on) {
+    if (on === through) return false;
+    through = on;
+    for (const [mesh, mat] of solid) {
+      mesh.material = on ? ghost : mat;
+      mesh.castShadow = !on;
+    }
+    return true;
+  }
   /** The near barrel's visible body, for a ring round it. */
   const body = new THREE.Box3(
     new THREE.Vector3(BINO_AT.x + front, BINO_AT.y - s - R_OBJ, BINO_AT.z - wo - R_OBJ),
     new THREE.Vector3(BINO_AT.x + back, BINO_AT.y + s + R_EYE, BINO_AT.z + wo + R_OBJ),
   );
-  return { root, near, prisms: [prismA, prismB], body };
+  return { root, near, prisms: [prismA, prismB], body, seeThrough };
 }
 
 /** A point of the near barrel's frame (u, v, w) in the world. */

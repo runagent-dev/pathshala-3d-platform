@@ -32,13 +32,19 @@ Added by the figure (not on the page): দেয়াল, ফুল, চোখ,
 - **② পেরিস্কোপ** (drag the head ↕ by its handle, or tap): the head rises above the wall; the flower's light comes in level,
   turns down in the top prism, turns again in the bottom prism and goes level into the eye. Dragged back below the wall's
   top, the light comes from the bricks instead, and the result line says the eye sees the wall.
-- **③ প্রিজম**: the camera flies close to the top prism; the normal (লম্ব, dashed) and the angle of incidence (blue) on the
-  hypotenuse face: ৪৫°, more than the critical angle ৪১.৮°, so all the light comes back and turns ৯০°. The bottom prism has
-  its own normal and angle (seen when the view is turned or zoomed out).
+- **③ প্রিজম**: the camera flies close to the top prism; the normal (লম্ব, dashed), the angle of incidence (blue, labelled)
+  and the equal angle of reflection (the smaller arc, as চিত্র ৯.০৭'s inset) on the hypotenuse face, labelled অতিভুজ তল:
+  ৪৫°, more than the critical angle ৪১.৮°, so all the light comes back and turns ৯০°. The camera then visits the bottom
+  prism (the same normal, angles and turn) and comes back up, so "নিচের প্রিজমেও তাই" is shown, not only said.
 - **④ বাইনোকুলার**: the camera flies to a pair of Porro-prism binoculars (they come onto the table for this step only, so
   they never crowd the periscope's picture): the near barrel is a cut-away shell; light comes in through the objective,
-  is reflected twice in the first prism (up, then back), twice in the second (sideways, then forward), numbered ১–৪, and
-  leaves through the eyepiece into an eye. Result: a path of about ২৭ cm inside a body about ১৪ cm long. Rule: the book's
+  is reflected twice in the first prism (up, then back), twice in the second (sideways, then forward), and leaves
+  through the eyepiece into an eye. The light runs at an even pace and stops a moment at each corner as its number pops
+  in beside it (১, then ২, ৩, ৪), so the order can be followed on a phone; the numbers sit just outside their corners
+  (smaller on small views), and the prisms are labelled প্রথম প্রিজম / দ্বিতীয় প্রিজম. A tap on a prism (or the how-to
+  row's "প্রিজমে টোকা দাও", which takes the first, then the second) plays the light through that prism again. The camera
+  looks down at about 45° so both folds read; seen from the far side the far barrel and hinge turn into the same faint
+  shell, so the drawn light never floats on a solid body. Result: a path of about ২৭ cm inside a body about ১৪ cm long. Rule: the book's
   sentence.
 - The panel: one action button (and its numbered badge on the 3D part), a lead-in line (side panels only), the result
   and the rule with the book's term in bold; quiet replay (আবার দেখো) and home buttons; the kit's how-to row (turn, front,
@@ -55,7 +61,9 @@ Added by the figure (not on the page): দেয়াল, ফুল, চোখ,
 - The binoculars: one barrel's path through the objective, Porro prism A (folds in the vertical plane) and B (turned a
   quarter turn, folds sideways), four reflections at 45°; path 27.1 cm, body 14.2 cm (this model's numbers, said with
   "প্রায়").
-- Honest simplifications: one ray (the central one) per path; the periscope is a table model (the wall 22 cm high); the
+- Honest simplifications: one ray (the central one) per path; the head "sees the flower" once that central ray clears
+  the wall's top (22.0 cm), although a real window shows the wall's top edge a little longer; the light is drawn
+  1.8 cm toward the front glass (any ray across the prisms' depth does the same), so it turns on the edge the camera sees; the periscope is a table model (the wall 22 cm high); the
   red ✕ marks where the straight light meets the wall's far face (drawn over the wall, which the camera sees from the
   near side).
 
@@ -70,14 +78,25 @@ Added by the figure (not on the page): দেয়াল, ফুল, চোখ,
   action's badge avoid them.
 
 ## Performance (measured, headless Chromium, 844 × 390, shadows on)
-- Draw calls / triangles per frame, four azimuths (0°, 90°, 180°, 270°): step ② 32 / 8.2 k at every side; step ③ 20–25 /
-  4.3–7.5 k; step ④ 24 / 8.3 k at every side (the periscope is hidden there). Idle: 0 draws a second.
-- Main-thread time per animated frame at 6× CPU throttling: 1.6–3.7 ms (each step's animation), 2.1–2.6 ms dragging the
-  head with the view turned to each of the four sides.
+- Draw calls / triangles per frame, four azimuths (0°, 90°, 180°, 270°), round 2: step ② 32 / 8.2 k at every side;
+  step ③ 20–23 / 4.3–6.9 k; step ④ 19–24 / 5.6–7.9 k. Idle: 0 draws a second.
+- Main-thread time per animated frame at 6× CPU throttling (machine under load, ~20): 2.4–4.4 ms (each step's
+  animation), 2.7–3.1 ms dragging the head with the view turned to each of the four sides.
 - Shadow map 1024², fitted to the table; static parts merged one mesh per material; the light, normal and angles are a 2D
   canvas (no geometry); the binoculars are hidden outside their step and warmed up at load (`stage.warmUp`).
 - GLB: 459 KB, 9,496 triangles, 0.73 × 0.30 × 0.35 m (the wall, the flower, the periscope with its prisms, the
   binoculars). Zip: 463 KB, runs offline.
+
+## Round 2 (after the independent review)
+- The drag handle has no word (it could not sit clear of the action's ring and badge on a phone); it sits beside the head,
+  below its window, clear of the ring, the badge, the light and the panel's tab. The how-to row and the action say "drag".
+- Binoculars: numbers pop in one by one with a stop at each corner, smaller discs set beside their corners, the camera at
+  ~45°, two distinct prism labels, a replay per prism, the far barrel see-through from behind.
+- The test: Q1's wrong choices are now real mistakes (the flower behind the wall, the flower upside down, darkness); Q4's
+  notes name the mistake without repeating the answer; Q5's right answer is no longer the longest and does not repeat the
+  rule.
+- The flower and the wall stand closer to the periscope, so the scene is larger on a phone (prisms ≥ 25 px at 390 × 520).
+- A smaller eyecup; welded binocular merges and fewer lens segments for the GLB.
 
 ## Open questions
 - Every Bangla line needs a person's check against the book.

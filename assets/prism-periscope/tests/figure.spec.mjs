@@ -61,6 +61,38 @@ test(`${ID}: a step plays from a tap, and the head can be dragged with the keys`
   expect(log.errors).toEqual([]);
 });
 
+test(`${ID}: the binoculars' numbers come in one by one, and a prism can be played again`, async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 }); // the how-to row shows here
+  const log = await preparePage(page);
+  const fig = await openFigure(page, ID);
+  const frame = frameOf(page);
+  const state = () => frame.evaluate(() => /** @type {any} */ (window).figure.getState());
+  await fig.call('set', { step: 'prism', animate: false });
+  await fig.advance(300);
+  await frame.locator('.pvc-act').click();
+  const seen = [];
+  // frames of 50 ms (the stage's longest step): a 12 s animation in about 250 frames, quick under software rendering
+  for (let i = 0; i < 40; i++) {
+    await fig.advance(400, 50);
+    const st = await state();
+    seen.push(st.numbers);
+    if (!st.busy && st.step === 'bino') break;
+  }
+  // never all at once: 0, then 1, 2, 3, 4 in turn
+  expect(seen.at(-1)).toBe(4);
+  for (const n of [1, 2, 3]) expect(seen).toContain(n);
+  for (let i = 1; i < seen.length; i++) expect(seen[i]).toBeGreaterThanOrEqual(seen[i - 1]);
+  // the how-to row's tap plays the light through the first prism again: its numbers go and come back
+  await frame.locator('button.pvc-howto-item.pvc-howto-tap').click();
+  await fig.advance(400);
+  const again = await state();
+  expect(again.busy).toBe(true);
+  expect(again.numbers).toBeLessThan(2);
+  for (let i = 0; i < 30 && (await state()).busy; i++) await fig.advance(400, 50);
+  expect(await state()).toMatchObject({ step: 'bino', busy: false, numbers: 4, reflections: 4 });
+  expect(log.errors).toEqual([]);
+});
+
 test(`${ID}: the test, answered all right, scores five of five`, async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 400 });
   const log = await preparePage(page);

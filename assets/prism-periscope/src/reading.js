@@ -37,10 +37,16 @@ export const isTotal = (angle, n2 = N.glass, n1 = N.air) => angle > criticalAngl
 // ── the periscope (the light runs in the plane z = 0; the table top is y = 0) ─────────────────────────────────────
 /** The scene: a low brick wall, a flower behind it, the periscope on this side of it, the eye at its bottom window. */
 export const SCENE = {
-  wall: { x0: -15, x1: -11, top: 22, z: 16 }, // the wall's faces (x), its top (y) and half its length (z)
-  flower: { x: -30, y: 27, r: 3.6 }, // the flower's head: its centre and radius
+  wall: { x0: -12.5, x1: -9, top: 22, z: 16 }, // the wall's faces (x), its top (y) and half its length (z)
+  flower: { x: -23, y: 27, r: 3.6 }, // the flower's head: its centre and radius
   eyeX: 10.6, // where the eye is, in front of the bottom window
 };
+/**
+ * The light of the periscope is drawn in the plane z = Z_LIGHT, toward the front glass (the prisms are 5 cm deep, from
+ * −2.5 to 2.5): a ray anywhere across the depth does the same, and near the front face it lines up with the edges the
+ * camera sees, so it visibly turns at the hypotenuse, not inside the glass.
+ */
+export const Z_LIGHT = 1.8;
 /** The periscope: the prisms' legs (L), the lower prism's centre (the eye's height), and how far the head slides. */
 export const PERI = {
   L: 5, // the right-angle prisms' legs (cm); both are 45°-45°-90°

@@ -101,13 +101,13 @@ export function createPeriscope() {
   );
   // the eyecup: a soft rubber ring round the bottom window, toward the eye
   const cupProfile = [
-    [2.55, 0],
-    [3.05, 0],
-    [3.25, 1.2],
-    [3.35, 1.9],
-    [3.1, 2.1],
-    [2.75, 1.6],
-    [2.55, 0.6],
+    [2.6, 0],
+    [2.95, 0],
+    [3.05, 0.7],
+    [3.1, 1.15],
+    [2.9, 1.3],
+    [2.7, 1.0],
+    [2.6, 0.4],
   ].map(([r, x]) => new THREE.Vector2(r, x));
   const cup = new THREE.Mesh(new THREE.LatheGeometry(cupProfile, 32).rotateZ(-Math.PI / 2).translate(outer, low, 0), m.rubber);
   for (const part of [walls, frame, foot, cup]) {
