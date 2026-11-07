@@ -1,0 +1,48 @@
+/* The page and the animation's caption panel. Colours and type come from ../../shared/lib/student/student.css. */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.anim { position: absolute; inset: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); container-type: size; }
+.anim .pvc-stage { position: relative; overflow: hidden; background: #173f93; }
+.anim-panel { padding: 10px 14px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--page); display: grid; gap: 8px; align-content: start; }
+.anim-caption { margin: 0; font-size: 16px; line-height: 1.5; min-height: 4.5em; color: var(--ink); }
+.anim-caption b { font-weight: 700; }
+.anim-caption .kp { color: #c92a2a; }
+.anim-caption .kf { color: #6741d9; }
+.anim-caption .km { color: #237a35; }
+.anim-caption .kh { color: #d9480f; }
+.anim-controls { display: flex; gap: 6px; align-items: flex-start; }
+.anim-steps { display: flex; gap: 3px; flex-wrap: wrap; flex: 1; }
+.anim-steps button { min-height: 34px; flex: 0 0 auto; padding: 0 5px; border: 1px solid var(--line-2); border-radius: 17px; background: var(--page); color: var(--ink); font: 500 13.5px/1 var(--font); cursor: pointer; }
+.anim-steps button.on { color: #fff; background: #1f5fae; border-color: #1f5fae; font-weight: 600; }
+.anim-play { min-width: 36px; padding: 0 6px; min-height: 34px; justify-content: center; border-radius: 17px; }
+
+/* the magnifier's ring and words, the iris's rim, the dip and the honest note (all over the canvas) */
+.kt-lens { position: absolute; left: 0; top: 0; transform-origin: 50% 50%; pointer-events: none; opacity: 0; will-change: transform; }
+.kt-lens i { position: absolute; inset: -3px; border-radius: 50%; border: 5px solid #fff; box-shadow: 0 0 0 2px #13213a, 0 6px 18px rgba(0, 0, 0, 0.35); }
+.kt-lens-cap { position: absolute; right: -4px; top: calc(100% + 8px); width: max-content; max-width: 220px; padding: 3px 9px; border-radius: 6px; background: #fff; color: var(--ink); font-size: 12.5px; line-height: 1.35; text-align: right; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); }
+.kt-iris { position: absolute; left: 0; top: 0; border-radius: 50%; box-shadow: 0 0 0 4px #fff, 0 0 0 6px #13213a; pointer-events: none; opacity: 0; }
+.kt-leader { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; overflow: visible; }
+.kt-leader line { stroke: #fff; stroke-width: 2.5; stroke-dasharray: 6 5; stroke-linecap: round; }
+.kt-dip { position: absolute; inset: 0; background: #173f93; opacity: 0; pointer-events: none; }
+.kt-note { position: absolute; left: 8px; top: 8px; max-width: 58%; padding: 2px 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.92); color: var(--ink-2); font-size: 12px; line-height: 1.4; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.kt-note.on { opacity: 1; }
+.kt .pvc-anno { font-size: 13.5px; }
+
+/* short, wide frames: the words beside the picture */
+@media (min-aspect-ratio: 5/4) {
+  .anim { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(240px, 32vw, 360px); }
+  .anim-panel { border-top: 0; border-left: 1px solid var(--line); align-content: space-between; padding: 12px 14px; overflow: hidden; }
+  .anim-caption { min-height: 0; font-size: 16.5px; }
+  .anim-controls { flex-direction: column; align-items: stretch; }
+  .anim-play { align-self: flex-start; }
+  .anim-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-aspect-ratio: 5/4) and (min-height: 600px) {
+  .anim-caption { font-size: 19px; }
+}
+@media (max-aspect-ratio: 5/4) and (max-height: 560px) {
+  .anim-caption { font-size: 15px; line-height: 1.42; min-height: 4.3em; }
+  .anim-panel { padding-top: 8px; gap: 6px; }
+}
