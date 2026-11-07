@@ -105,6 +105,15 @@ describe('electric-potential: the strings', () => {
     assert.match(t('rule_potential', { one: 1 }), /তড়িৎ বিভব/);
     assert.match(t('rule_join'), /বিভব পার্থক্যের/);
     assert.match(t('rule_earth'), /শূন্য বিভব/);
+    assert.match(t('rule_potential', { one: 1 }), /^অসীম থেকে প্রতি একক টেস্ট চার্জ/);
+  });
+
+  it('never says electrons run from high to low like water: they go toward the higher potential', () => {
+    const t = createI18n('bn');
+    assert.doesNotMatch(t('rule_join'), /উঁচু থেকে নিচে/);
+    assert.match(t('rule_join'), /ঋণাত্মক ইলেকট্রন যায় উঁচু বিভবের দিকে/);
+    assert.match(t('doing_join'), /নিচু বিভব B থেকে উঁচু বিভব A/);
+    assert.doesNotMatch(STRINGS.en.rule_join, /high to low/);
   });
 
   it('has a step name, an action and a rule for every step', () => {

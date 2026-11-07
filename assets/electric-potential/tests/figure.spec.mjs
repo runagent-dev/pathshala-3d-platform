@@ -36,20 +36,23 @@ test(`${ID}: the work, the potential, the wire, the crow, the earth`, async ({ p
   await frame.locator('#app').focus();
   await page.keyboard.press('ArrowLeft');
   expect((await fig.call('get')).r).toBe(19);
+  // a rounded value says "≈", never "= ≈"
+  expect(await fig.call('set', { r: 13 })).toMatchObject({ r: 13 });
+  await expect(frame.locator('.pvc-outcome')).toContainText('≈');
+  expect(await frame.locator('.pvc-outcome').textContent()).not.toContain('= ≈');
 
   // the wire: from 1,800 V and 300 V to 1,050 V each, electrons from B to A
   await fig.call('set', { step: 'potential', animate: false });
   await frame.locator('.pvc-act').click();
-  await fig.advance(1400 + 1400);
+  await fig.advance(1420 + 1400);
   const j0 = await fig.call('get');
   expect(j0).toMatchObject({ busy: true, va: 1800, vb: 300 });
-  await fig.advance(800 + 1600 + 1800);
+  await fig.advance(800 + 1600 + 2100);
   const j1 = await fig.call('get');
   expect(j1.busy).toBe(true);
-  expect(j1.va).toBeLessThan(1800);
-  expect(j1.vb).toBeGreaterThan(300);
-  expect(j1.va).toBeGreaterThan(j1.vb);
-  await fig.advance(3200);
+  // the first electron has arrived: a bead is 1 nC, so A and B have moved by exactly one step of 150 V
+  expect(j1).toMatchObject({ va: 1650, vb: 450, qa: 9, qb: 1 });
+  await fig.advance(2900);
   expect(await fig.call('get')).toMatchObject({ step: 'join', busy: false, qa: 5, qb: 5, va: 1050, vb: 1050, next: 'crow' });
 
   // the crow: same potential, no difference
@@ -64,6 +67,22 @@ test(`${ID}: the work, the potential, the wire, the crow, the earth`, async ({ p
 
   await fig.call('reset');
   expect(await fig.call('get')).toMatchObject({ step: 'intro', r: 30, view: 'front', mode: 'explore' });
+  expect(log.errors).toEqual([]);
+});
+
+test(`${ID}: the step URL parameter opens on the crow, and a jump shows no old charges`, async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize({ width: 640, height: 400 });
+  const log = await preparePage(page);
+  const fig = await openFigure(page, ID, { params: { step: 'crow' } });
+  expect(await fig.call('get')).toMatchObject({ step: 'crow', busy: false, va: 1050, next: 'earth' });
+  // from the wire to the earth is a jump, not a played step: it must not show the old charges on the way
+  await fig.call('set', { step: 'join', animate: false });
+  await fig.frame.locator('[data-example="earth"]').click();
+  await fig.advance(300);
+  expect(await fig.call('get')).toMatchObject({ step: 'earth', busy: true, va: 0, qa: 0, qb: 0 });
+  await fig.advance(1200);
+  expect((await fig.call('get')).busy).toBe(false);
   expect(log.errors).toEqual([]);
 });
 

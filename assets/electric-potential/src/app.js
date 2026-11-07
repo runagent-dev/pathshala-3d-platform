@@ -34,6 +34,7 @@ import { choicesFor, clampR, group, isWhole, potentialAt, Q0_NC, Q_NC, R_MAX, R_
 import { backdrop, createSetting } from './setting.js';
 
 export const DEFAULTS = {
+  step: 'intro',
   view: 'front',
   mode: 'explore',
   coach: true,
@@ -71,12 +72,12 @@ const T = {
 };
 /** Where each step ends. r is the test charge's distance (cm); the rest go 0 … 1. */
 const TARGET = {
-  intro: { lines: 1, arrows: 0, morph: 0, shells: 0, q0: 1, b: 0, wire: 0, flow: 0, crow: 0, cable: 0, ground: 0, r: R_MAX },
-  bring: { lines: 1, arrows: 1, morph: 0, shells: 0, q0: 1, b: 0, wire: 0, flow: 0, crow: 0, cable: 0, ground: 0, r: R_MIN },
-  potential: { lines: 1, arrows: 0, morph: 1, shells: 1, q0: 1, b: 0, wire: 0, flow: 0, crow: 0, cable: 0, ground: 0 },
-  join: { lines: 0, arrows: 0, morph: 1, shells: 0, q0: 0, b: 1, wire: 1, flow: 1, crow: 0, cable: 0, ground: 0 },
-  crow: { lines: 0, arrows: 0, morph: 1, shells: 0, q0: 0, b: 1, wire: 1, flow: 1, crow: 1, cable: 0, ground: 0 },
-  earth: { lines: 0, arrows: 0, morph: 1, shells: 0, q0: 0, b: 1, wire: 1, flow: 1, crow: 0, cable: 1, ground: 1 },
+  intro: { lines: 1, arrows: 0, morph: 0, shells: 0, q0: 1, b: 0, wire: 0, flow: 0, crow: 0, cable: 0, ground: 0, hold: 0, r: R_MAX },
+  bring: { lines: 1, arrows: 1, morph: 0, shells: 0, q0: 1, b: 0, wire: 0, flow: 0, crow: 0, cable: 0, ground: 0, hold: 0, r: R_MIN },
+  potential: { lines: 1, arrows: 0, morph: 1, shells: 1, q0: 1, b: 0, wire: 0, flow: 0, crow: 0, cable: 0, ground: 0, hold: 0 },
+  join: { lines: 0, arrows: 0, morph: 1, shells: 0, q0: 0, b: 1, wire: 1, flow: 1, crow: 0, cable: 0, ground: 0, hold: 0 },
+  crow: { lines: 0, arrows: 0, morph: 1, shells: 0, q0: 0, b: 1, wire: 1, flow: 1, crow: 1, cable: 0, ground: 0, hold: 0 },
+  earth: { lines: 0, arrows: 0, morph: 1, shells: 0, q0: 0, b: 1, wire: 1, flow: 1, crow: 0, cable: 1, ground: 1, hold: 0 },
 };
 const ORDER = ['intro', ...STEPS];
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
@@ -94,6 +95,8 @@ export function createApp(root, options = {}) {
   const fmt = (x) => group(x);
   /** A value in volts or nJ as shown: whole numbers, "≈" when rounded. */
   const shown = (x) => `${isWhole(x) ? '' : '≈ '}${N(fmt(x))}`;
+  /** "=" for a whole value, "≈" for a rounded one, to go before it in a sum. */
+  const eq = (x) => (isWhole(x) ? '=' : '≈');
 
   root.classList.add('pvc', 'ep');
   root.dataset.theme = 'light';
@@ -233,41 +236,36 @@ export function createApp(root, options = {}) {
     let marksA = Q_NC;
     let marksB = 0;
     if (v.ground <= 0) {
-      // joined: five electrons from B's top along the wire into A
-      let moved = 0;
+      // joined: five electrons from B's top along the wire into A. A bead is 1 nC: the charges and the potentials change
+      // as each one arrives (150 V a step, always whole volts), so the labels and the columns change a few times, not every frame
       let arrived = 0;
       let left = 0;
       for (const e of JOIN_E) {
         const p = clamp01((v.flow - e.start) / e.dur);
-        moved += p;
         if (p >= 1) arrived++;
         if (p > 0) left++;
         if (p > 0 && p < 1) app.paths.join.getPoint(p, ePts[n++]);
       }
-      qa = Q_NC - moved;
-      qb = moved;
-      marksA = Q_NC - arrived;
+      qa = Q_NC - arrived;
+      qb = arrived;
+      marksA = qa;
       marksB = left;
     } else {
       // earthed: ten electrons up the cable, five stop in B, five go on over B and along the wire into A
-      let inA = 0;
-      let inB = 0;
       let gotA = 0;
       let gotB = 0;
       for (const e of EARTH_E) {
         const p = clamp01((v.ground - e.start) / e.dur);
-        if (e.toA) inA += p;
-        else inB += p;
         if (p >= 1) {
           if (e.toA) gotA++;
           else gotB++;
         }
         if (p > 0 && p < 1) (e.toA ? app.paths.toA : app.paths.toB).getPoint(p, ePts[n++]);
       }
-      qa = Q_NC / 2 - inA;
-      qb = Q_NC / 2 - inB;
-      marksA = Q_NC / 2 - gotA;
-      marksB = Q_NC / 2 - gotB;
+      qa = Q_NC / 2 - gotA;
+      qb = Q_NC / 2 - gotB;
+      marksA = qa;
+      marksB = qb;
     }
     const pv = twoSpheres(qa, qb);
     Object.assign(live, { qa, qb, va: pv.a, vb: v.b > 0.01 ? pv.b : potentialAt(B_X * 100), marksA, marksB, eCount: n });
@@ -298,12 +296,13 @@ export function createApp(root, options = {}) {
       m.transparent = true;
       m.opacity = v.lines;
     }
-    app.shellMat.uniforms.opacity.value = v.shells;
     app.shells.forEach((m, i) => {
-      // one after the other, the nearest first
-      const k = clamp01(v.shells * 3 - i);
+      // one after the other, the nearest first; the 300 V shell, which runs through where B stands, waits for the wire
+      const held = i === app.shells.length - 1 ? v.hold : 0;
+      const k = Math.max(clamp01(v.shells * 3 - i), held);
       m.visible = k > 0.01;
       m.scale.setScalar(0.92 + 0.08 * k);
+      app.shellMats[i].uniforms.opacity.value = Math.max(v.shells, held);
     });
     app.setWire(v.wire);
     app.setCable(v.cable);
@@ -312,7 +311,7 @@ export function createApp(root, options = {}) {
     const n = charges();
     app.marksA.set(Math.round(live.marksA));
     app.marksB.set(v.b > 0.5 ? Math.round(live.marksB) : 0);
-    app.setElectrons(ePts.slice(0, n), camera);
+    app.setElectrons(ePts, n, camera);
     const noteKey = s.mode === 'quiz' ? '' : n > 0 ? 'note_slow' : v.crow > 0.5 ? 'note_crow' : '';
     note.hidden = !noteKey;
     if (noteKey && noteNow !== noteKey) note.textContent = t((noteNow = noteKey));
@@ -387,48 +386,87 @@ export function createApp(root, options = {}) {
       () => action?.box(),
       () => action?.ringBox(),
       () => boxOf(rotateEl),
-      () => handle?.box(),
+      handleBoxes,
       bodyBox(() => (s.v.q0 > 0.5 ? beadAt.set(s.v.r / 100, H, 0) : null), Q0_R),
       sphereABox,
       bodyBox(() => (s.v.b > 0.5 ? bAt : null), R),
       bodyBox(() => (s.v.crow > 0.5 ? crowMid.set(app.crowAt.x, app.crowAt.y + 0.035, 0) : null), 0.055),
     ],
   });
+  /** The drag handle with its word, and 6 px of air: a label that touches the word reads as one with it. */
+  const airBoxes = [];
+  function handleBoxes() {
+    const list = handle?.box() ?? [];
+    airBoxes.length = list.length;
+    list.forEach((b, i) => {
+      const o = airBoxes[i] || (airBoxes[i] = { left: 0, top: 0, right: 0, bottom: 0 });
+      o.left = b.left - 6;
+      o.top = b.top - 6;
+      o.right = b.right + 6;
+      o.bottom = b.bottom + 6;
+    });
+    return airBoxes;
+  }
   function boxOf(el) {
     if (!el || el.hidden) return null;
     const r = el.getBoundingClientRect();
     const c = stage.canvas.getBoundingClientRect();
     return r.width ? { left: r.left - c.left, top: r.top - c.top, right: r.right - c.left, bottom: r.bottom - c.top } : null;
   }
+  /** A label's point: one vector of its own, filled in each frame (nothing new per frame). */
+  const at = (fill) => {
+    const p = V(0, 0, 0);
+    return () => fill(p);
+  };
   const spot = (dx, dy) => ({ dx, dy });
   const ABOVE = [spot(0, -26), spot(22, -26), spot(-22, -26), spot(0, -44)];
   const RIGHT_OF = [spot(22, 0), spot(22, -18), spot(22, 18)];
   const LEFT_OF = [spot(-22, 0), spot(-22, -18), spot(-22, 18)];
   const vAt = (r) => roundTo(potentialAt(r));
-  const SHELL_AT = [0.95, 0.75, 0.6]; // the angle above the rail's line (rad) where each shell's label is pinned
+  const SHELL_AT = [0.45, 0.75, 0.6]; // the angle above the rail's line (rad) where each shell's label is pinned
   const LABELS = {
     q: {
       text: () => (s.v.b > 0.5 ? t('lbl_a', { v: shown(live.va) }) : t('lbl_q')),
-      point: () => V(-0.02, H + R * 0.9, 0),
+      point: at((p) => p.set(-0.02, H + R * 0.9, 0)),
       color: COL.ink,
       spots: [...ABOVE, ...LEFT_OF, spot(-34, -30), spot(-44, 20)],
       optional: true,
       show: () => true,
     },
+    // what A itself is at: just under it
+    surface: {
+      text: () => t('lbl_surface', { v: fmt(potentialAt(R * 100)) }),
+      point: at((p) => p.set(0, H - R, 0)),
+      color: COL.pot,
+      spots: [spot(0, 22), spot(16, 24), spot(-14, 24), spot(30, 12), spot(0, 42)],
+      optional: true, // the graph always shows it
+      show: () => s.v.morph > 0.5 && s.v.b < 0.5 && s.v.q0 > 0.5 && !s.quizKind,
+    },
     q0: {
       text: () => {
         if (s.step === 'intro' && !s.quizKind) return t('lbl_q0');
-        if (s.quizKind === 'read' || (s.step === 'bring' && !s.quizKind)) return t('lbl_q0_w', { w: N(fmt(workTo(rNow()))) });
-        return t('lbl_here', { v: shown(potentialAt(rNow())) });
+        if (s.quizKind === 'read' || (s.step === 'bring' && !s.quizKind)) return t('lbl_q0_w', { w: fmt(workTo(rNow())), eqw: eq(workTo(rNow())) });
+        return t('lbl_here', { v: fmt(potentialAt(rNow())), eq: eq(potentialAt(rNow())) });
       },
-      point: () => V(s.v.r / 100, H + Q0_R, 0),
+      point: at((p) => p.set(s.v.r / 100, H + Q0_R, 0)),
       color: COL.ink,
-      spots: [...ABOVE, spot(46, -34), spot(30, -46), spot(70, -22), ...RIGHT_OF],
+      spots: [
+        ...ABOVE,
+        spot(46, -34),
+        spot(30, -46),
+        spot(70, -22),
+        ...RIGHT_OF,
+        spot(0, -66),
+        spot(40, -64),
+        spot(84, -44),
+        spot(70, 14),
+        spot(60, 40),
+      ],
       show: () => s.v.q0 > 0.5 && !s.busy,
     },
     rep: {
       text: () => t('lbl_rep'),
-      point: () => repArrow.tip.clone(),
+      point: at((p) => p.copy(repArrow.tip)),
       color: COL.rep,
       spots: [spot(34, -24), spot(16, -30), spot(52, -8), spot(60, -30)],
       optional: true,
@@ -436,7 +474,7 @@ export function createApp(root, options = {}) {
     },
     push: {
       text: () => t('lbl_push'),
-      point: () => pushArrow.root.position.clone(),
+      point: at((p) => p.copy(pushArrow.root.position)),
       color: COL.push,
       spots: [spot(30, 24), spot(14, 32), spot(52, 12), spot(46, 40)],
       optional: true,
@@ -444,14 +482,15 @@ export function createApp(root, options = {}) {
     },
     r: {
       text: () => t('lbl_r', { r: N(rNow()) }),
-      point: () => V(s.v.r * 0.0036, 0.002, DIM_Z), // nearer A than the middle: clear of the drag handle's words
+      point: at((p) => p.set(s.v.r * 0.0036, 0.002, DIM_Z)), // nearer A than the middle: clear of the drag handle's words
       color: COL.ink,
-      spots: [spot(0, 18), spot(0, -18), spot(0, 30)],
+      spots: [spot(0, 18), spot(-30, 18), spot(-52, 12), spot(0, -18), spot(-30, -18), spot(0, 30), spot(-40, 30)],
+      optional: true,
       show: () => s.v.q0 > 0.5 && s.v.r > 14,
     },
     inf: {
       text: () => t('lbl_inf'),
-      point: () => V(0.427, H, 0),
+      point: at((p) => p.set(0.427, H, 0)),
       color: COL.ink,
       spots: [spot(-24, 24), spot(-8, 24), spot(-24, -24)],
       optional: true,
@@ -463,38 +502,38 @@ export function createApp(root, options = {}) {
         {
           text: () => t('lbl_shell', { v: N(fmt(vAt(cm))) }),
           // where the shell meets a line up and to the right of A: clear of the rail and the test charge
-          point: () => V(Math.cos(SHELL_AT[i]) * (cm / 100), H + Math.sin(SHELL_AT[i]) * (cm / 100), 0),
+          point: at((p) => p.set(Math.cos(SHELL_AT[i]) * (cm / 100), H + Math.sin(SHELL_AT[i]) * (cm / 100), 0)),
           color: COL.shell,
           spots: [spot(-14, -12), spot(-20, 0), spot(0, -20), spot(14, -14)],
           optional: true,
-          show: () => s.v.shells * 3 - i > 0.8 && s.quizKind !== 'closer',
+          show: () => (s.v.shells * 3 - i > 0.8 || (i === SHELLS.length - 1 && s.v.hold > 0.5)) && s.quizKind !== 'closer',
         },
       ]),
     ),
     b: {
       text: () => t('lbl_b', { v: shown(live.vb) }),
-      point: () => V(B_X + 0.02, H + R * 0.9, 0),
+      point: at((p) => p.set(B_X + 0.02, H + R * 0.9, 0)),
       color: COL.ink,
       spots: [...ABOVE, ...RIGHT_OF, spot(30, -30), spot(26, 30)],
       show: () => s.v.b > 0.5,
     },
     crow: {
       text: () => t('lbl_crow', { v: shown(live.va) }),
-      point: () => V(app.crowAt.x + 0.02, app.crowAt.y + 0.075, 0),
+      point: at((p) => p.set(app.crowAt.x + 0.02, app.crowAt.y + 0.075, 0)),
       color: COL.ink,
       spots: [spot(0, -22), spot(30, -16), spot(-30, -16)],
       show: () => s.v.crow > 0.95,
     },
     earth: {
       text: () => t('lbl_earth', { v: N(0) }),
-      point: () => V(app.term.x, 0.006, app.term.z),
+      point: at((p) => p.set(app.term.x, 0.006, app.term.z)),
       color: COL.earth,
       spots: [spot(0, 24), spot(26, 18), spot(-26, 22)],
       show: () => s.v.b > 0.5 && (s.v.cable > 0.6 || s.step === 'crow'),
     },
     e: {
       text: () => t('lbl_e'),
-      point: () => live.eFirst.clone(),
+      point: at((p) => p.copy(live.eFirst)),
       color: COL.e,
       spots: [spot(0, -22), spot(16, -20), spot(-16, -20)],
       optional: true,
@@ -651,6 +690,8 @@ export function createApp(root, options = {}) {
 
   // ── the steps ───────────────────────────────────────────────────────────────
   const KEYS = Object.keys(TARGET.intro);
+  const PANEL_MS = 66;
+  let lastPanel = Number.NEGATIVE_INFINITY;
   /** Moves some of the values to where they go, together, over `duration` seconds. */
   function tweenTo(to, duration, my, curve = ease.inOutCubic) {
     const from = { ...s.v };
@@ -662,8 +703,12 @@ export function createApp(root, options = {}) {
         onUpdate: (k) => {
           if (my !== s.run) return;
           for (const key of Object.keys(to)) s.v[key] = from[key] + (to[key] - from[key]) * k;
-          syncLabels();
-          drawGraph();
+          // the 3D every frame; the words and the SVG graph 15 times a second (done() draws the last state)
+          if (now() - lastPanel >= PANEL_MS) {
+            lastPanel = now();
+            syncLabels();
+            drawGraph();
+          }
           stage.invalidate();
         },
       })
@@ -686,10 +731,11 @@ export function createApp(root, options = {}) {
       ];
     if (from === 'potential' && to === 'join')
       return [
+        [{ hold: 1 }, 0.02],
         [{ arrows: 0, shells: 0, lines: 0, q0: 0 }, T.out],
         [{ b: 1 }, T.inB],
         [{}, T.hold],
-        [{ wire: 1 }, T.wire],
+        [{ hold: 0, wire: 1 }, T.wire],
         [{ flow: 1 }, T.flow, ease.linear],
       ];
     if (from === 'join' && to === 'crow') return [[{ crow: 1 }, T.crow, ease.outCubic]];
@@ -728,8 +774,8 @@ export function createApp(root, options = {}) {
     }
     const plan = planFor(from, step);
     const jump = plan.length === 1 && plan[0][1] === T.back;
-    // a jump back lands the electrons' runs at once, before the fades; a jump on lands them after
-    if (jump) for (const k of SNAP) if (goal[k] < s.v[k]) s.v[k] = goal[k];
+    // a jump lands the electrons' runs at once, before the fades: nothing shows the old charges on the way
+    if (jump) for (const k of SNAP) s.v[k] = goal[k];
     s.busy = true;
     refresh();
     emitChange();
@@ -737,7 +783,6 @@ export function createApp(root, options = {}) {
     for (const [to, sec, curve] of plan) {
       if (!(await tweenTo(to, sec, my, curve))) return;
     }
-    if (jump) for (const k of SNAP) s.v[k] = goal[k];
     s.busy = false;
     audio.success?.();
     done();
@@ -803,7 +848,7 @@ export function createApp(root, options = {}) {
       ui.learn.classList.toggle('ep-calm', calm);
     }
     const r = rNow();
-    const vars = { r, w: fmt(workTo(r)), v: shown(potentialAt(r)), q0: Q0_NC, one: 1 };
+    const vars = { r, w: fmt(workTo(r)), eqw: eq(workTo(r)), v: fmt(potentialAt(r)), eq: eq(potentialAt(r)), q0: Q0_NC, one: 1 };
     let out = '';
     if (s.busy) out = t(`doing_${s.step}`);
     else if (!calm) {
@@ -1220,6 +1265,7 @@ export function createApp(root, options = {}) {
     show: [app.B.group, app.wire, app.crow, app.cable, app.terminal, app.eBeads, app.eSigns, ...app.shells, app.marksB.disc, app.marksB.plus],
   });
   const ready = (async () => {
+    if (o.step !== 'intro' && o.step in TARGET) await go(o.step, { animate: false });
     if (o.mode === 'quiz') quiz.start();
   })();
 

@@ -27,6 +27,7 @@ To listen to it or control it from the book page, use the helper shipped in the 
 | Param | Meaning | Values | Default |
 |---|---|---|---|
 | `lang` | Language | `bn` বাংলা · `en` English | `bn` |
+| `step` | Start at | `intro` the sphere and the test charge · `bring` the test charge brought in · `potential` the potential, V = kq/r · `join` two spheres joined by a wire · `crow` the crow on the wire · `earth` joined to the earth | `intro` |
 | `view` | View | `front` · `3d` | `front` |
 | `mode` | Start in | `explore` learn · `quiz` test | `explore` |
 | `coach` | The ring on the part pulses at first | `1` · `0` | `1` |

@@ -3,7 +3,8 @@
 //   (30 cm) to where q₀ is now, so it grows as q₀ comes closer; a dashed tail past a break in the axis comes down to 0 at
 //   the axis's last tick, ∞: the work starts from nothing, far away.
 // - 'V': the same line divided by q₀: the potential V = W/q₀ (V) against r. The line keeps its shape and only the numbers
-//   on the axis change (W ÷ ২ nC), so "per unit test charge" is seen, not just read. Open circles mark the shells.
+//   on the axis change (W ÷ ২ nC), so "per unit test charge" is seen, not just read. Open circles mark the shells. It runs on
+//   up to the sphere's surface and stays level inside (metal), so A's 1,800 V is read off the graph at every size.
 //   `morph` (0 … 1) cross-fades the numbers of 'W' into those of 'V'.
 // - 'bars': the potentials of sphere A, sphere B and the earth as three columns (like water levels), with the
 //   difference between A and B written over them.
@@ -13,8 +14,8 @@ const NS = 'http://www.w3.org/2000/svg';
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const R_AXIS = 42; // cm of the r axis, the last few past the break
 const R_TICK = 37; // where the true scale stops (the break)
-const W_MAX = 2000; // nJ
-const V_MAX = 1000; // V
+const W_MAX = 4000; // nJ
+const V_MAX = 2000; // V: the same top as the columns in the next steps
 const BAR_MAX = 2000; // V
 
 /**
@@ -86,16 +87,17 @@ export function createGraph(el, { t, N, fmt, colors }) {
     s += `<text class="g-name" x="${f * 0.1}" y="${f * 1.05}" font-size="${f}" fill="${k > 0.5 ? colors.pot : colors.work}">${esc(yName)}</text>`;
     s += `<text class="g-name" x="${x1}" y="${y1 - f * 0.45}" text-anchor="end" font-size="${f}">${esc(t('graph_r'))}</text>`;
     if (mode === 'empty') {
-      s += `<text class="g-hint" x="${(x0 + x1) / 2}" y="${(y0 + y1) / 2 + f * 0.6}" text-anchor="middle" font-size="${f}">${esc(t('graph_hint'))}</text>`;
+      s += `<text class="g-hint" x="${(X(R_SPHERE * 100) + x1) / 2}" y="${(y0 + y1) / 2 + f * 0.6}" text-anchor="middle" font-size="${f}">${esc(t('graph_hint'))}</text>`;
       return s;
     }
     const col = k > 0.5 ? colors.pot : colors.work;
     const lw = Math.min(4.5, Math.max(3, H / 40));
     // the line: from 50 cm in to r (W), or the whole of it (V); the tail beyond the rail dashed
-    const from = isV ? 9 : Math.max(R_MIN, Math.min(R_MAX, r));
+    const from = isV ? R_SPHERE * 100 : Math.max(R_MIN, Math.min(R_MAX, r));
     const pts = [];
     for (let cm = R_MAX; cm >= from - 1e-9; cm -= 0.5) pts.push(`${X(cm).toFixed(1)},${Y(workTo(cm)).toFixed(1)}`);
     if (pts.length) pts.push(`${X(from).toFixed(1)},${Y(workTo(from)).toFixed(1)}`);
+    if (isV) pts.push(`${X(0).toFixed(1)},${Y(workTo(from)).toFixed(1)}`);
     const tail = [];
     for (let cm = R_MAX; cm <= R_TICK; cm += 1) tail.push(`${X(cm).toFixed(1)},${Y(workTo(cm)).toFixed(1)}`);
     tail.push(`${x1.toFixed(1)},${y0.toFixed(1)}`);
@@ -119,6 +121,9 @@ export function createGraph(el, { t, N, fmt, colors }) {
     const ty = Math.max(y1 + f, Math.min(y0 - f * 0.4, cy - f * 0.55));
     s += `<text class="g-tag" x="${tx}" y="${ty}" text-anchor="${right ? 'start' : 'end'}" font-size="${f}" fill="${col}">${esc(txt)}</text>`;
     if (isV && k > 0.5) {
+      // the sphere itself: the top of the line
+      const surfaceV = potentialAt(R_SPHERE * 100);
+      s += `<text class="g-tag" x="${X(0) + f * 0.3}" y="${Y(workTo(R_SPHERE * 100)) - f * 0.4}" font-size="${f}" fill="${col}">${esc(`${N(fmt(surfaceV))} V`)}</text>`;
       const note = t('graph_div', { q0: Q0_NC });
       s += `<text class="g-note" x="${x1}" y="${y1 + f * 1.1}" text-anchor="end" font-size="${f * 0.92}">${esc(note)}</text>`;
     }

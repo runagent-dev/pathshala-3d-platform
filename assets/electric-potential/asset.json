@@ -13,7 +13,7 @@
   "order": 1,
   "maintainers": ["RadeenXALNW"],
   "units": "m",
-  "description": "Electric potential and potential difference (book pages 287–289, topics 10.6 and 10.6.1, চিত্র ১০.১৪). A polished steel sphere A with a positive charge q on a clear acrylic (insulating) stand, on a plain sand bench in a calm deep-blue setting, with a wooden rule in cm from A's centre; a small positive test charge q₀ on a carriage on a rail, on the line of চিত্র ১০.১৪. Honest lab sizes: q = 10 nC, q₀ = 2 nC, R = 5 cm, so V = 90/r (r in m). Five steps, one tap each: (1) q₀ is brought in at constant speed from the far end to r = 10 cm, the repulsion (teal) and the equal applied force (orange) grow as 1/r², and the panel's graph draws the work W from infinity; the student can then drag q₀ along the rail; (2) the work is divided by q₀: the same line's numbers become volts, V = W/q₀ = kq/r, and three equipotential shells (900, 450, 300 V) appear round A; (3) a second, uncharged sphere B stands at 50 cm (180 V from A's field) and a wire joins them: electrons run from B to A until both are at 990 V and the flow stops (the panel's columns level like water); (4) the book's crow lands on the wire, at the wire's potential: no difference, no shock; (5) an earthing cable joins B to the ground: electrons come up until A and B are at 0 V, the earth's potential. A calm intro card; per step the result and the rule in the book's words; the kit's drag handle, rotate cue and how-to row. Test tab: five questions read off the picture, each wrong choice with its own note. Phone-first, Bangla and English.",
+  "description": "Electric potential and potential difference (book pages 287–289, topics 10.6 and 10.6.1, চিত্র ১০.১৪). A polished steel sphere A with a positive charge q on a clear acrylic (insulating) stand, on a plain sand bench in a calm deep-blue setting, with a wooden rule in cm from A's centre; a small positive test charge q₀ on a carriage on a rail, on the line of চিত্র ১০.১৪. Honest lab sizes: q = 10 nC, q₀ = 2 nC, R = 5 cm, so V = 90/r (r in m). Five steps, one tap each: (1) q₀ is brought in at constant speed from the far end to r = 10 cm, the repulsion (teal) and the equal applied force (orange) grow as 1/r², and the panel's graph draws the work W from infinity; the student can then drag q₀ along the rail; (2) the work is divided by q₀: the same line's numbers become volts, V = W/q₀ = kq/r, and three equipotential shells (900, 450, 300 V) appear round A; (3) a second, uncharged sphere B stands at 30 cm, on the 300 V shell (A's field reaches it), and a wire joins them: negative electrons run from B to A, toward the higher potential, until both are at 1,050 V and the flow stops (the panel's columns level like water); (4) the book's crow lands on the wire, at the wire's potential: no difference, no shock; (5) an earthing cable joins B to the ground: electrons come up until A and B are at 0 V, the earth's potential. A calm intro card; per step the result and the rule in the book's words; the kit's drag handle, rotate cue and how-to row. Test tab: five questions read off the picture, each wrong choice with its own note. Phone-first, Bangla and English.",
   "tags": ["electric potential", "potential difference", "volt", "earthing", "static electricity", "work", "bangla"],
   "params": [
     {
@@ -22,6 +22,20 @@
       "type": "select",
       "options": [["bn", "বাংলা"], ["en", "English"]],
       "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Start at",
+      "type": "select",
+      "options": [
+        ["intro", "the sphere and the test charge"],
+        ["bring", "the test charge brought in"],
+        ["potential", "the potential, V = kq/r"],
+        ["join", "two spheres joined by a wire"],
+        ["crow", "the crow on the wire"],
+        ["earth", "joined to the earth"]
+      ],
+      "default": "intro"
     },
     { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
     {
@@ -48,6 +62,7 @@
     { "name": "set", "payload": { "step": "bring", "animate": false } },
     { "name": "set", "payload": { "step": "potential", "r": 20, "animate": false } },
     { "name": "set", "payload": { "step": "join", "animate": false } },
+    { "name": "set", "payload": { "step": "crow", "animate": false } },
     { "name": "set", "payload": { "step": "earth", "animate": false } },
     { "name": "set", "payload": { "view": "3d" } },
     { "name": "reset", "payload": {} },
@@ -64,14 +79,15 @@
     "glb": [{ "name": "default", "setup": [] }],
     "video": {
       "kind": "script",
-      "seconds": 30,
+      "seconds": 38,
       "fps": 30,
       "params": { "coach": "0" },
       "script": [
         { "at": 0.8, "command": "set", "payload": { "step": "bring" } },
         { "at": 6.6, "command": "set", "payload": { "step": "potential" } },
         { "at": 12.4, "command": "set", "payload": { "step": "join" } },
-        { "at": 23, "command": "set", "payload": { "step": "earth" } }
+        { "at": 23, "command": "set", "payload": { "step": "crow" } },
+        { "at": 26.5, "command": "set", "payload": { "step": "earth" } }
       ]
     }
   }

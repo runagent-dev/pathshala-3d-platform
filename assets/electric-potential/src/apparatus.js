@@ -16,7 +16,7 @@ import { D_AB, R_SPHERE, SHELLS } from './reading.js';
 
 export const H = 0.135; // the centres' height above the bench (m)
 export const R = R_SPHERE;
-export const Q0_R = 0.022; // the test charge's bead (m): drawn big enough to see on a phone
+export const Q0_R = 0.027; // the test charge's bead (m): drawn big enough to see on a phone
 export const B_X = D_AB; // sphere B's centre (m)
 export const RAIL = { x0: 0.08, x1: 0.345, z: 0, h: 0.008, w: 0.02 };
 const CARRIAGE = { w: 0.034, h: 0.016, d: 0.03 };
@@ -313,11 +313,11 @@ export function createApparatus() {
   root.add(field);
 
   // ── the equipotential shells (cut at the bench) ──
-  const shellMat = shellMaterial(COLORS.shell);
-  const shells = SHELLS.map((cm) => {
+  const shellMats = SHELLS.map(() => shellMaterial(COLORS.shell)); // one each: the 300 V shell outlasts the others
+  const shells = SHELLS.map((cm, i) => {
     const r = cm / 100;
     const theta = Math.acos(Math.max(-1, -H / r));
-    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 56, 28, 0, Math.PI * 2, 0, theta), shellMat);
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 56, 28, 0, Math.PI * 2, 0, theta), shellMats[i]);
     m.name = `Equipotential${cm}`;
     m.position.y = H;
     m.renderOrder = 5;
@@ -452,9 +452,9 @@ export function createApparatus() {
   root.add(eBeads, eSigns);
   const tmpO = new THREE.Object3D();
   const toCam = new THREE.Vector3();
-  /** Places electrons at the given points (Vector3s), each "−" turned to the camera. */
-  function setElectrons(points, camera) {
-    const n = Math.min(MAX_E, points.length);
+  /** Places the first `count` of these electrons (Vector3s), each "−" turned to the camera. */
+  function setElectrons(points, count, camera) {
+    const n = Math.min(MAX_E, count);
     for (let i = 0; i < n; i++) {
       tmpO.position.copy(points[i]);
       tmpO.quaternion.identity();
@@ -492,7 +492,7 @@ export function createApparatus() {
     field,
     fieldMats: [mats.field],
     shells,
-    shellMat,
+    shellMats,
     wire,
     crow,
     crowAt,
