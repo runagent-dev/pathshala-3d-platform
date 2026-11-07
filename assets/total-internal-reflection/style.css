@@ -1,0 +1,120 @@
+/* Total internal reflection: the page, the panel's calm first card and lead-in line, the formula and the graph under
+   the rule, the labels on the picture (short words on a white chip, in the colour of what they name) and the test's
+   answers. The rest of the panel is the kit's clean sheet (../../shared/lib/student/student.css). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+#app { position: fixed; inset: 0; }
+body.bg-transparent { background: transparent; }
+
+.tir sub, .tir sup { font-size: 0.72em; line-height: 0; }
+
+/* the rays' drawing: over the 3D, under the labels; touches go through to the view */
+.tir .tir-draw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* the line before the action; on the first screen a calm card that sets the scene */
+.tir .tir-lead { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+.tir .tir-lead:empty { display: none; }
+.tir .tir-lead.pvc-note { font-size: 15px; line-height: 1.6; }
+.tir .tir-lead .tir-short { display: none; }
+.tir .pvc-learn.tir-calm .pvc-outcome,
+.tir .pvc-learn.tir-calm .pvc-rule,
+.tir .pvc-learn.tir-calm .tir-formula { display: none; }
+
+/* the result, the rule, the formula */
+.tir .pvc-outcome { font-size: 15px; line-height: 1.5; }
+.tir .pvc-outcome b { font-size: 1.1em; font-weight: 600; color: var(--ink); }
+.tir .pvc-rule { font-size: 14.5px; line-height: 1.55; }
+.tir .pvc-rule b { color: var(--ink); }
+.tir .tir-formula { margin: 0; padding: 4px 8px; font-size: 15px; line-height: 1.5; white-space: nowrap; overflow: hidden; }
+.tir .tir-formula.tir-off { visibility: hidden; }
+.tir .tir-fr { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; font-size: 0.86em; line-height: 1.15; margin: 0 1px; }
+.tir .tir-fr > span:first-child { border-bottom: 1.2px solid currentColor; padding: 0 2px; }
+
+/* the graph: the panel's free height, never less than it needs to be read */
+.tir .tir-graph { position: relative; flex: 1 1 auto; min-height: 120px; max-height: 260px; }
+/* beside the 3D the sheet takes the panel's height, so the graph grows into what is free */
+.tir.tir-side .pvc-sheets { flex: 1 1 auto; }
+.tir.tir-side .pvc-learn { min-height: 0; }
+.tir .tir-graph.tir-off { visibility: hidden; }
+.tir .tir-graph .tir-graph-svg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; overflow: visible; font-family: inherit; }
+.tir-graph-svg text { paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.tir-graph-svg .g-grid { stroke: #e3e8ee; stroke-width: 1; }
+.tir-graph-svg .g-axis { stroke: #6b7785; stroke-width: 1.4; fill: none; }
+.tir-graph-svg .g-num { fill: #5c6773; }
+.tir-graph-svg .g-t1n { fill: #237032; }
+.tir-graph-svg .g-rn { fill: #b35c00; }
+.tir-graph-svg .g-name { fill: #3d4954; }
+.tir-graph-svg .g-none { fill: #f1f3f5; }
+.tir-graph-svg .g-none-t { fill: #6b7785; font-style: italic; }
+.tir-graph-svg .g-t1, .tir-graph-svg .g-r, .tir-graph-svg .g-past { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.tir-graph-svg .g-past { stroke: #b6c0ca; stroke-dasharray: 5 4; }
+.tir-graph-svg .g-past-t { fill: #8a96a3; }
+.tir-graph-svg .g-crit { stroke: #7048e8; stroke-width: 1.6; stroke-dasharray: 4 3; }
+.tir-graph-svg .g-crit-t, .tir-graph-svg .g-tag { font-weight: 600; }
+.tir-graph-svg .g-now { stroke: #1971c2; stroke-width: 1; stroke-dasharray: 2 3; }
+.tir-graph-svg .g-dot { stroke: #fff; stroke-width: 1.6; }
+
+/* labels on the picture: short words on a white chip, in their colour */
+.pvc-anno-chip { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
+.pvc-anno-chip sub { font-size: 0.72em; line-height: 0; }
+.pvc-anno-lines .k-chip { display: none; }
+
+/* the test */
+.tir .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
+.tir-opt { display: block; white-space: normal; text-align: center; }
+.tir .pvc-q-text { font-size: 15px; }
+.tir .pvc-q-feedback { font-size: 13.5px; }
+
+/* narrow panels: tighter type */
+@container pvc-panel (max-width: 420px) {
+  .tir .pvc-rule { font-size: 14px; }
+  .tir .pvc-outcome { font-size: 14px; }
+  .tir .pvc-opt { height: 40px; font-size: 13px; line-height: 1.2; }
+  .tir .pvc-q-text { font-size: 14.5px; }
+  .tir .pvc-q-feedback { font-size: 13.5px; }
+  .tir .pvc-learn { gap: 6px; }
+}
+/* a side panel of middle height (800 × 500): no formula line (the rule and the graph carry θc) */
+@container pvc (max-height: 620px) {
+  .tir .tir-formula { display: none; }
+  .tir .tir-graph { min-height: 96px; }
+}
+/* a low side panel (844 × 390, 640 × 400): the short words, a smaller graph */
+@container pvc (max-height: 460px) {
+  .tir .tir-lead .tir-long { display: none; }
+  .tir .tir-lead .tir-short { display: inline; }
+  .tir .tir-lead { font-size: 13.5px; line-height: 1.45; }
+  .tir .tir-lead.pvc-note { font-size: 14px; line-height: 1.5; padding: 5px 10px; }
+  .tir .pvc-outcome { font-size: 13.5px; line-height: 1.45; min-height: calc(2 * 1.45em); }
+  .tir .pvc-rule { font-size: 13.5px; line-height: 1.5; min-height: calc(3 * 1.5em); }
+  .tir .pvc-learn:not(.tir-calm) .tir-lead { display: none; }
+  .tir .tir-formula { display: none; }
+  .tir .tir-graph { min-height: 84px; }
+  .tir .pvc-learn { gap: 6px; }
+  .tir .pvc-q-feedback { --pvc-q-feedback-min: 4lh; font-size: 13.5px; }
+  .tir .pvc-q-text { font-size: 13.5px; }
+  .tir .pvc-opt { font-size: 12.5px; height: 44px; }
+  .pvc-anno-chip { font-size: 12.5px; }
+}
+
+/* a phone held upright (the panel under the 3D): no graph and no formula line, so the 3D keeps its height */
+@media (orientation: portrait), (max-width: 599px) {
+  .tir .tir-formula { display: none; }
+  .tir .tir-graph { display: none; }
+  .tir .pvc-rule { --pvc-rule-lines: 3; }
+}
+
+/* the shortest phone frame (390 × 520): the short calm words, no lead-in line once the steps start */
+@media (orientation: portrait) and (max-height: 600px) {
+  .tir .tir-lead .tir-long { display: none; }
+  .tir .tir-lead .tir-short { display: inline; }
+  .tir .pvc-learn:not(.tir-calm) .tir-lead { display: none; }
+  .tir .pvc-learn { gap: 5px; }
+  .tir .pvc-outcome { font-size: 13.5px; line-height: 1.45; }
+  .tir .pvc-rule { font-size: 13.5px; line-height: 1.5; }
+  /* the test: the questions fit two lines here, a worked answer with its note four */
+  .tir .pvc-q-text { --pvc-q-text-min: 2lh; }
+  .tir .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
+}
+@container pvc (max-height: 460px) and (max-width: 300px) {
+  .tir .tir-graph { min-height: 78px; }
+}
