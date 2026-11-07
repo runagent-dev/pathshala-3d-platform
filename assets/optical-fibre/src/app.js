@@ -25,7 +25,7 @@ import { fitPose } from './camera.js';
 import { createGraph } from './graph.js';
 import { createI18n } from './i18n.js';
 import { C, createRays } from './rays.js';
-import { ALPHA_MAX, ALPHA_START, BEND_MAX, FIBRE, N_CLAD_BOOK, N_CORE, SOURCE_GAP, shownTheta, THETA_C, trace } from './reading.js';
+import { ALPHA_MAX, ALPHA_START, BEND_MAX, FIBRE, N_CLAD, N_CLAD_BOOK, N_CORE, SOURCE_GAP, shownTheta, THETA_C, trace } from './reading.js';
 import { backdrop, createTable } from './setting.js';
 
 export const DEFAULTS = {
@@ -55,10 +55,10 @@ const TARGET = {
   light: { light: 1, h: 0, alpha: ALPHA_START, marks: 0 },
   one: { light: 1, h: 0, alpha: ALPHA_START, marks: 1 },
   bend: { light: 1, h: BEND_TO, alpha: ALPHA_START, marks: 0 },
-  tilt: { light: 1, h: BEND_TO, alpha: TILT_TO, marks: 0 },
+  tilt: { light: 1, h: 0, alpha: TILT_TO, marks: 0 },
 };
 /** Where the camera looks in each step. */
-const CAM = { intro: 'all', parts: 'end', light: 'all', one: 'close', bend: 'all', tilt: 'source' };
+const CAM = { intro: 'all', parts: 'end', light: 'all', one: 'close', bend: 'bendWin', tilt: 'source' };
 const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 
 export function createApp(root, options = {}) {
@@ -82,7 +82,7 @@ export function createApp(root, options = {}) {
         { act: 'home', label: 'act_home', icon: ICONS.reset },
       ],
       tight: true,
-      lines: { action: 1, outcome: 2, rule: 4 },
+      lines: { action: 1, outcome: 1, rule: 2 },
     }),
     learnAlign: 'start',
   });
@@ -159,6 +159,8 @@ export function createApp(root, options = {}) {
     quizKind: '',
     quizFocus: -1,
     quizShowTheta: false,
+    nClad: N_CLAD, // the clad's index (the test asks once what an equal index would do)
+    hideHandles: false, // a still for the book (the poster): no handles on the view
   };
   const now = () => performance.now();
   let lastAct = Number.NEGATIVE_INFINITY;
@@ -167,12 +169,12 @@ export function createApp(root, options = {}) {
   let tr = trace({ alpha: s.v.alpha, h: s.v.h });
   let trKey = '';
   function retrace() {
-    const key = `${s.v.alpha.toFixed(4)}|${s.v.h.toFixed(4)}`;
+    const key = `${s.v.alpha.toFixed(4)}|${s.v.h.toFixed(4)}|${s.nClad}`;
     if (key === trKey) return tr;
     trKey = key;
     const line = app.setBend(s.v.h);
     app.setTilt(s.v.alpha);
-    tr = trace({ alpha: s.v.alpha, h: s.v.h, line });
+    tr = trace({ alpha: s.v.alpha, h: s.v.h, line, nClad: s.nClad });
     rays.setTrace(tr);
     return tr;
   }
@@ -266,9 +268,10 @@ export function createApp(root, options = {}) {
     const seg = tr.segs.find((x) => x.kind === 'clad');
     return seg ? fw(seg.a.x + (seg.b.x - seg.a.x) * 0.6, seg.a.y + (seg.b.y - seg.a.y) * 0.6) : fw(0, 0);
   };
-  const critQ = () => s.mode === 'quiz' && s.quizKind === 'crit';
-  /** A point of the fibre's plane dx cm along from the wall shown close up, at height y. */
-  const closeAt = (dx, y) => fw((tr.hits[FOCUS_ONE]?.x ?? 26) + dx, y);
+  /** The test's questions that name the core and the clad beside a wall (the book's indices, or equal ones). */
+  const critQ = () => s.mode === 'quiz' && (s.quizKind === 'crit' || s.quizKind === 'same');
+  /** A point of the fibre's plane dx cm along from the wall the question shows, at height y. */
+  const closeAt = (dx, y) => fw((tr.hits[s.quizKind === 'same' ? 0 : FOCUS_ONE]?.x ?? 26) + dx, y);
   const thetaAt = (i) => (tr.hits[i] ? shownTheta(tr.hits[i]) : 0);
   const LABELS = {
     core: {
@@ -280,7 +283,7 @@ export function createApp(root, options = {}) {
       show: () => (s.mode !== 'quiz' && s.step === 'parts') || critQ(),
     },
     clad: {
-      text: () => t('lbl_clad', { n: N2(N_CLAD_BOOK) }),
+      text: () => t('lbl_clad', { n: N2(s.nClad >= N_CORE ? N_CORE : N_CLAD_BOOK) }),
       point: () => (critQ() ? closeAt(2.6, -(FIBRE.core + FIBRE.clad) / 2) : W(X0 - 0.1, Y0 - (FIBRE.core + FIBRE.clad) / 2, 0.25)),
       color: '#1864ab',
       spots: [...BELOW, ...LEFT],
@@ -288,10 +291,18 @@ export function createApp(root, options = {}) {
     },
     coat: {
       text: () => t('lbl_coat'),
-      point: () => W(X0 + 5, Y0 + FIBRE.jacket, -0.2),
+      // on the coating's lower band, clear of the clamp and the hub behind the fibre
+      point: () => W(X0 + 3.2, Y0 - FIBRE.jacket * 0.985, FIBRE.jacket * 0.17),
       color: COLORS.ink,
-      spots: [...ABOVE, ...RIGHT],
+      spots: [...BELOW, ...RIGHT],
       show: () => s.mode !== 'quiz' && s.step === 'parts',
+    },
+    ask: {
+      text: () => '?',
+      point: () => W(X0 - 0.1, Y0 + FIBRE.core * 0.2, FIBRE.core * 0.3),
+      color: COLORS.ink,
+      spots: [...LEFT, ...ABOVE],
+      show: () => s.mode === 'quiz' && s.quizKind === 'part',
     },
     source: {
       text: () => t('lbl_source'),
@@ -350,9 +361,16 @@ export function createApp(root, options = {}) {
     },
   };
   const placed = new Map();
+  const OPTIONAL = new Set(['source', 'screen', 'normal', 'crit', 'leak', 'coat']);
+  const seen = V(0, 0, 0);
+  /** The anchor is on the view (with a margin), not behind the camera. */
+  function inView(p) {
+    seen.copy(p).project(camera);
+    return seen.z < 1 && Math.abs(seen.x) < 0.97 && Math.abs(seen.y) < 0.95;
+  }
   function syncLabels() {
     for (const [id, L] of Object.entries(LABELS)) {
-      const want = L.show();
+      const want = L.show() && inView(L.point());
       const spots = typeof L.spots === 'function' ? L.spots() : L.spots;
       const text = want ? L.text() : '';
       const was = placed.get(id);
@@ -361,7 +379,7 @@ export function createApp(root, options = {}) {
         placed.delete(id);
       }
       if (want && !anno.has(id)) {
-        anno.add(id, { text, point: L.point, kind: 'chip', color: L.color, spots });
+        anno.add(id, { text, point: L.point, kind: 'chip', color: L.color, spots, optional: OPTIONAL.has(id) });
         placed.set(id, { spots, text });
       } else if (want && was && was.text !== text) {
         anno.setText(id, text);
@@ -383,28 +401,36 @@ export function createApp(root, options = {}) {
       return new THREE.Box3(V(X0 + hit.x - 6.5, Y0 - 2.2, -1), V(X0 + hit.x + 4.5, Y0 + 2.2, 1));
     },
     source: () => new THREE.Box3(V(X0 + BACK + 3, Y0 - 7.5, -1.5), V(X0 + 15, Y0 + 2.5, 1.5)),
+    // the S of step ④: the two arcs and a little of the straight ends
+    bendWin: () => new THREE.Box3(V(X0 + FIBRE.s1 - 5, Y0 - 2, -1.5), V(X0 + FIBRE.s1 + FIBRE.span + 6, Y0 + BEND_TO + 2, 1.5)),
   };
   const DIRS = {
     all: V(-0.75, 0.4, 1).normalize(),
     end: V(-0.85, 0.42, 0.95).normalize(),
     close: V(0.2, 0.16, 1).normalize(),
     follow: V(0.22, 0.2, 1).normalize(),
+    bendWin: V(0.25, 0.22, 1).normalize(),
     source: V(0.12, 0.2, 1).normalize(),
   };
   const poses = {};
   const followPoses = [];
   const FOLLOW_N = 9;
+  // an upright view: the long scene seen more along its length, so the fibre runs corner to corner and fills the height
+  const UPRIGHT = { all: V(-1.5, 0.62, 1).normalize(), bendWin: V(-1.05, 0.42, 1).normalize() };
   function fitPoses() {
     const args = { camera, width: stage.width, height: stage.height, margin: MARGIN };
+    const upright = stage.width < stage.height * 1.05;
     for (const k of Object.keys(boxes)) {
-      const p = fitPose({ box: boxes[k](), dir: DIRS[k], ...args });
+      const p = fitPose({ box: boxes[k](), dir: (upright && UPRIGHT[k]) || DIRS[k], ...args });
       poses[k] = { position: p.position, target: p.target };
     }
-    // the follow camera: a window about 30 cm long round the light's front, at points along the fibre
+    // the follow camera: a window round the light's front, at points along the fibre, short enough that the core is
+    // at least about 22 px across (1.2 cm), never more than 26 cm long
+    const half = Math.max(7, Math.min(13, stage.width / 40));
     followPoses.length = 0;
     for (let i = 0; i < FOLLOW_N; i++) {
       const x = X0 - 8 + ((FIBRE.length + 14) * i) / (FOLLOW_N - 1);
-      const box = new THREE.Box3(V(x - 13, Y0 - 3, -1.5), V(x + 13, Y0 + 3, 1.5));
+      const box = new THREE.Box3(V(x - half, Y0 - 3, -1.5), V(x + half, Y0 + 3, 1.5));
       const p = fitPose({ box, dir: DIRS.follow, ...args });
       followPoses.push({ x, position: p.position, target: p.target });
     }
@@ -641,16 +667,21 @@ export function createApp(root, options = {}) {
       if (!(await wait(0.3, my))) return;
       if (!(await tweenTo({ marks: 1 }, T.normal + T.arc + T.crit, my, ease.linear))) return;
     } else if (step === 'bend' && (next || from === step)) {
-      Object.assign(s.v, { marks: 0, light: 1, alpha: goal.alpha });
+      // the fibre bends (the light off), then the light is sent again and the camera follows it round the S
+      Object.assign(s.v, { marks: 0, light: 0, alpha: goal.alpha });
       if (from === step) s.v.h = 0;
       await takeView(T.fly);
       if (my !== s.run) return;
       if (!(await tweenTo({ h: goal.h }, T.bend, my))) return;
+      if (!(await wait(0.3, my))) return;
+      if (!(await sendLight(my))) return;
     } else if (step === 'tilt' && (next || from === step)) {
+      // a straight fibre, so every wall has the same θ₁ = 90° − β and the edge is the book's 22.8°
       Object.assign(s.v, { marks: 0, light: 1 });
       if (from === step) s.v.alpha = ALPHA_START;
       await takeView(T.fly);
       if (my !== s.run) return;
+      if (s.v.h !== 0 && !(await tweenTo({ h: 0 }, T.jump, my))) return;
       if (!(await tweenTo({ alpha: goal.alpha }, T.tilt, my))) return;
     } else {
       // a jump (a step word, back, several at once): the camera flies and the values land together
@@ -825,8 +856,8 @@ export function createApp(root, options = {}) {
   });
 
   // ── dragging: the far clamp up and down (the bend), the source round its pivot (the tilt) ──
-  const canBend = () => s.mode === 'explore' && !s.busy && s.step === 'bend';
-  const canTilt = () => s.mode === 'explore' && !s.busy && s.step === 'tilt';
+  const canBend = () => s.mode === 'explore' && !s.busy && s.step === 'bend' && !s.hideHandles;
+  const canTilt = () => s.mode === 'explore' && !s.busy && s.step === 'tilt' && !s.hideHandles;
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const plane = new THREE.Plane(V(0, 0, 1), 0);
@@ -868,7 +899,7 @@ export function createApp(root, options = {}) {
     direction: V(0, 1, 0),
     track: { from: V(app.farX, Y0 - BEND_MAX + 5, app.POST_Z), to: V(app.farX, Y0 + BEND_MAX + 5, app.POST_Z) },
     label: t('drag_bend'),
-    labelAt: 'right',
+    labelAt: 'left',
     aria: t('aria_bend'),
     pulse: Boolean(o.coach),
     when: canBend,
@@ -1027,12 +1058,32 @@ export function createApp(root, options = {}) {
   let question = null;
   let picked = -1;
   const words = (keys) => keys.map((key) => ({ key }));
-  /** The five questions: what happens at this wall, the book's θc, why no light arrives, why the bent fibre works, which light. */
-  const KINDS = ['what', 'crit', 'leak', 'bend', 'ir'];
+  /**
+   * The five questions: the part marked on the end face, what happens at the wall shown, θc from the indices on the
+   * picture, what equal indices would do, why the bent fibre still works.
+   */
+  const KINDS = ['part', 'what', 'crit', 'same', 'bend'];
   /** Each question's scene: the step's values, the wall ringed, the light drawn so far, θ₁ shown. */
   function quizScene(kind) {
     s.quizShowTheta = false;
     s.quizFocus = -1;
+    s.nClad = N_CLAD;
+    if (kind === 'part') {
+      Object.assign(s.v, { h: 0, alpha: ALPHA_START, light: 0, marks: 0 });
+      s.step = 'parts';
+      return { cam: 'end' };
+    }
+    if (kind === 'same') {
+      // a clad as dense as the core: the light, drawn as far as the wall, goes straight on when the answer is in
+      s.nClad = N_CORE;
+      Object.assign(s.v, { h: 0, alpha: 15.7, light: 0, marks: 0 });
+      s.step = 'one';
+      trKey = '';
+      retrace();
+      rays.hitFractions(fractions);
+      s.v.light = fractions[0] ?? 0.2;
+      return { cam: 'source' };
+    }
     if (kind === 'what') {
       const tirCase = Math.random() < 0.5;
       // θ₁ = 80° or 70° at a straight wall
@@ -1051,22 +1102,9 @@ export function createApp(root, options = {}) {
       s.step = 'one';
       return { cam: 'close' };
     }
-    if (kind === 'leak') {
-      Object.assign(s.v, { h: 0, alpha: 33, light: 1, marks: 0 });
-      s.step = 'tilt';
-      retrace();
-      s.quizFocus = 0;
-      s.quizShowTheta = true;
-      return { cam: 'source' };
-    }
-    if (kind === 'bend') {
-      Object.assign(s.v, { h: -BEND_TO, alpha: ALPHA_START, light: 1, marks: 0 });
-      s.step = 'bend';
-      return { cam: 'all' };
-    }
-    Object.assign(s.v, { h: 0, alpha: ALPHA_START, light: 1, marks: 0 });
-    s.step = 'light';
-    return { cam: 'all' };
+    Object.assign(s.v, { h: -BEND_TO, alpha: ALPHA_START, light: 1, marks: 0 });
+    s.step = 'bend';
+    return { cam: 'bendWin' };
   }
   const deg = (x) => `${N(x)}°`;
   let quizCam = 'all'; // during the test, the camera looks where the question says
@@ -1095,6 +1133,8 @@ export function createApp(root, options = {}) {
         s.quizKind = '';
         s.quizFocus = -1;
         s.quizShowTheta = false;
+        s.nClad = N_CLAD;
+        trKey = '';
         syncUI();
         go(learnSaved && learnSaved !== 'intro' ? learnSaved : 'intro', { animate: false });
       },
@@ -1122,11 +1162,11 @@ export function createApp(root, options = {}) {
           const items = [75, 42, 15, 44].map((v, j) => ({ key: ['right', 'air', 'wall', 'clad'][j], v }));
           return { text: t('q_crit'), ...choicesOf(items, kind, (x) => deg(x.v)) };
         }
-        if (kind === 'leak')
-          return { text: t('q_leak'), ...choicesOf(words(['c_lk_right', 'c_lk_more', 'c_lk_absorb', 'c_lk_same']), kind, (x) => t(x.key)) };
-        if (kind === 'bend')
-          return { text: t('q_bend'), ...choicesOf(words(['c_bd_right', 'c_bd_curve', 'c_bd_mirror', 'c_bd_coat']), kind, (x) => t(x.key)) };
-        return { text: t('q_ir'), ...choicesOf(words(['c_ir_right', 'c_ir_seen', 'c_ir_uv', 'c_ir_straight']), kind, (x) => t(x.key)) };
+        if (kind === 'part')
+          return { text: t('q_part'), ...choicesOf(words(['c_pt_core', 'c_pt_clad', 'c_pt_coat', 'c_pt_air']), kind, (x) => t(x.key)) };
+        if (kind === 'same')
+          return { text: t('q_same'), ...choicesOf(words(['c_sm_right', 'c_sm_tir', 'c_sm_half', 'c_sm_bend']), kind, (x) => t(x.key)) };
+        return { text: t('q_bend'), ...choicesOf(words(['c_bd_right', 'c_bd_less', 'c_bd_curve', 'c_bd_coat']), kind, (x) => t(x.key)) };
       },
       reveal(q, correct) {
         const k = question.kind;
@@ -1143,15 +1183,16 @@ export function createApp(root, options = {}) {
             : t('why_wh_leak', { a, c: N(THETA_C) }) + note({ c_wh_tir: 'mis_wh_tir_leak', c_wh_air: 'mis_wh_air', c_wh_stop: 'mis_wh_stop' });
         }
         if (k === 'crit') return t('why_crit', vars) + note({ air: 'mis_cr_air', wall: 'mis_cr_wall', clad: 'mis_cr_clad' });
-        if (k === 'leak')
-          return (
-            t('why_leak', { ...vars, a: N(thetaAt(0)) }) + note({ c_lk_more: 'mis_lk_more', c_lk_absorb: 'mis_lk_absorb', c_lk_same: 'mis_lk_same' })
-          );
-        if (k === 'bend')
-          return (
-            t('why_bend', { a: N(thetaAt(minWall())) }) + note({ c_bd_curve: 'mis_bd_curve', c_bd_mirror: 'mis_bd_mirror', c_bd_coat: 'mis_bd_coat' })
-          );
-        return t('why_ir') + note({ c_ir_seen: 'mis_ir_seen', c_ir_uv: 'mis_ir_uv', c_ir_straight: 'mis_ir_straight' });
+        if (k === 'part') return t('why_part') + note({ c_pt_clad: 'mis_pt_clad', c_pt_coat: 'mis_pt_coat', c_pt_air: 'mis_pt_air' });
+        if (k === 'same') {
+          s.v.light = 1;
+          stage.invalidate();
+          return t('why_same') + note({ c_sm_tir: 'mis_sm_tir', c_sm_half: 'mis_sm_half', c_sm_bend: 'mis_sm_bend' });
+        }
+        return (
+          t('why_bend', { ...vars, a: N(thetaAt(minWall())) }) +
+          note({ c_bd_less: 'mis_bd_less', c_bd_curve: 'mis_bd_curve', c_bd_coat: 'mis_bd_coat' })
+        );
       },
       done() {
         s.locked = false;
@@ -1257,7 +1298,7 @@ export function createApp(root, options = {}) {
     /**
      * Change any of: step ('intro' | 'parts' | 'light' | 'one' | 'bend' | 'tilt'), h (the far end's rise, cm, ±10), alpha
      * (the source's tilt, degrees, 0…40), view ('front' | '3d'). animate: false lands at once. h and alpha apply after
-     * the step (they are the drags of steps ④ and ⑤).
+     * the step (they are the drags of steps ④ and ⑤). handles: false hides the drag handles (a still for the book).
      */
     async set(p = {}) {
       const animate = p.animate !== false;
@@ -1271,6 +1312,10 @@ export function createApp(root, options = {}) {
         changed();
       }
       if (p.view) await setView(p.view, { animate });
+      if (p.handles != null) {
+        s.hideHandles = p.handles === false;
+        stage.invalidate();
+      }
       refresh();
       emitChange();
       return snapshot();
@@ -1309,9 +1354,13 @@ export function createApp(root, options = {}) {
       const g = new THREE.Group();
       g.name = 'OpticalFibre';
       const copy = app.root.clone(true);
+      // the back faces are drawn separately only for the see-through order on screen: one surface each in the model
+      const drop = [];
       copy.traverse((ob) => {
-        if (ob.name !== 'Spot') ob.visible = true;
+        if (ob.name === 'CoreBack' || ob.name === 'CladBack') drop.push(ob);
+        else if (ob.name !== 'Spot') ob.visible = true;
       });
+      for (const ob of drop) ob.removeFromParent();
       g.add(copy);
       return g;
     },

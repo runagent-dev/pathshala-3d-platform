@@ -36,15 +36,20 @@ Added by the figure (not on the page): আলোর উৎস, পর্দা, 
 - Five steps, one tap each: ① the camera flies to the near end face: কোর n₂ = 1.50, ক্ল্যাড n₁ = 1.45, আবরণ; ② the light is
   sent: the camera follows its front along the fibre (7 s), then pulls back; "৭ বার প্রতিফলিত"; ③ one reflection close up
   (চিত্র ৯.১১b): লম্ব, θ₁ = 83°, the θc = 75° direction (violet, dashed), and sin θc = n₁/n₂ = 1.45/1.50 = 0.967, θc = 75°;
-  ④ the fibre bends into an S (চিত্র ৯.১১a); a drag handle on the far clamp (or ↑/↓): the smallest θ₁ (79° at the default
-  bend) is labelled, every θ₁ stays above 75°; ⑤ the source is tilted to 35° (a drag handle, or ←/→): θ₁ = 68°, the light
-  leaves into the clad at every wall and the screen is dark; turned back under 22.8° it all arrives again.
+  ④ the fibre bends into an S (চিত্র ৯.১১a), then the light is sent again and the follow camera rides with it round the S
+  (the core ≥ 22 px across in the window), then pulls back to the S; a drag handle on the far clamp (or ↑/↓) bends it more
+  or less; the smallest θ₁ (79° at the default bend) is labelled, every θ₁ stays above 75°; ⑤ the fibre goes straight again
+  and the source is tilted to 35° (a drag handle, or ←/→): every wall has the same θ₁ = 90° − sin⁻¹(sin α / 1.50) = 68°, the
+  light leaves into the clad at every wall and the screen is dark; turned back to 22.8° or less (the book's 75° edge) it
+  all arrives again.
+- An upright phone sees the long scene more along its length, so the fibre runs corner to corner and fills the height.
 - The panel: a calm intro card, then per step a lead-in line, the result, the book's rule (term in bold); the kit's how-to
   row; a graph (landscape panels with room) of θ₁ at each wall in turn against the 75° line (dots come in as the light
   reaches each wall; a leaking wall is a hollow dot with a cross); "আবার দেখো" replays a step.
-- Test (5): what happens at the wall shown (θ₁ = 80° or 70° on the picture, chosen at random); the critical angle from the
-  indices shown on the picture; why the light leaves (θ₁ = 69° on the picture); why the bent fibre works; which rays real
-  fibres carry and why. Each wrong choice is a real mistake with its own note.
+- Test (5): the part marked "?" on the end face (core; wrong: clad, coating, "air in a hollow tube"); what happens at the
+  wall shown (θ₁ = 80° or 70° on the picture, chosen at random); the critical angle from the indices labelled on the
+  picture; what would happen if the clad were as dense as the core (the picture labels both 1.50; the answer: straight on,
+  shown when the answer is in); why the bent fibre still works. Each wrong choice is a real mistake with its own note.
 
 ## Decisions
 - **θc = 75° exactly.** 1.45/1.50 = 0.9667 → 75.2°; the book prints 0.97 and 75° (sin⁻¹ 0.97 would be 75.9°). The physics uses
@@ -58,18 +63,27 @@ Added by the figure (not on the page): আলোর উৎস, পর্দা, 
   magnified model (R/a ≥ 108) the starting light (θ₁ = 83°) and any tilt up to 16° never leak at any bend of the range
   (unit-tested over the whole range); the leak is shown with the tilt, which is exactly the book's question. A real fibre's
   core is about 0.05 mm, so real bends are far gentler still.
-- **The light's colour.** Amber, the chapter's ray colour; the step-2 rule says real fibres carry invisible infrared.
+- **The light's colour.** Amber, the chapter's ray colour; the step-2 rule says real fibres carry invisible infrared
+  (ইনফ্রারেড বা অবলাল রশ্মি, the page's words).
+- **Step ⑤ is a straight fibre**, so every wall has the same θ₁ and the panel's θ₁ is the one at every wall in view; the edge
+  is the book's own: θ₁ = 75° at a tilt of 22.8°.
+- Rays are a 2D overlay (the chapter's style); seen from behind the fibre they fade to a third, since the coating and the
+  posts are then in front of them.
 - Only meridional rays (in the plane of the bend) are traced, as the book draws them.
 
 ## Performance (2026-11-07, `scripts/.perf-tmp.mjs`, 844 × 390, shadows on, software WebGL)
-| state | draw calls (az 0° / 90° / 180° / 270°) | triangles (max, incl. the shadow pass) |
+One frame, counted at the WebGL calls (a tiny change of the bend, then one frame of the clock), from four azimuths:
+| state | draw calls per frame | triangles per frame |
 |---|---|---|
-| bend (S) | 34 / 82 / 82 / 82 | 158,016 |
-| tilt | 26 / 79 / 58 / 58 | 158,010 |
-- Idle: 0 draws once the orbit's damping settles. Main-thread task time per animated frame under 6× CPU throttling:
-  1.2 ms (the light running, follow camera) and 2.3 ms (the bend). Ready in about 3.5 s under the harness.
+| bend (S), tilt | 26 (no shadow pass) / 33–34 (scene changed: + the shadow pass) | 17,182 / 18,448 |
+- (The first round's table, 82 draws and 158k triangles, added up several frames and the old 150 × 32 tube; one frame was then
+  about 34 draws and 59k triangles.)
+- Idle: 0 draws once the orbit's damping settles. Main-thread task time (CDP) per animated frame under 6× CPU throttling:
+  1.1 ms (the light running round the S, follow camera) and 1.0 ms (the tilt). Ready in about 2.5–3 s under the harness.
+- GLB: one surface per tube (the back-face copies drawn for the see-through order are left out).
 - One small texture (the spot's 64² glow) and a 4×256 backdrop. The fibre is three swept surfaces (core and clad drawn back
-  then front) re-written in place when it bends (no new buffers); holders merged per material; parts of later steps (the
+  then front) with rings only where they are needed (the two ends of each straight piece, 22 along each arc; 24 round),
+  re-written in place when it bends (no new buffers); holders merged per material; parts of later steps (the
   spot) exist at load and are warmed up with `stage.warmUp({ show })`. Label anchors come from a small ring of vectors.
 
 ## Open questions for the book team

@@ -95,6 +95,16 @@ describe('optical-fibre: the light', () => {
     assert.equal(r.trace({ alpha: r.ALPHA_EDGE - 0.05, h: 0 }).leaked, false);
     assert.equal(r.trace({ alpha: r.ALPHA_EDGE + 0.05, h: 0 }).leaked, true);
   });
+  it('with a clad as dense as the core goes straight on into the clad (the test’s question)', () => {
+    const tr = r.trace({ alpha: 15.7, h: 0, nClad: r.N_CORE });
+    assert.equal(tr.hits.length, 1);
+    assert.equal(tr.hits[0].tir, false);
+    const leak = tr.segs.find((s) => s.kind === 'clad');
+    const core = tr.segs.find((s) => s.kind === 'core');
+    const dir = (g) => Math.atan2(g.b.y - g.a.y, g.b.x - g.a.x);
+    near(dir(leak), dir(core), 1e-9);
+    assert.equal(tr.arrived, 0);
+  });
   it('never shows 75° on a wall that leaks nor less on one that reflects', () => {
     assert.equal(r.shownTheta({ theta: 74.8, tir: false }), 74);
     assert.equal(r.shownTheta({ theta: 75.0, tir: true }), 75);

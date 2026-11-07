@@ -45,7 +45,7 @@ test(`${ID}: the core and clad; the light trapped; the bend; the tilt lets it ou
 
   // the tilt: θ₁ below 75°, the light leaves into the clad, nothing on the screen; turned back, all of it again
   const tilt = await fig.call('set', { step: 'tilt', animate: false });
-  expect(tilt).toMatchObject({ alpha: 35, leaked: true, arrived: 0 });
+  expect(tilt).toMatchObject({ alpha: 35, h: 0, leaked: true, arrived: 0 });
   expect(tilt.minTheta).toBeLessThan(75);
   expect(await fig.call('set', { alpha: 12 })).toMatchObject({ leaked: false, arrived: 1 });
   await frame
@@ -75,10 +75,10 @@ test(`${ID}: the test, answered all right, scores five of five`, async ({ page }
       .replace(/&nbsp;/g, ' ')
       .trim();
   const right = {
+    [plain(t('q_part'))]: () => plain(t('c_pt_core')),
     [plain(t('q_crit'))]: () => `${t.num(75)}°`,
-    [plain(t('q_leak'))]: () => plain(t('c_lk_right')),
+    [plain(t('q_same'))]: () => plain(t('c_sm_right')),
     [plain(t('q_bend'))]: () => plain(t('c_bd_right')),
-    [plain(t('q_ir'))]: () => plain(t('c_ir_right')),
     // the wall's angle decides: above 75° all of it comes back
     [plain(t('q_what'))]: async () => plain(t((await fig.call('get')).theta[0] >= 75 ? 'c_wh_tir' : 'c_wh_leak')),
   };

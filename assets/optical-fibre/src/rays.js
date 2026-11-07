@@ -259,7 +259,8 @@ export function createRays({ stage, host }) {
     P(FIBRE.length / 2, FIBRE.core * 2);
     corePx = Math.hypot(sx - cx, sy - cy);
     fit = Math.max(0.3, Math.min(1, (corePx * 0.3) / FULL));
-    dim = 1;
+    // seen from behind, the coating and the posts are in front of the light: it fades, so it does not float over them
+    dim = camera.position.z < 0 ? 0.32 : camera.position.z < 6 ? 0.32 + (0.68 * camera.position.z) / 6 : 1;
     const reach = v.light * total;
     // the leaks first (under the main path), each once the light has got to its wall
     for (const l of leaks) {
@@ -339,14 +340,6 @@ export function createRays({ stage, host }) {
   stage.onResize(size);
   stage.onAfterRender(paint);
 
-  /** Where a point of the fibre's plane is on the view (canvas px). */
-  const atPt = { x: 0, y: 0 };
-  const screen = (x, y) => {
-    P(x, y);
-    atPt.x = sx;
-    atPt.y = sy;
-    return atPt;
-  };
   // boxes along the drawn light and the normal (canvas px), for the labels to keep off
   const pool = Array.from({ length: 160 }, () => ({ left: 0, top: 0, right: 0, bottom: 0 }));
   const outBoxes = [];
@@ -383,9 +376,7 @@ export function createRays({ stage, host }) {
     view: v,
     setTrace,
     hitFractions,
-    paint,
     boxes,
-    screen,
     get total() {
       return total;
     },

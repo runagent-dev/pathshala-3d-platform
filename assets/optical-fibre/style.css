@@ -51,7 +51,8 @@ body.bg-transparent { background: transparent; }
 /* labels on the picture: short words on a white chip, in their colour */
 .pvc-anno-chip { --c: var(--ink); padding: 0 6px; border: 1.5px solid var(--c); border-radius: 5px; background: rgba(255, 255, 255, 0.96); color: var(--c); font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; transition: none; }
 .pvc-anno-chip sub { font-size: 0.72em; line-height: 0; }
-.pvc-anno-lines .k-chip { display: none; }
+/* a short leader from each label to what it names */
+.pvc-anno-lines .k-chip { stroke: rgba(255, 255, 255, 0.9); stroke-width: 1.4; }
 
 /* the test */
 .of .pvc-opt { font-size: 14px; line-height: 1.2; padding: 0 4px; }
@@ -71,7 +72,7 @@ body.bg-transparent { background: transparent; }
 @container pvc (max-height: 620px) {
   .of:lang(en) .of-lead .of-long { display: none; }
   .of:lang(en) .of-lead .of-short { display: inline; }
-  .of .of-graph { min-height: 72px; }
+  .of .of-graph { display: none; }
   .of .pvc-howto-orbit .pvc-howto-word, .of .pvc-howto-front .pvc-howto-word { display: none; }
 }
 /* a low side panel (844 × 390, 640 × 400): the short words, no lead-in once the steps start, a smaller graph */
@@ -99,6 +100,8 @@ body.bg-transparent { background: transparent; }
   .of .of-lead .of-short { display: inline; }
   .of .pvc-learn:not(.of-calm) .of-lead { display: none; }
   .of .pvc-learn { gap: 6px; }
+  /* the worked answer with the note on a wrong choice: up to four lines, kept, so the 3D keeps its height */
+  .of .pvc-q-feedback { --pvc-q-feedback-min: 4lh; }
   /* the how-to row on one line: the pill and the সামনে button carry their own words */
   .of .pvc-howto-orbit .pvc-howto-word, .of .pvc-howto-front .pvc-howto-word { display: none; }
 }

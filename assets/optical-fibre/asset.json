@@ -53,6 +53,7 @@
     { "name": "set", "payload": { "h": -6 } },
     { "name": "set", "payload": { "alpha": 20 } },
     { "name": "set", "payload": { "view": "3d" } },
+    { "name": "set", "payload": { "handles": false } },
     { "name": "reset", "payload": {} },
     { "name": "practice", "payload": {} },
     { "name": "capture", "payload": { "width": 800, "height": 500 } },
@@ -62,7 +63,7 @@
   "export": {
     "poster": {
       "params": { "coach": "0" },
-      "setup": [{ "command": "set", "payload": { "step": "bend", "animate": false } }]
+      "setup": [{ "command": "set", "payload": { "step": "bend", "animate": false, "handles": false } }]
     },
     "glb": [{ "name": "default", "setup": [{ "command": "set", "payload": { "step": "bend", "animate": false } }] }],
     "video": {

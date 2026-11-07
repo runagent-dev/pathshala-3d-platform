@@ -185,7 +185,9 @@ const P = (x, y) => ({ x, y });
  *  leaked: true if any wall had θ₁ < θc; minTheta: the smallest θ₁ met.
  * alpha: the source's tilt (degrees, + up), h: the far end's rise (cm).
  */
-export function trace({ alpha = ALPHA_START, h = 0, line = centreLine(h), maxHits = 40, minPower = 0.004 } = {}) {
+export function trace({ alpha = ALPHA_START, h = 0, line = centreLine(h), maxHits = 40, minPower = 0.004, nClad = N_CLAD } = {}) {
+  // the critical angle for this clad (90°: none, when the clad is as dense as the core)
+  const crit = nClad < N_CORE ? (nClad === N_CLAD ? THETA_C : criticalAngle(nClad, N_CORE)) : 90;
   const { core, clad, length } = FIBRE;
   const a = alpha * DEG;
   const segs = [];
@@ -242,13 +244,13 @@ export function trace({ alpha = ALPHA_START, h = 0, line = centreLine(h), maxHit
     const ny = best.ny;
     const cosi = dx * nx + dy * ny;
     const theta = Math.acos(Math.min(1, Math.max(-1, cosi))) / DEG;
-    const tir = theta >= THETA_C - 1e-9;
+    const tir = theta >= crit - 1e-9 && crit < 90;
     hits.push({ x: qx, y: qy, nx, ny, theta, tir, power });
     minTheta = Math.min(minTheta, theta);
     if (!tir) {
       leaked = true;
-      const R = reflectance(theta);
-      const tr = refract(dx, dy, nx, ny, N_CORE, N_CLAD);
+      const R = reflectance(theta, N_CORE, nClad);
+      const tr = refract(dx, dy, nx, ny, N_CORE, nClad);
       if (tr) {
         // through the clad to its outer face, where the plastic coating absorbs it
         const b2 = { t: Number.POSITIVE_INFINITY, nx: 0, ny: 0 };

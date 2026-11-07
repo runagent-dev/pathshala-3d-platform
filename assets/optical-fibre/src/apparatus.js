@@ -15,10 +15,28 @@ const NEAR_CLAMP = 9.5; // fibre x of the near clamp (clear of the first walls, 
 const FAR_CLAMP = FIBRE.length - 3.6;
 const BODY = 9.5; // the source's body length
 const BODY_R = 1.05;
-const ALONG = 150; // the sweep's rings along the fibre
-const ROUND = 32; // and points round each ring
+const PER_ARC = 22; // rings along each arc of the bend (a straight piece needs only its two end rings)
+const ALONG = 2 * PER_ARC + 2; // the sweep's segments along the fibre: start, the two arcs, the end
+const ROUND = 24; // points round each ring
 /** The coating is cut away on the near side (toward +z), between these angles from the top. */
 const CUT = [THREE.MathUtils.degToRad(22), THREE.MathUtils.degToRad(158)];
+
+/**
+ * Where the rings go along the centre line (arc length, cm): both ends of the straight start, PER_ARC along each arc,
+ * the far end. A straight fibre keeps the same rings (as if its middle were two arcs), so the surface is rewritten in place.
+ */
+const RINGS = new Float64Array(ALONG + 1);
+function ringsAlong(line) {
+  const p = line.pieces;
+  const lens =
+    p.length === 4 ? [p[0].len, p[1].len, p[2].len, p[3].len] : [FIBRE.s1, FIBRE.span / 2, FIBRE.span / 2, FIBRE.length - FIBRE.s1 - FIBRE.span];
+  let i = 0;
+  RINGS[i++] = 0;
+  RINGS[i++] = lens[0];
+  for (let k = 1; k <= PER_ARC; k++) RINGS[i++] = lens[0] + (lens[1] * k) / PER_ARC;
+  for (let k = 1; k <= PER_ARC; k++) RINGS[i++] = lens[0] + lens[1] + (lens[2] * k) / PER_ARC;
+  RINGS[i] = lens[0] + lens[1] + lens[2] + lens[3];
+}
 
 /** A swept surface round the centre line: rings of `round` points at radius r, from angle psi0 to psi1 (from the top, toward +z). */
 function sweep(r, psi0, psi1, round) {
@@ -47,8 +65,9 @@ function sweep(r, psi0, psi1, round) {
   const c = { x: 0, y: 0, tx: 1, ty: 0, nx: 0, ny: 1 };
   /** Writes the surface for a centre line, in place (no new arrays). */
   function update(line) {
+    ringsAlong(line);
     for (let i = 0; i < rows; i++) {
-      centreAt(line, (line.length * i) / ALONG, c);
+      centreAt(line, RINGS[i], c);
       for (let j = 0; j < cols; j++) {
         const k = (i * cols + j) * 3;
         const dx = cs[j] * c.nx;
@@ -153,7 +172,7 @@ export function createApparatus() {
   // ── the fibre: core and clad as two glass tubes (back faces first, then front), the coating cut away near side ──
   const coreS = sweep(FIBRE.core, 0, Math.PI * 2, ROUND);
   const cladS = sweep(FIBRE.clad, 0, Math.PI * 2, ROUND);
-  const coatS = sweep(FIBRE.jacket, CUT[1], CUT[0] + Math.PI * 2, 24);
+  const coatS = sweep(FIBRE.jacket, CUT[1], CUT[0] + Math.PI * 2, 18);
   const fibre = new THREE.Group();
   fibre.name = 'Fibre';
   const mk = (geo, m, order, name) => {
@@ -173,9 +192,9 @@ export function createApparatus() {
   // the end faces: the core's disc, the clad's ring, the coating's ring (cut away as the coating is)
   function ends(facing) {
     const g = new THREE.Group();
-    const core = new THREE.Mesh(annulus(0, FIBRE.core, 0, Math.PI * 2, 40, facing), mat.coreFace);
-    const clad = new THREE.Mesh(annulus(FIBRE.core, FIBRE.clad, 0, Math.PI * 2, 40, facing), mat.cladFace);
-    const coatRing = new THREE.Mesh(annulus(FIBRE.clad, FIBRE.jacket, CUT[1], CUT[0] + Math.PI * 2, 28, facing), mat.coating);
+    const core = new THREE.Mesh(annulus(0, FIBRE.core, 0, Math.PI * 2, ROUND, facing), mat.coreFace);
+    const clad = new THREE.Mesh(annulus(FIBRE.core, FIBRE.clad, 0, Math.PI * 2, ROUND, facing), mat.cladFace);
+    const coatRing = new THREE.Mesh(annulus(FIBRE.clad, FIBRE.jacket, CUT[1], CUT[0] + Math.PI * 2, 18, facing), mat.coating);
     core.renderOrder = 5;
     clad.renderOrder = 5;
     g.add(coatRing, clad, core);
@@ -318,8 +337,6 @@ export function createApparatus() {
   setBend(0);
   setTilt(0);
 
-  /** The meshes a finger can grab to bend the fibre (the slider) and to turn the source. */
-  const grab = { slider: slider.children.filter((m) => m.name !== 'Spot'), source: [sBody, sSteel, sBlack] };
   return {
     root,
     fibre,
@@ -328,15 +345,12 @@ export function createApparatus() {
     card,
     nearEnd,
     farEnd,
-    grab,
     setBend,
     setTilt,
     setLight,
     get line() {
       return line;
     },
-    /** World points: the near face's centre, the far end's slider boss, the source's back end. */
-    points: { farBoss: () => new THREE.Vector3(farX, Y0 + s.h, POST_Z), sourceBack: BODY + SOURCE_GAP },
     POST_Z,
     farX,
     screenX,
