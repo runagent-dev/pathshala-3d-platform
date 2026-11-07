@@ -1,0 +1,78 @@
+{
+  "$schema": "../../schemas/asset.schema.json",
+  "schemaVersion": 2,
+  "id": "electrostatic-induction",
+  "title": "Electrical induction (বৈদ্যুতিক আবেশ)",
+  "type": "interactive",
+  "entry": "index.html",
+  "version": "0.1.0",
+  "book": "physics-9-10",
+  "page": 275,
+  "topic": "10.3",
+  "placement": "Book page 275, topic 10.3 বৈদ্যুতিক আবেশ, চিত্র ১০.০৪–১০.০৬ (pp. 275–278).",
+  "order": 1,
+  "maintainers": ["RadeenXALNW"],
+  "units": "m",
+  "description": "Interactive 3D figure for electrical induction (বৈদ্যুতিক আবেশ), book pages 275–277, topic 10.3, next to চিত্র ১০.০৪–১০.০৬. A polished metal sphere stands on an insulating stand with its charges drawn as the book draws them: pairs of + and −, so it has no charge. The student drags a glass rod rubbed with silk near it, or taps: electrons, and only electrons, glide to the side near the rod and bare + stay behind; the nearer the rod, the more move; take it away and they go back. A second sphere then touches the first and electrons cross through the point of contact; pulled apart with the rod still there, then the rod removed, the two stay charged, opposite (চিত্র ১০.০৬). Last, the book's opening question: a negative comb over bits of paper; their near part turns positive, the far part negative, they jump to the comb, fill with negative charge and fly off (চিত্র ১০.০৫). Five test questions on the picture. Offline, Bangla and English.",
+  "tags": [
+    "static electricity",
+    "electrical induction",
+    "charge",
+    "electron",
+    "metal sphere",
+    "glass rod",
+    "comb",
+    "bangla"
+  ],
+  "params": [
+    {
+      "name": "lang",
+      "label": "Language",
+      "type": "select",
+      "options": [["bn", "বাংলা"], ["en", "English"]],
+      "default": "bn"
+    },
+    {
+      "name": "step",
+      "label": "Start at",
+      "type": "select",
+      "options": [
+        ["intro", "the sphere and the rod"],
+        ["near", "one sphere (চিত্র ১০.০৪)"],
+        ["pair", "two spheres touching (চিত্র ১০.০৬, left)"],
+        ["apart", "the spheres apart (চিত্র ১০.০৬, right)"],
+        ["comb", "the comb and the paper (চিত্র ১০.০৫)"]
+      ],
+      "default": "intro"
+    },
+    { "name": "view", "label": "View", "type": "select", "options": ["front", "3d"], "default": "front" },
+    {
+      "name": "mode",
+      "label": "Start in",
+      "type": "select",
+      "options": [["explore", "learn"], ["quiz", "test"]],
+      "default": "explore"
+    },
+    { "name": "coach", "label": "The numbered ring and the words on the handle", "type": "boolean", "default": "1" },
+    {
+      "name": "numerals",
+      "label": "Digits",
+      "type": "select",
+      "options": [["", "follow language"], ["bn", "Bangla"], ["latin", "Latin"]],
+      "default": ""
+    },
+    { "name": "bg", "label": "Background", "type": "select", "options": ["light", "transparent"], "default": "light" },
+    { "name": "shadow", "label": "Soft shadow", "type": "boolean", "default": "1" },
+    { "name": "sound", "label": "Sound", "type": "boolean", "default": "1" }
+  ],
+  "commands": [
+    { "name": "get", "payload": {} },
+    { "name": "set", "payload": { "step": "near", "gap": 3, "view": "front", "animate": false } },
+    { "name": "reset", "payload": {} },
+    { "name": "practice", "payload": {} },
+    { "name": "capture", "payload": { "width": 800, "height": 500 } },
+    { "name": "export-glb", "payload": {} }
+  ],
+  "events": ["ready", "change", "view", "dragstart", "dragend", "practice-start", "practice-result", "practice-end"],
+  "export": { "poster": { "params": { "coach": "0", "step": "near" } }, "glb": [{ "name": "default" }] }
+}
