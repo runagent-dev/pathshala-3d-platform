@@ -81,6 +81,10 @@ body.bg-transparent { background: transparent; }
 }
 /* a side panel of middle height (800 × 500): no formula line (the rule and the graph carry θc) */
 @container pvc (max-height: 620px) {
+  /* English is longer: the short calm card here, and a tighter table */
+  .tir:lang(en) .tir-lead .tir-long { display: none; }
+  .tir:lang(en) .tir-lead .tir-short { display: inline; }
+  .tir:lang(en) .tir-table { font-size: 12.5px; }
   .tir .tir-formula { display: none; }
   .tir .tir-graph { min-height: 96px; }
 }

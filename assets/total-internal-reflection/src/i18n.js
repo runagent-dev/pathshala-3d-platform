@@ -259,7 +259,7 @@ export const STRINGS = {
     out_zero: '{T2} = 0° → {T1} = <b>0°</b>: along the normal it goes straight; about {r}% reflects.',
     out_critical: 'At {T2} = <b>{a}°</b>, {T1} = <b>{b}°</b>: the refracted ray grazes the surface.',
     out_more: '{T2} = {a}°: sin {T1} = {f} = <b>{s}</b> &gt; 1, so <b>no light leaves</b>.',
-    out_prism: 'At the long (hypotenuse) face <b>{a}°</b> &gt; {c}°: all the light is reflected and turns by <b>{b}°</b>.',
+    out_prism: 'On the long (hypotenuse) face <b>{a}°</b> &gt; {c}°: all reflected, turned <b>{b}°</b>.',
 
     f_snell: '{N1} sin {T1} = {N2} sin {T2}',
     f_crit_air:
@@ -273,8 +273,8 @@ export const STRINGS = {
     rule_water_critical: 'In water the critical angle is larger: {c}°. At this angle the ray grazes the surface.',
     rule_water_more: '{a}° is more than even the water\u2019s critical angle {c}°: <b>total internal reflection</b> in water too.',
     rule_prism: 'So the prism works as a mirror, and a better one: <b>the most complete reflection is total internal reflection.</b>',
-    tbl_inc: 'Angle of incidence on the long (hypotenuse) face',
-    tbl_crit: 'Critical angle, glass to air',
+    tbl_inc: 'Angle on the long (hypotenuse) face',
+    tbl_crit: 'Critical angle, glass–air',
     tbl_refl: 'Light reflected',
     tbl_label: 'What happens at the prism’s long (hypotenuse) face',
 
@@ -359,7 +359,7 @@ export const STRINGS = {
 
     q_prism: 'In the prism, light meets the long (hypotenuse) face slantwise. Where does it go?',
     c_prism_right: 'All back, turned 90° to the right',
-    c_prism_out: 'Out through the long (hypotenuse) face',
+    c_prism_out: 'Out of the long (hypotenuse) face',
     c_prism_straight: 'Straight up, unbent',
     c_prism_half: 'Half leaves, half turns',
     why_prism: '<b>All back, turned 90° to the right</b>: 45° &gt; 41.8°, so total internal reflection; the prism works as a mirror (fig. 9.07).',
