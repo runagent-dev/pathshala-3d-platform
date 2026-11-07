@@ -1,6 +1,7 @@
 // The optics of concave-lens-image: the image wherever the pencil stands (virtual, upright, smaller, between O and F), the book's three
 // rays meeting exactly at X′, the bundles of চিত্র ৯.১৮ and ৯.১৯, the thin lens's map that the glass shows, and the lens's shape.
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { test } from 'node:test';
 import {
   candidates,
@@ -122,4 +123,11 @@ test("the test's candidate paths: only one spreads as if from F", () => {
   assert.ok(c.gather.y < 0 && c.gather.x > 0);
   assert.equal(c.straight.y, 0);
   assert.ok(c.back.x < 0);
+});
+
+test('every event asset.json declares is forwarded to the book by main.js', () => {
+  const manifest = JSON.parse(fs.readFileSync(new URL('../../assets/concave-lens-image/asset.json', import.meta.url), 'utf8'));
+  const main = fs.readFileSync(new URL('../../assets/concave-lens-image/src/main.js', import.meta.url), 'utf8');
+  const forwarded = JSON.parse(main.match(/events: (\[[^\]]*\])/)[1].replace(/'/g, '"'));
+  for (const e of manifest.events) if (e !== 'ready') assert.ok(forwarded.includes(e), `${e} is not forwarded`);
 });

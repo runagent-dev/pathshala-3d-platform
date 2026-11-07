@@ -72,6 +72,13 @@ the sister), and the panel's words টেনে সরাও.
   of a real lens would distort more near its edge. Only the pencil, its stand, the rail and the table on the pencil's side are seen in
   it; the blue backdrop is the same either way.
 - The ghost image is scaled by m in every direction; its true depth scales by m². A pencil is thin, so it does not show.
+- The see-through view is one-sided: only what stands on the pencil's side is minified in the glass (the rail and table on the eye's side
+  are seen directly, as they should be, but they are never seen *through* the glass from the other side), and the copies in the glass
+  carry no shadows.
+- Cost of the see-through view: every material of the pencil, its stand, the rail and the table carries a small test and a `discard` in
+  its fragment shader, even when the eye is on the pencil's side (`lensOn` = 0). A `discard` can turn off early depth testing on some old
+  tiled mobile GPUs (PowerVR, Mali); these parts are few and small on the screen, and the measured frame times stay low, but a cheaper
+  route would be to swap to unpatched materials while `lensOn` is 0.
 
 ## Measured (844 × 390, shadows on, a temporary script)
 - Draw calls / triangles of one frame from four azimuths 90° apart: the first view 45 / 74 / 80 / 112 draws, 20–50k triangles; চিত্র ৯.১৮
@@ -90,3 +97,24 @@ the sister), and the panel's words টেনে সরাও.
   "লেন্সের কেন্দ্র".
 - The book uses both "প্রধান অক্ষ" (rule ii) and "মূল অক্ষ" (p258); the figure says প্রধান অক্ষ.
 - The sentence on young people's glasses (p255, 9.4) is used in the opening words: "অনেকের চশমার কাচ মাঝখানে সরু, কিনারে পুরু"।
+
+## Round 2 (the independent review)
+- **The magnifier keeps the climax.** It shows whenever the image is under 40 px on the view (any width, the image step and the row's
+  steps), aimed a little above the image's middle, and the ray layer is painted again inside the glass, enlarged as the 3D is
+  (a canvas point p shows at c + (p − c)·zoom, clipped to the disc): the rays, the dashed lines and the X′ dot cross magnified there.
+  Labels of points under the glass point to where they show, from just outside its rim; a point hidden by the glass whose enlarged copy
+  falls outside it is not labelled.
+- **X′ and Y′**: once the ghost stands there they are named in its one chip below the axis ("প্রতিবিম্ব X′Y′ (অবাস্তব) / সোজা · ছোট"),
+  with one line to X′; in the ray steps X′ alone, its line from the free wedge below the crossing; F there tries above-left first (the
+  pencil's handle track runs just under the axis). The chip keeps off the pencil and its stand.
+- **Measured in every state at all six sizes, Bangla and English** (26 states each: every step, every row distance, the graph, the
+  table, each test question, each revealed answer, the result): one 3D height per size; panel scroll 0; no text cut; no label on another
+  label, a corner pill, the panel tab or the note; no label on a ray (amber pixels of the ray layer under a visible label); the action
+  button keeps its place in every step after the calm first screen (portrait ±2 px).
+- Test Q3: the pencil at 10, 30 or 45 cm; "beyond F" half way from F to the pencil (or 4 cm past F when the pencil is inside F), never on
+  the pencil. Q2's "উল্টো, বড়" has its own note. The `view` event is forwarded (unit-tested against asset.json).
+- Words: rule c0 says "পেনসিলের ৩/৫ অংশ" (the number from m) and glosses m once: "m = প্রতিবিম্বের উচ্চতা ÷ পেনসিলের উচ্চতা";
+  "লেন্স ও F এর মাঝখানে" where "F এর ভেতরে" was; S stays named in rule (i)'s step, which speaks of FS; the readout "একই পাশে ১০ cm" as the
+  sister; the third ray's action "তৃতীয় রশ্মি আঁকো" fits one line. English shortened where it wrapped or scrolled.
+- The graph's names in a legend row above the plot (never on a curve or a live dot); F and the pencil's height under their lines. The
+  table at 12.5–13 px (12 px in a short side panel). Dead label spots removed. Ray numbering kept as the sister's, by decision.

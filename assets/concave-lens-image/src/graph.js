@@ -32,7 +32,7 @@ export function createGraph(el, { t }) {
     const x0 = f * 1.9;
     const x1 = W - 6;
     const y0 = H - f * 2.45; // the bottom of the plot (the numbers and the axis's name under it)
-    const y1 = f * 1.2;
+    const y1 = f * 2.1; // the legend row above the plot
     const X = (x) => x0 + (x / U.max) * (x1 - x0);
     const Y = (y) => y0 - (Math.min(Y_MAX, y) / Y_MAX) * (y0 - y1);
     let out = '';
@@ -60,11 +60,16 @@ export function createGraph(el, { t }) {
     out += `<g fill="none" stroke-width="${lw}" stroke-linejoin="round" stroke-linecap="round">`;
     out += `<path d="${path((i) => i.behind)}" stroke="${G.v}"/><path d="${path((i) => i.height)}" stroke="${G.height}"/></g>`;
     // the names, each in the clear band beside its own line: v over its curve, the height over its curve, the pencil over its line
-    const at = (u) => imageOf(u);
-    out += `<text x="${x1 - 2}" y="${Y(F0) - f * 0.35}" text-anchor="end" font-size="${f}" font-weight="600" style="fill:${G.focus}">${t('g_f', { f: F0 })}</text>`;
-    out += `<text x="${X(36)}" y="${Y(at(36).behind) - f * 0.45}" text-anchor="middle" font-size="${f}" font-weight="600" style="fill:${G.v}">${t('g_v')}</text>`;
-    out += `<text x="${X(U.max) - 2}" y="${Y(PENCIL) - f * 0.35}" text-anchor="end" font-size="${f}" style="fill:#5c636a">${t('g_pencil', { h: PENCIL })}</text>`;
-    out += `<text x="${X(36)}" y="${Y(at(36).height) - f * 0.45}" text-anchor="middle" font-size="${f}" font-weight="600" style="fill:${G.height}">${t('g_h')}</text>`;
+    // the names: a legend row above the plot (never on a curve or a dot); F under its line on the left, the pencil's height under its
+    // line on the right, where the curves are far from both
+    const lx = x0 + 2;
+    const half = (x1 - x0) / 2;
+    out += `<line x1="${lx}" x2="${lx + 14}" y1="${f * 0.75}" y2="${f * 0.75}" stroke="${G.v}" stroke-width="3" stroke-linecap="round"/>`;
+    out += `<text x="${lx + 18}" y="${f * 1.1}" font-size="${f}" font-weight="600" style="fill:${G.v}">${t('g_v')}</text>`;
+    out += `<line x1="${lx + half}" x2="${lx + half + 14}" y1="${f * 0.75}" y2="${f * 0.75}" stroke="${G.height}" stroke-width="3" stroke-linecap="round"/>`;
+    out += `<text x="${lx + half + 18}" y="${f * 1.1}" font-size="${f}" font-weight="600" style="fill:${G.height}">${t('g_h')}</text>`;
+    out += `<text x="${x0 + 4}" y="${Y(F0) + f * 1.05}" font-size="${f}" font-weight="600" style="fill:${G.focus}">${t('g_f', { f: F0 })}</text>`;
+    out += `<text x="${x1 - 2}" y="${Y(PENCIL) + f * 1.05}" text-anchor="end" font-size="${f}" style="fill:#5c636a">${t('g_pencil', { h: PENCIL })}</text>`;
     // where the pencil is now: a guide and a dot on each curve
     const img = imageOf(u);
     out += `<line x1="${X(u)}" x2="${X(u)}" y1="${y1}" y2="${y0}" stroke="${G.dot}" stroke-width="1.5" stroke-dasharray="3 3"/>`;

@@ -39,6 +39,8 @@ export function createRays({ stage, host }) {
   let sx = 0;
   let sy = 0;
   let behind = false;
+  /** Inside the magnifier the view is enlarged about its centre: a canvas point p shows at c + (p − c)·zoom. Null outside it. */
+  let lens = null;
   /** World point to the canvas: (x, height y above the axis, z). */
   const P = (x, y = 0, z = 0) => {
     pv.set(x, RAIL.axis + y, z).applyMatrix4(camera.matrixWorldInverse);
@@ -46,6 +48,10 @@ export function createRays({ stage, host }) {
     pv.applyMatrix4(camera.projectionMatrix);
     sx = ((pv.x + 1) / 2) * w;
     sy = ((1 - pv.y) / 2) * h;
+    if (lens) {
+      sx = lens.x + (sx - lens.x) * lens.zoom;
+      sy = lens.y + (sy - lens.y) * lens.zoom;
+    }
   };
   /** The same for a point given by its height above the table. */
   const Q = (x, y, z) => P(x, y - RAIL.axis, z);
@@ -75,7 +81,7 @@ export function createRays({ stage, host }) {
     eyeX: 12,
     eyeY: 4.5,
     picks: null, // the test's candidates: [{ from, dir, length }]
-    hole: null, // { x, y, r } canvas px: the magnifier's glass, kept clear of the drawing
+    loupe: null, // { x, y, r, zoom } canvas px: the magnifier's glass; inside it the drawing is enlarged as the 3D is
   };
 
   const line = (x0, y0, x1, y1) => {
@@ -322,18 +328,37 @@ export function createRays({ stage, host }) {
     ctx.clearRect(0, 0, w, h);
     if (v.on <= 0) return;
     ctx.globalAlpha = 1;
+    const g = v.loupe;
     ctx.save();
-    if (v.hole) {
-      // nothing is drawn over the magnifier: it shows the 3D enlarged, and the lines would not be
+    if (g) {
+      // outside the glass: the drawing as it is
       ctx.beginPath();
       ctx.rect(0, 0, w, h);
-      ctx.arc(v.hole.x, v.hole.y, v.hole.r, 0, Math.PI * 2, true);
+      ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2, true);
       ctx.clip('evenodd');
     }
+    drawing(true);
+    ctx.restore();
+    if (g) {
+      // inside it: the same lines and points, enlarged like the 3D under them, so the crossing at X′ shows magnified
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
+      ctx.clip();
+      lens = g;
+      drawing(false);
+      lens = null;
+      ctx.restore();
+    }
+  }
+  /** Everything of the drawing; `all` false leaves out what does not belong in the magnifier (the eye, the bar, the drop lines). */
+  function drawing(all) {
     if (v.axis > 0) axis(v.axis);
-    drop(-F0, C.focusSoft, v.showF);
-    drop(F0, C.focusSoft, v.showF2);
-    if (v.fBar > 0) bar(0, -F0, -LENS.half - 2.2, C.focus, v.fBar);
+    if (all) {
+      drop(-F0, C.focusSoft, v.showF);
+      drop(F0, C.focusSoft, v.showF2);
+      if (v.fBar > 0) bar(0, -F0, -LENS.half - 2.2, C.focus, v.fBar);
+    }
     lensLine(v.lens);
     const b = v.bundle;
     if (b) {
@@ -376,13 +401,12 @@ export function createRays({ stage, host }) {
       ctx.setLineDash([]);
       ctx.globalAlpha = 1;
     }
-    if (v.imageAt) drop(v.imageAt.x, C.image, v.drop);
-    if (v.eye > 0) eye(v.eyeX, v.eyeY, v.eye);
+    if (v.imageAt && all) drop(v.imageAt.x, C.image, v.drop);
+    if (v.eye > 0 && all) eye(v.eyeX, v.eyeY, v.eye);
     dot(0, 0, C.ink, v.showO, 3.8);
     dot(-F0, 0, C.focus, v.showF);
     dot(F0, 0, C.focus, v.showF2);
-    if (v.imageAt && v.imageK > 0) dot(v.imageAt.x, v.imageAt.y, C.image, v.imageK, 3.8);
-    ctx.restore();
+    if (v.imageAt && v.imageK > 0) dot(v.imageAt.x, v.imageAt.y, C.image, v.imageK, all ? 3.8 : 5);
   }
   stage.onResize(size);
   stage.onAfterRender(paint);
@@ -431,8 +455,15 @@ export function createRays({ stage, host }) {
     return out;
   }
   /** Where a point of the plane of the rays is on the canvas (px), and whether it is in front of the camera. */
-  function toScreen(x, y) {
+  function toScreen(x, y, magnified = false) {
+    if (magnified && v.loupe) {
+      // where it shows: enlarged when it lies under the glass
+      P(x, y);
+      const g = v.loupe;
+      if (Math.hypot(sx - g.x, sy - g.y) < g.r) lens = g;
+    }
     P(x, y);
+    lens = null;
     return { x: sx, y: sy, behind };
   }
 

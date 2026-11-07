@@ -172,25 +172,6 @@ const TRACK_Y = -2;
 const EYE_X = 12;
 const EYE_Y = 4.5;
 const BUNDLES = { spread: spreadBundle(), converge: convergeBundle() };
-/** The ray question's tags, each on its own side of its ray's end so that close ends do not crowd. */
-const TAG_SPOTS = {
-  spread: [
-    { dx: 0, dy: -20 },
-    { dx: -16, dy: -18 },
-  ],
-  straight: [
-    { dx: 20, dy: 0 },
-    { dx: 18, dy: -14 },
-  ],
-  gather: [
-    { dx: 0, dy: 20 },
-    { dx: 16, dy: 18 },
-  ],
-  back: [
-    { dx: -18, dy: -12 },
-    { dx: 0, dy: -20 },
-  ],
-};
 
 const dirFrom = (az, el, out = new THREE.Vector3()) => {
   const a = THREE.MathUtils.degToRad(az);
@@ -265,26 +246,19 @@ export function createApp(root, options = {}) {
   const loupeAt = new THREE.Vector3();
   loupe.setTarget(() => {
     const img = imageOf(V.u);
-    return loupeAt.set(img.x, AX + img.height / 2, 0);
+    return loupeAt.set(img.x, AX + img.height * 0.62, 0); // a little high: X′, where the lines cross, well inside the glass
   });
   const LOUPE_PX = 40;
   function placeLoupe() {
     const px = imagePx();
-    // in the image step only on a phone-width view: there the rays' crossing at X′ is the point, and it shows wider
-    const want =
-      !s.quiz &&
-      (FREE.has(s.stage) || (s.stage === 'image' && stage.width < 500)) &&
-      V.ghost >= 1 &&
-      camK >= 1 &&
-      px > 0 &&
-      px < LOUPE_PX &&
-      !s.userMovedCamera;
+    // whenever the image is small on the view; the drawing is enlarged inside it too, so the crossing at X′ still shows
+    const want = !s.quiz && (FREE.has(s.stage) || s.stage === 'image') && V.ghost >= 1 && camK >= 1 && px > 0 && px < LOUPE_PX && !s.userMovedCamera;
     if (want !== loupe.visible) loupe.setVisible(want);
     if (want) {
       const z = Math.round(clamp(90 / px, 2, 4) * 2) / 2;
       if (Math.abs(loupe.zoom - z) > 0.01) loupe.setZoom(z);
     }
-    rays.view.hole = loupe.visible ? { x: loupe.center.x, y: loupe.center.y, r: loupe.diameter / 2 - 2 } : null;
+    rays.view.loupe = loupe.visible ? { x: loupe.center.x, y: loupe.center.y, r: loupe.diameter / 2 - 2, zoom: loupe.zoom } : null;
   }
 
   // ── the state ───────────────────────────────────────────────────────────────────────────────────────────
@@ -585,11 +559,6 @@ export function createApp(root, options = {}) {
   });
   const OFF = { left: -20, top: -20, right: -10, bottom: -10 };
   const lb = { left: 0, top: 0, right: 0, bottom: 0 };
-  function underLoupe(x, y) {
-    const p = rays.toScreen(x, y - AX);
-    const c = loupe.center;
-    return Math.hypot(p.x - c.x, p.y - c.y) < loupe.diameter / 2 + 10;
-  }
   function loupeBox() {
     const c = loupe.center;
     const r = loupe.diameter / 2 + 4;
@@ -601,8 +570,46 @@ export function createApp(root, options = {}) {
   }
   const shown = new Map();
   const pts = new Map();
+  const ndcP = new THREE.Vector3();
+  /** Spots round the magnifier's rim for a label whose point shows inside it (below first, then the sides, then above). */
+  const RIM = [90, 125, 55, 160, 20, 200, 340, 270].map((deg) => (deg * Math.PI) / 180);
+  const rimSpots = new Map();
+  function aroundLoupe(id, px, py) {
+    if (!rimSpots.has(id))
+      rimSpots.set(
+        id,
+        RIM.map(() => ({ dx: 0, dy: 0 })),
+      );
+    const out = rimSpots.get(id);
+    const c = loupe.center;
+    const r = loupe.diameter / 2 + 24;
+    RIM.forEach((a, i) => {
+      out[i].dx = Math.round(c.x + Math.cos(a) * (r + 30) - px);
+      out[i].dy = Math.round(c.y + Math.sin(a) * r - py);
+    });
+    return out;
+  }
+  /**
+   * Like label(), for points that may lie under the magnifier: there the label is pinned to where the point shows (enlarged) and takes
+   * a place just outside the glass, with its line into it.
+   */
+  function labelL(id, on, text, x, y, color, spots, optional = false) {
+    if (on && loupe.visible) {
+      const p = rays.toScreen(x, y - AX);
+      const c = loupe.center;
+      if (Math.hypot(p.x - c.x, p.y - c.y) < loupe.diameter / 2 - 2) {
+        const m = rays.toScreen(x, y - AX, true);
+        // hidden by the glass, and its enlarged copy falls outside it: nothing to point at
+        if (Math.hypot(m.x - c.x, m.y - c.y) > loupe.diameter / 2 - 8) return label(id, false);
+        ndcP.set(x, y, 0).project(camera);
+        ndcP.set((m.x / stage.width) * 2 - 1, 1 - (m.y / stage.height) * 2, ndcP.z).unproject(camera);
+        return label(id, on, text, ndcP.x, ndcP.y, ndcP.z, color, aroundLoupe(id, m.x, m.y), optional, 'rim');
+      }
+    }
+    return label(id, on, text, x, y, 0, color, spots, optional, 'plain');
+  }
   /** A label pinned to a world point. `spots` are the places it may take, best first; key labels have no `optional`. */
-  function label(id, on, text, x, y, z, color, spots, optional = false) {
+  function label(id, on, text, x, y, z, color, spots, optional = false, mode = '', avoid = []) {
     if (!on) {
       if (shown.has(id)) {
         anno.remove(id);
@@ -614,9 +621,15 @@ export function createApp(root, options = {}) {
     pts.get(id).set(x, y, z);
     const was = shown.get(id);
     if (!was) {
-      anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part', optional });
-      shown.set(id, { text });
+      anno.add(id, { text, point: () => pts.get(id), color, spots, kind: 'part', optional, avoid });
+      shown.set(id, { text, spots, mode });
       return;
+    }
+    if (was.spots !== spots || was.mode !== mode) {
+      // under the magnifier or out of it, or a new set of places: the label looks again
+      anno.update(id, { spots, optional });
+      was.spots = spots;
+      was.mode = mode;
     }
     if (was.text !== text) {
       anno.setText(id, text);
@@ -647,12 +660,6 @@ export function createApp(root, options = {}) {
       { dx: -26, dy: 12 },
       { dx: -14, dy: -24 },
       { dx: -14, dy: 24 },
-    ],
-    right: [
-      { dx: 24, dy: -8 },
-      { dx: 26, dy: 12 },
-      { dx: 14, dy: -24 },
-      { dx: 14, dy: 24 },
     ],
     x: [
       { dx: 0, dy: -24 },
@@ -688,35 +695,44 @@ export function createApp(root, options = {}) {
       { dx: -60, dy: 26 },
       { dx: -30, dy: -48 },
     ],
-    // what the image is, beside it
-    props: [
-      { dx: 0, dy: 64 },
-      { dx: -20, dy: 74 },
-      { dx: 20, dy: 74 },
-      { dx: -60, dy: -50 },
-      { dx: -70, dy: 40 },
-    ],
-    // X′: straight up first (the wedge between the line from F and the ray through O), then below
-    xi: [
-      { dx: 0, dy: -22 },
-      { dx: -6, dy: -26 },
-      { dx: 0, dy: 24 },
-      { dx: -26, dy: 6 },
-      { dx: 26, dy: -4 },
-      { dx: -30, dy: -18 },
-      { dx: 30, dy: 18 },
-      { dx: -22, dy: 30 },
-    ],
     axis: [
       { dx: 0, dy: 22 },
       { dx: -50, dy: 22 },
       { dx: -100, dy: 22 },
       { dx: -150, dy: 14 },
     ],
-    xiLow: [
-      { dx: 0, dy: 24 },
-      { dx: -8, dy: 28 },
-      { dx: 0, dy: -22 },
+    // X′ in the ray steps: in the free wedge below the crossing (between the line from F and the ray through O), a line up to it
+    xiWedge: [
+      { dx: -16, dy: 42 },
+      { dx: -30, dy: 36 },
+      { dx: -6, dy: 54 },
+      { dx: 22, dy: 44 },
+      { dx: 34, dy: 38 },
+      { dx: -40, dy: 50 },
+      { dx: -24, dy: 66 },
+      { dx: 10, dy: 64 },
+      { dx: -50, dy: 66 },
+      { dx: 40, dy: 66 },
+    ],
+    f2conv: [
+      { dx: 0, dy: 40 },
+      { dx: 0, dy: 62 },
+      { dx: 0, dy: 84 },
+      { dx: 0, dy: 106 },
+      { dx: 30, dy: 130 },
+      { dx: 0, dy: 150 },
+    ],
+    // F beside the pencil's rays: above and to the left first (under the ray through O, clear of the handle's track below the axis and
+    // of X′ on its right)
+    fLeft: [
+      { dx: -20, dy: -20 },
+      { dx: -28, dy: -8 },
+      { dx: -22, dy: 26 },
+      { dx: 0, dy: 26 },
+      { dx: 22, dy: 26 },
+      { dx: -34, dy: 12 },
+      { dx: 34, dy: 12 },
+      { dx: 0, dy: 44 },
     ],
     pq: [
       { dx: -16, dy: 20 },
@@ -738,31 +754,6 @@ export function createApp(root, options = {}) {
     eye: [
       { dx: 0, dy: -24 },
       { dx: 0, dy: -30 },
-    ],
-    imageFar: [
-      { dx: 0, dy: 96 },
-      { dx: -70, dy: 96 },
-      { dx: 70, dy: 96 },
-      { dx: 0, dy: -96 },
-      { dx: -120, dy: 40 },
-      { dx: 110, dy: 60 },
-      { dx: -110, dy: -70 },
-      { dx: 110, dy: -70 },
-    ],
-    badge: [
-      { dx: 0, dy: -16 },
-      { dx: 0, dy: 16 },
-      { dx: 14, dy: -14 },
-    ],
-    tab: [
-      { dx: 8, dy: 0 },
-      { dx: 8, dy: 22 },
-      { dx: 8, dy: -22 },
-    ],
-    near: [
-      { dx: 0, dy: 0 },
-      { dx: 0, dy: -16 },
-      { dx: 0, dy: 16 },
     ],
   };
   /** The handle calms down once the pencil has been moved by hand. */
@@ -787,6 +778,30 @@ export function createApp(root, options = {}) {
     const b = rays.toScreen(img.x, img.height);
     return Math.abs(b.y - ay);
   }
+  /** Where a point of the plane of the rays shows: enlarged when it lies under the magnifier. Screen point and a world point there. */
+  const shownWorld = new THREE.Vector3();
+  function shownAt(x, y) {
+    const m = rays.toScreen(x, y - AX, true);
+    ndcP.set(x, y, 0).project(camera);
+    shownWorld.set((m.x / stage.width) * 2 - 1, 1 - (m.y / stage.height) * 2, ndcP.z).unproject(camera);
+    return { x: m.x, y: m.y, world: shownWorld };
+  }
+  /** The image's chip: below the foot of the image (or of the magnifier), centred, then to the sides, lower, and level with it. */
+  const CHIP = [];
+  for (const dy of [0, 30, 60, 90]) for (const dx of [0, -70, 70, -120, 120]) CHIP.push([dx, dy]);
+  CHIP.push([-150, -20], [150, -20]);
+  const chipSpots = CHIP.map(() => ({ dx: 0, dy: 0 }));
+  /** The pencil and its stand on the screen: the chip keeps off them (a pencil close to the lens stands right by its image). */
+  const pb = { left: 0, top: 0, right: 0, bottom: 0 };
+  function pencilBox() {
+    const a = rays.toScreen(-V.u, PENCIL + 0.3);
+    const b = rays.toScreen(-V.u, RAIL.carrier - AX);
+    pb.left = Math.min(a.x, b.x) - 16;
+    pb.right = Math.max(a.x, b.x) + 16;
+    pb.top = Math.min(a.y, b.y);
+    pb.bottom = Math.max(a.y, b.y);
+    return pb;
+  }
   function labels() {
     const q = s.quiz;
     const calm = !s.busy && camK >= 1 && !s.userMovedCamera;
@@ -797,7 +812,6 @@ export function createApp(root, options = {}) {
     const drawn = V.on >= 1;
     const pencilSeen = pencilInView();
     const eyeView = s.frame === 'eye';
-    const open = (x, y) => !loupe.visible || !underLoupe(x, y);
 
     // from the eye's side: the lens and what is seen in it
     const fromEye = calm && !q && eyeView;
@@ -814,40 +828,58 @@ export function createApp(root, options = {}) {
 
     // the pencil's letters, and P, S, T where the book writes them
     const onRays = calm && drawn && PENCIL_STAGES.has(st) && pencilSeen;
-    label('x', onRays, big(t('l_x')), -V.u, AX + PENCIL, 0, INK.dark, SPOTS.x);
-    label('y', onRays && !FREE.has(st), big(t('l_y')), -V.u, AX, 0, INK.dark, SPOTS.down, true);
+    labelL('x', onRays, big(t('l_x')), -V.u, AX + PENCIL, INK.dark, SPOTS.x);
+    labelL('y', onRays && !FREE.has(st), big(t('l_y')), -V.u, AX, INK.dark, SPOTS.down, true);
     const R = rv.rays;
     const tell = calm && !q && drawn;
     const steps = tell && !FREE.has(st);
-    label(
+    labelL(
       'p',
       ((steps && !FREE.has(st)) || (calm && !!q?.showP)) && V.pin >= 1 && R[0],
       big(t('l_p')),
       0,
       AX + (R[0]?.hit.y ?? 0),
-      0,
       INK.dark,
       q && !q.named ? SPOTS.pq : SPOTS.p,
+      !q,
+    );
+    // S stays named while the rule (i) speaks of the line FS
+    label(
+      's',
+      steps && V.pout >= 1 && R[0] && (st === 'r2' || st === 'r1'),
+      big(t('l_s')),
+      R[0]?.end.x ?? 0,
+      AX + (R[0]?.end.y ?? 0),
+      0,
+      INK.ray,
+      SPOTS.up,
       true,
     );
-    label('s', steps && V.pout >= 1 && R[0] && st === 'r2', big(t('l_s')), R[0]?.end.x ?? 0, AX + (R[0]?.end.y ?? 0), 0, INK.ray, SPOTS.up, true);
     label('t', steps && V.cout >= 1 && R[1] && st === 'r1', big(t('l_t')), R[1]?.end.x ?? 0, AX + (R[1]?.end.y ?? 0), 0, INK.ray, SPOTS.down, true);
     // O, F and F′: named where they are new, then big letters
     const axisOn = calm && drawn && V.axis >= 1;
     const oName = !q && st === 'r1';
-    label('o', axisOn && V.showO >= 1 && named && PENCIL_STAGES.has(st), oName ? t('l_o_name') : big(t('l_o')), 0, AX, 0, INK.dark, SPOTS.down);
+    labelL(
+      'o',
+      axisOn && V.showO >= 1 && named && PENCIL_STAGES.has(st),
+      oName ? t('l_o_name') : big(t('l_o')),
+      0,
+      AX,
+      INK.dark,
+      SPOTS.down,
+      FREE.has(st) || !!q,
+    );
     const fName = !q && st === 'focus';
-    label(
+    labelL(
       'f',
-      axisOn && V.showF >= 1 && (named || q?.showF) && open(-F0, AX),
+      axisOn && V.showF >= 1 && (named || q?.showF),
       fName ? t('l_f_name') : big(t('l_f')),
       -F0,
       AX,
-      0,
       INK.focus,
-      fName ? SPOTS.fname : SPOTS.down,
+      fName ? SPOTS.fname : PENCIL_STAGES.has(st) ? SPOTS.fLeft : SPOTS.down,
     );
-    label('f2', axisOn && V.showF2 >= 1 && named, big(t('l_f2')), F0, AX, 0, INK.focus, st === 'conv' ? SPOTS.below : SPOTS.down);
+    labelL('f2', axisOn && V.showF2 >= 1 && named, big(t('l_f2')), F0, AX, INK.focus, st === 'conv' ? SPOTS.f2conv : SPOTS.down);
     // the step's ray, named on itself in the book's words
     const RAY_KEY = ['pout', 'cout', 'qout'];
     const NAME = ['l_r_parallel', 'l_r_centre', 'l_r_focal'];
@@ -862,26 +894,46 @@ export function createApp(root, options = {}) {
       const my = ray ? from.y + (to.y - from.y) * k : 0;
       label(`r${i}`, here, t(NAME[i]), mx, AX + my, 0, INK.ray, i === 1 ? SPOTS.below : i === 2 ? SPOTS.r3 : SPOTS.above, true);
     }
-    // the image: where, and what it is, beside it
+    // the image: in the ray steps X′ alone, its line from the free wedge below and left of the crossing; once the ghost stands there,
+    // one chip below the axis names X′Y′ and what it is, with its one line to X′ (where it shows: enlarged under the magnifier)
     const imageOn = calm && drawn && (V.xdot >= 1 || V.ghost >= 1);
-    label(
-      'xi',
-      imageOn && (named || !!q?.showXi) && open(img.x, AX + img.height),
-      big(t('l_xi')),
-      img.x,
-      AX + img.height,
-      0,
-      INK.dark,
-      st === 'r3' ? SPOTS.xiLow : SPOTS.xi,
-    );
-    label('yi', imageOn && named && V.perp >= 1 && !FREE.has(st) && open(img.x, AX), big(t('l_yi')), img.x, AX, 0, INK.dark, SPOTS.down, true);
-    const chip = imageOn && !q && V.ghost >= 1 && (st === 'image' || FREE.has(st));
-    label('image', chip, t('p_image'), img.x, AX, 0, INK.dark, loupe.visible ? SPOTS.imageFar : SPOTS.props);
+    const ghostOn = imageOn && V.ghost >= 1;
+    labelL('xi', imageOn && !ghostOn && (named || !!q?.showXi), big(t('l_xi')), img.x, AX + img.height, INK.dark, SPOTS.xiWedge);
+    const chipOn = ghostOn && (q ? named || !!q.showXi : st === 'image' || FREE.has(st));
+    if (chipOn) {
+      const top = shownAt(img.x, AX + img.height);
+      const foot = rays.toScreen(img.x, 0, true);
+      let dy = foot.y - top.y + 30;
+      if (loupe.visible) dy = Math.max(dy, loupe.center.y + loupe.diameter / 2 + 26 - top.y);
+      CHIP.forEach(([cx, cy], i) => {
+        chipSpots[i].dx = cx;
+        chipSpots[i].dy = Math.round(dy + cy);
+      });
+      label('image', true, named ? t('p_image') : t('l_xiyi'), top.world.x, top.world.y, top.world.z, INK.dark, chipSpots, false, 'chip', [
+        pencilBox,
+      ]);
+    } else label('image', false);
     label('eye', calm && !q && V.eye >= 1, t('l_eye'), EYE_X, AX + EYE_Y, 0, INK.dark, SPOTS.eye, true);
     // the test's letters
     for (let i = 0; i < 4; i++) {
       const on = calm && !!q?.points && !q.named;
       const pt = q?.points?.[i];
+      if (on && pt?.tip) {
+        // beyond the tip, then a little to each side of that
+        const a = rays.toScreen(pt.tip.bx, pt.tip.by);
+        const ax = a.x;
+        const ay = a.y;
+        const b = rays.toScreen(pt.tip.x, pt.tip.y);
+        const l = Math.hypot(b.x - ax, b.y - ay) || 1;
+        const ux = (b.x - ax) / l;
+        const uy = (b.y - ay) / l;
+        pt.spots[0].dx = Math.round(ux * 22);
+        pt.spots[0].dy = Math.round(uy * 22);
+        pt.spots[1].dx = Math.round(ux * 18 - uy * 16);
+        pt.spots[1].dy = Math.round(uy * 18 + ux * 16);
+        pt.spots[2].dx = Math.round(ux * 18 + uy * 16);
+        pt.spots[2].dy = Math.round(uy * 18 - ux * 16);
+      }
       label(`pt${i}`, on, on ? big(t(`tag_${i}`)) : '', pt?.x ?? 0, pt?.y ?? AX, pt?.z ?? 0, INK.dark, pt?.spots ?? (i % 2 ? SPOTS.up : SPOTS.down));
     }
     anno.update(); // places them now, on this frame's drawing (it asks for no new frame)
@@ -1026,12 +1078,12 @@ export function createApp(root, options = {}) {
     return f ? `${t.num(f.n)}/${t.num(f.d)}` : t.num(round(m, 2));
   }
   function tableHtml(u) {
-    const row = (a, b, c, on) => `<tr class="${on ? 'on' : ''}"><td>${a}</td><td>${b}</td><td>${c}</td></tr>`;
+    const row = (a, b, c, cls) => `<tr class="${cls}"><td>${a}</td><td>${b}</td><td>${c}</td></tr>`;
     const rows = CASES.map((x) => {
       const img = imageOf(x);
-      return row(`${t.num(x)} cm${x === F0 ? ` (${t('tb_at_f')})` : ''}`, `${t.num(round(img.behind, 1))} cm`, mText(img.m), x === u);
+      return row(`${t.num(x)} cm${x === F0 ? ` (${t('tb_at_f')})` : ''}`, `${t.num(round(img.behind, 1))} cm`, mText(img.m), x === u ? 'on' : '');
     }).join('');
-    const far = row(t('tb_far'), `${t.num(F0)} cm (F)`, t.num(0), false);
+    const far = row(t('tb_far'), `${t.num(F0)} cm (F)`, t.num(0), 'lim'); // left out on the smallest phone
     return `<table class="lab-table"><thead><tr><th>${t('th_u')}</th><th>${t('th_v')}</th><th>${t('th_m')}</th></tr></thead><tbody>${rows}${far}</tbody></table>`;
   }
   function outcomeNow() {
@@ -1048,7 +1100,7 @@ export function createApp(root, options = {}) {
     if (st === 'graph') return t('rule_graph');
     if (st === 'cases') {
       const i = CASES.indexOf(s.u);
-      return t(i >= 0 ? `rule_c${i}` : 'rule_case');
+      return t(i >= 0 ? `rule_c${i}` : 'rule_case', { m: mText(imageOf(s.u).m) });
     }
     return t(`rule_${st}`, { f: F0 });
   }
@@ -1236,12 +1288,24 @@ export function createApp(root, options = {}) {
       const order = shuffle(Object.keys(dirs));
       quizScene({ kind: 'ray', showF: true, showP: true }, 'r2', { u, change: { pout: 0, pext: 0, showF: 1 } });
       const from = { x: 0, y: PENCIL };
-      rays.view.picks = order.map((k) => ({ from, dir: dirs[k], length: k === 'back' ? 9 : 13 }));
+      const length = (k) => (k === 'back' ? 8 : 10);
+      rays.view.picks = order.map((k) => ({ from, dir: dirs[k], length: length(k) }));
+      // each tag just beyond the tip of its own path, along it on the screen (worked out each frame in labels())
       s.quiz.points = order.map((k) => ({
-        x: dirs[k].x * (k === 'back' ? 9 : 13),
-        y: AX + PENCIL + dirs[k].y * (k === 'back' ? 9 : 13),
+        x: dirs[k].x * length(k),
+        y: AX + PENCIL + dirs[k].y * length(k),
         z: 0,
-        spots: TAG_SPOTS[k],
+        tip: {
+          x: dirs[k].x * length(k),
+          y: PENCIL + dirs[k].y * length(k),
+          bx: dirs[k].x * (length(k) - 2),
+          by: PENCIL + dirs[k].y * (length(k) - 2),
+        },
+        spots: [
+          { dx: 0, dy: 0 },
+          { dx: 0, dy: 0 },
+          { dx: 0, dy: 0 },
+        ],
       }));
       const tag = (k) => t(`tag_${order.indexOf(k)}`);
       return {
@@ -1270,17 +1334,16 @@ export function createApp(root, options = {}) {
         notes: notesOf([
           ['flip', t('n_kind_flip')],
           ['big', t('n_kind_big')],
-          ['flipbig', t('n_kind_big')],
+          ['flipbig', t('n_kind_flipbig')],
         ]),
         reveal: t('a_kind'),
       };
     },
     where() {
-      const u = shuffle([10, 20, 45])[0];
+      const u = shuffle([10, 30, 45])[0];
       const img = imageOf(u);
-      const beyond = -(F0 + Math.max(4, Math.min(8, (u - F0) / 2)));
-      const spots = { right: img.x, f: -F0, other: img.behind, beyond: u > F0 + 8 ? beyond : -(u + F0) / 2 - 2 };
-      if (u <= F0 + 8) spots.beyond = -Math.max(F0 + 4, u + 4);
+      // "beyond F": half way from F to the pencil when the pencil is past F, else 4 cm past F (behind the pencil, well clear of it)
+      const spots = { right: img.x, f: -F0, other: img.behind, beyond: u > F0 ? -(F0 + u) / 2 : -(F0 + 4) };
       const order = shuffle(Object.keys(spots));
       quizScene({ kind: 'where', points: order.map((k) => ({ x: spots[k], y: AX, z: 0 })) }, 'r2', {
         u,

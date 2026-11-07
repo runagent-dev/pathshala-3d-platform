@@ -59,7 +59,7 @@ test(`${ID}: the three rays, the image and the eye, on one action`, async ({ pag
   expect(st.miss).toBeLessThan(1e-6);
   st = await act();
   expect(st).toMatchObject({ stage: 'image', ghost: true });
-  await expect(fig.frame.locator('.pvc-anno', { hasText: 'প্রতিবিম্ব (অবাস্তব)' })).toHaveCount(1);
+  await expect(fig.frame.locator('.pvc-anno', { hasText: 'প্রতিবিম্ব X′Y′ (অবাস্তব)' })).toHaveCount(1);
   // from the far side the glass itself shows the image
   st = await act();
   expect(st).toMatchObject({ stage: 'eye', frame: 'eye', throughLens: true, rays: 0 });
